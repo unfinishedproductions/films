@@ -10,9 +10,6 @@
             padding: 0;
             width: 100%;
             height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             background-color: #000;
         }
 
@@ -22,41 +19,61 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            position: relative; /* To position the play button */
         }
 
         video {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    min-width: 100%;
-    min-height: 100%;
-    width: auto;
-    height: auto;
-}
+            width: 100%;
+            height: 100%;
+            object-fit: fill;
+        }
+
+        #play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            font-size: 24px;
+            cursor: pointer;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 2px solid white;
+            border-radius: 10px;
+            z-index: 10; /* Ensures it's on top of the video */
+            display: block; /* Initially visible */
+        }
     </style>
 </head>
 <body>
 
     <div id="video-container">
-        <video playsinline>
+        <video id="myVideo" playsinline>
             <source src="taxiwars.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
+        <div id="play-button">Play Video</div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const video = document.getElementById('myVideo');
+            const playButton = document.getElementById('play-button');
 
-            // The setTimeout function will wait for 3000 milliseconds (3 seconds)
+            // Wait for 3 seconds before showing the play button
             setTimeout(() => {
-                video.play().catch(error => {
-                    console.error("Autoplay was prevented:", error);
-                    // Handle cases where autoplay is blocked by the browser
-                    // You might want to show a play button here instead.
-                });
+                playButton.style.display = 'block';
             }, 3000);
+
+            // Add an event listener to the play button
+            playButton.addEventListener('click', () => {
+                video.play().then(() => {
+                    // Hide the play button once playback starts
+                    playButton.style.display = 'none';
+                }).catch(error => {
+                    console.error("Video playback failed:", error);
+                });
+            });
         });
     </script>
 
