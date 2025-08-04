@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Video with Custom Controls</title>
+    <title>unfinished.productions presents TAXI WARS</title>
+
     <style>
         body, html {
             margin: 0;
@@ -14,7 +15,6 @@
             justify-content: center;
             align-items: center;
             background-color: #000;
-            font-family: Arial, sans-serif;
         }
 
         #video-container {
@@ -22,10 +22,10 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            max-width: 1920px; /* Adjust max width if needed */
+            background-color: #000; /* Fallback for black background */
         }
 
-        /* YouTube iframe styling to cover the container */
+        /* The iframe is created here. This CSS ensures it fills the container. */
         #youtube-player {
             position: absolute;
             top: 50%;
@@ -33,57 +33,7 @@
             width: 100vw;
             height: 100vh;
             transform: translate(-50%, -50%);
-            /* Ensures the video fills the screen and hides any black bars */
-        }
-
-        /* Custom controls styling */
-        #custom-controls {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 800px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 10px 20px;
-            border-radius: 5px;
-            color: white;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        #video-container:hover #custom-controls {
-            opacity: 1;
-        }
-
-        #play-pause-btn {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 24px;
-            line-height: 1;
-            padding: 0;
-        }
-
-        #progress-bar {
-            flex-grow: 1;
-            height: 5px;
-            background-color: rgba(255, 255, 255, 0.3);
-            cursor: pointer;
-            border-radius: 2.5px;
-        }
-
-        #progress-bar-fill {
-            height: 100%;
-            width: 0;
-            background-color: white;
-            border-radius: 2.5px;
-            transition: width 0.1s linear;
+            pointer-events: none; /* Prevents clicks on the video itself */
         }
     </style>
 </head>
@@ -91,95 +41,46 @@
 
     <div id="video-container">
         <div id="youtube-player"></div>
-
-        <div id="custom-controls">
-            <button id="play-pause-btn">&#9658;</button> <div id="progress-bar">
-                <div id="progress-bar-fill"></div>
-            </div>
-        </div>
     </div>
 
     <script>
-        // 1. This code loads the IFrame Player API code asynchronously.
+        // 1. Asynchronously loads the IFrame Player API code.
         var tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         var firstScriptTag = document.getElementsByTagName('script')[0];
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
 
         var player; // The YouTube player object
-        const videoId = '3DkTlNIJGyM'; // <-- REPLACE THIS WITH YOUR YOUTUBE VIDEO ID
+        const videoId = '3DkTlNIJGyM'; // <-- REPLACE WITH YOUR YOUTUBE VIDEO ID
 
-        // 2. The API calls this function when the player's API code has downloaded.
+        // 2. This function is called by the API when the script loads.
         function onYouTubeIframeAPIReady() {
             player = new YT.Player('youtube-player', {
-                height: '100%',
-                width: '100%',
                 videoId: videoId,
                 playerVars: {
-                    'controls': 0, // Hides YouTube's default controls
-                    'autoplay': 0, // We will handle autoplay with a delay
-                    'mute': 1,     // Muting is required for browser autoplay policies
-                    'playsinline': 1, // Plays on mobile devices without going fullscreen
-                    'modestbranding': 1, // Minimal YouTube branding
-                    'enablejsapi': 1, // Required to use the API
+                    'controls': 0,           // Hide all controls
+                    'autoplay': 1,           // Autoplay the video
+                    'mute': 1,               // Crucial for browser autoplay policy
+                    'playsinline': 1,        // For mobile devices
+                    'modestbranding': 1,     // Minimal branding
+                    'loop': 1,               // Loop the video
+                    'playlist': videoId,     // Required for the loop parameter to work
+                    'disablekb': 1,          // Disable keyboard controls
                 },
                 events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
+                    'onReady': onPlayerReady
                 }
             });
         }
 
         // 3. This function is called when the video player is ready.
         function onPlayerReady(event) {
-            // Autoplay the video after a 3-second delay
+            // Unmute the video after a 3-second delay, but this may still fail due to browser policies.
+            // The most reliable way is to let the user unmute it manually.
             setTimeout(() => {
-                player.unMute(); // You can unmute the video here if you want sound.
-                event.target.playVideo();
+                 player.unMute();
             }, 3000);
         }
-
-        // 4. This function is called when the player's state changes.
-        function onPlayerStateChange(event) {
-            const playPauseBtn = document.getElementById('play-pause-btn');
-            if (event.data == YT.PlayerState.PLAYING) {
-                playPauseBtn.innerHTML = '&#10074;&#10074;'; // Pause icon
-            } else {
-                playPauseBtn.innerHTML = '&#9658;'; // Play icon
-            }
-        }
-
-        // 5. Custom controls logic
-        document.getElementById('play-pause-btn').addEventListener('click', () => {
-            const playerState = player.getPlayerState();
-            if (playerState === YT.PlayerState.PLAYING) {
-                player.pauseVideo();
-            } else {
-                player.playVideo();
-            }
-        });
-
-        // Update progress bar
-        function updateProgressBar() {
-            const progressBarFill = document.getElementById('progress-bar-fill');
-            const duration = player.getDuration();
-            const currentTime = player.getCurrentTime();
-            if (duration > 0) {
-                const progress = (currentTime / duration) * 100;
-                progressBarFill.style.width = `${progress}%`;
-            }
-        }
-
-        // Click on progress bar to seek
-        document.getElementById('progress-bar').addEventListener('click', (e) => {
-            const progressBar = e.currentTarget;
-            const clickPosition = e.clientX - progressBar.getBoundingClientRect().left;
-            const newTime = (clickPosition / progressBar.offsetWidth) * player.getDuration();
-            player.seekTo(newTime, true);
-        });
-
-        // Set up a continuous loop to update the progress bar
-        setInterval(updateProgressBar, 100);
     </script>
 
 </body>
