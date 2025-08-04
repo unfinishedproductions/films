@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+   <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -11,14 +11,12 @@
             width: 100%;
             height: 100%;
             background-color: #000;
+            overflow: hidden; /* Prevent scrolling */
         }
 
         #video-container {
             width: 100%;
             height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             position: relative;
         }
 
@@ -26,6 +24,10 @@
             width: 100%;
             height: 100%;
             object-fit: fill;
+        }
+
+        #outroVideo {
+            display: none; /* Hidden by default */
         }
 
         /* --- Play Button Styles --- */
@@ -38,27 +40,38 @@
             height: 80px; /* Adjust size as needed */
             cursor: pointer;
             z-index: 10;
-            
-            /* Circle */
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 50%;
             border: 2px solid rgba(255, 255, 255, 0.8);
-
-            /* Center the triangle */
             display: flex;
             justify-content: center;
             align-items: center;
         }
 
-        /* Triangle using a pseudo-element */
         #play-button::after {
             content: '';
             width: 0;
             height: 0;
-            border-top: 15px solid transparent; /* Adjust size */
-            border-bottom: 15px solid transparent; /* Adjust size */
-            border-left: 25px solid rgba(255, 255, 255, 0.8); /* Adjust size and color */
-            margin-left: 5px; /* Slight adjustment to optically center the triangle */
+            border-top: 15px solid transparent;
+            border-bottom: 15px solid transparent;
+            border-left: 25px solid rgba(255, 255, 255, 0.8);
+            margin-left: 5px;
+        }
+
+        /* --- Title Screen Styles --- */
+        #title-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none; /* Hidden by default */
+            z-index: 11; /* Make sure it's on top */
+            text-align: center;
+            color: #fff;
+            font-family: sans-serif;
+            font-weight: bold;
+            font-size: 10vw; /* Responsive font size */
+            line-height: 1.2;
         }
     </style>
 </head>
@@ -69,33 +82,61 @@
             <source src="taxiwars.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
+
+        <video id="outroVideo" loop muted playsinline>
+            <source src="taxiwars.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+        
         <div id="play-button"></div>
+
+        <div id="title-screen">
+            <div>TAXI</div>
+            <div>WARS</div>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
-            const video = document.getElementById('myVideo');
+            const myVideo = document.getElementById('myVideo');
+            const outroVideo = document.getElementById('outroVideo');
             const playButton = document.getElementById('play-button');
+            const titleScreen = document.getElementById('title-screen');
 
-            // Play button is now visible by default (no display: none in CSS and no setTimeout)
-            
-            // Add an event listener to the play button
+            // --- Main Video Logic ---
+            // Listener for the play button to start the first video
             playButton.addEventListener('click', () => {
-                video.play().then(() => {
-                    // Hide the play button once playback starts
+                myVideo.play().then(() => {
                     playButton.style.display = 'none';
                 }).catch(error => {
                     console.error("Video playback failed:", error);
                 });
             });
 
-            // Add a click listener to the video itself
-            video.addEventListener('click', () => {
-                // Check if the video is currently playing
-                if (!video.paused) {
-                    // If it's playing, pause it and unhide the button
-                    video.pause();
-                    playButton.style.display = 'flex'; // Use 'flex' to re-center the content
+            // Flag to ensure the end logic only runs once
+            let hasTriggered = false;
+
+            // Listener to check the time and trigger the transition
+            myVideo.addEventListener('timeupdate', () => {
+                // The 'myVideo.duration' property may be NaN until the video has loaded metadata.
+                if (!hasTriggered && myVideo.duration && myVideo.currentTime >= myVideo.duration - 2) {
+                    
+                    // Stop the main video
+                    myVideo.pause();
+                    
+                    // Hide the main video and play button
+                    myVideo.style.display = 'none';
+                    playButton.style.display = 'none';
+                    
+                    // Unhide and play the looping outro video
+                    outroVideo.style.display = 'block';
+                    outroVideo.play();
+                    
+                    // Unhide the title screen text
+                    titleScreen.style.display = 'block';
+
+                    // Set the flag to prevent this from running again
+                    hasTriggered = true;
                 }
             });
         });
