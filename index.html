@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Page</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #000;
+        }
+
+        #video-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        video {
+            max-width: 100%;
+            max-height: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="video-container">
+        <video id="myVideo" controls muted playsinline>
+            <source src="taxiwars.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const video = document.getElementById('myVideo');
+
+            // The setTimeout function will wait for 3000 milliseconds (3 seconds)
+            setTimeout(() => {
+                video.play().catch(error => {
+                    console.error("Autoplay was prevented:", error);
+                    // Handle cases where autoplay is blocked by the browser
+                    // You might want to show a play button here instead.
+                });
+            }, 3000);
+        });
+    </script>
+
+</body>
+</html>
