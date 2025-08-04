@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>unfinished.productions presents TAXI WARS</title>
-
     <style>
         body, html {
             margin: 0;
@@ -18,69 +17,41 @@
         }
 
         #video-container {
-            position: relative;
             width: 100%;
             height: 100%;
-            overflow: hidden;
-            background-color: #000; /* Fallback for black background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* The iframe is created here. This CSS ensures it fills the container. */
-        #youtube-player {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100vw;
-            height: 100vh;
-            transform: translate(-50%, -50%);
-            pointer-events: none; /* Prevents clicks on the video itself */
+        video {
+            max-width: 100%;
+            max-height: 100%;
         }
     </style>
 </head>
 <body>
 
     <div id="video-container">
-        <div id="youtube-player"></div>
+        <video id="myVideo" controls muted playsinline>
+            <source src="taxiwars.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
     </div>
 
     <script>
-        // 1. Asynchronously loads the IFrame Player API code.
-        var tag = document.createElement('script');
-        tag.src = "https://www.youtube.com/iframe_api";
-        var firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const video = document.getElementById('myVideo');
 
-        var player; // The YouTube player object
-        const videoId = '3DkTlNIJGyM'; // <-- REPLACE WITH YOUR YOUTUBE VIDEO ID
-
-        // 2. This function is called by the API when the script loads.
-        function onYouTubeIframeAPIReady() {
-            player = new YT.Player('youtube-player', {
-                videoId: videoId,
-                playerVars: {
-                    'controls': 0,           // Hide all controls
-                    'autoplay': 1,           // Autoplay the video
-                    'mute': 1,               // Crucial for browser autoplay policy
-                    'playsinline': 1,        // For mobile devices
-                    'modestbranding': 1,     // Minimal branding
-                    'loop': 1,               // Loop the video
-                    'playlist': videoId,     // Required for the loop parameter to work
-                    'disablekb': 1,          // Disable keyboard controls
-                },
-                events: {
-                    'onReady': onPlayerReady
-                }
-            });
-        }
-
-        // 3. This function is called when the video player is ready.
-        function onPlayerReady(event) {
-            // Unmute the video after a 3-second delay, but this may still fail due to browser policies.
-            // The most reliable way is to let the user unmute it manually.
+            // The setTimeout function will wait for 3000 milliseconds (3 seconds)
             setTimeout(() => {
-                 player.unMute();
+                video.play().catch(error => {
+                    console.error("Autoplay was prevented:", error);
+                    // Handle cases where autoplay is blocked by the browser
+                    // You might want to show a play button here instead.
+                });
             }, 3000);
-        }
+        });
     </script>
 
 </body>
