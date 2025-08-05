@@ -8,164 +8,186 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
 
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #000;
-            overflow: hidden;
-            font-family: 'Archivo Black', sans-serif;
-        }
+   <style>
+    body, html {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #000;
+        overflow: hidden;
+        font-family: 'Archivo Black', sans-serif;
+    }
 
-        #video-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
+    #video-container {
+        width: 100%;
+        height: 100%;
+        position: relative;
+    }
 
-        #myVideo, #fireLoopVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            position: absolute;
-            top: 0;
-            left: 0;
-            transition: opacity 0.5s ease-in-out;
-        }
+    /* Applied to all video elements for consistent styling */
+    #myVideo, #fireLoopVideo1, #fireLoopVideo2 {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        position: absolute;
+        top: 0;
+        left: 0;
+        transition: opacity 0.5s ease-in-out;
+    }
 
-        #myVideo {
-            z-index: 1;
-            opacity: 1;
-        }
-        
-        #fireLoopVideo {
-            z-index: 2;
-            opacity: 0;
-        }
+    #myVideo {
+        z-index: 1;
+        opacity: 1;
+    }
+    
+    #fireLoopVideo1 {
+        z-index: 2;
+        opacity: 0;
+    }
 
-        /* --- Play Button Styles --- */
-        #play-button {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80px;
-            height: 80px;
-            cursor: pointer;
-            z-index: 10;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 50%;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+    /* The second loop video starts identical to the first */
+    #fireLoopVideo2 {
+        z-index: 2;
+        opacity: 0;
+    }
 
-        #play-button::after {
-            content: '';
-            width: 0;
-            height: 0;
-            border-top: 15px solid transparent;
-            border-bottom: 15px solid transparent;
-            border-left: 25px solid rgba(255, 255, 255, 0.8);
-            margin-left: 5px;
-        }
+    /* --- Play Button Styles --- */
+    #play-button {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80px;
+        height: 80px;
+        cursor: pointer;
+        z-index: 10;
+        background-color: rgba(0, 0, 0, 0.5);
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-        /* --- Overlay Container for Text and Button --- */
-        #outro-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 11;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            pointer-events: none;
-        }
+    #play-button::after {
+        content: '';
+        width: 0;
+        height: 0;
+        border-top: 15px solid transparent;
+        border-bottom: 15px solid transparent;
+        border-left: 25px solid rgba(255, 255, 255, 0.8);
+        margin-left: 5px;
+    }
 
-        /* --- Title Screen Styles (Fixed on large screens) --- */
+    /* --- Overlay Container for Text and Button --- */
+    #outro-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 11;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        pointer-events: none;
+    }
+
+    /* --- Title Screen Styles (Fixed on large screens) --- */
+    #title-screen {
+        text-align: center;
+        color: #fff;
+        font-weight: normal;
+        font-size: 120px; /* Fixed font size for larger screens */
+        line-height: 0.8;
+        margin-bottom: 15px;
+        max-width: 90%; /* Creates the shrinking side margins */
+    }
+    
+    /* --- Fund Button Styles --- */
+    #fund-button {
+        pointer-events: auto;
+        cursor: pointer;
+        padding: 15px 40px;
+        background-color: rgba(0, 0, 0, 0.6);
+        color: #fff;
+        font-size: 2vw;
+        font-weight: normal;
+        border-radius: 50px;
+        border: 2px solid rgba(255, 255, 255, 0.8);
+        white-space: nowrap;
+    }
+
+    /* --- Mobile-specific styles (Text shrinks below this width) --- */
+    @media (max-width: 1200px) {
         #title-screen {
-            text-align: center;
-            color: #fff;
-            font-weight: normal;
-            font-size: 120px; /* Fixed font size for larger screens */
-            line-height: 0.8;
-            margin-bottom: 15px;
-            max-width: 90%; /* Creates the shrinking side margins */
+            font-size: 10vw; /* Responsive font size */
         }
-        
-        /* --- Fund Button Styles --- */
-        #fund-button {
-            pointer-events: auto;
-            cursor: pointer;
-            padding: 15px 40px;
-            background-color: rgba(0, 0, 0, 0.6);
-            color: #fff;
-            font-size: 2vw;
-            font-weight: normal;
-            border-radius: 50px;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            white-space: nowrap;
-        }
-
-        /* --- Mobile-specific styles (Text shrinks below this width) --- */
-        @media (max-width: 1200px) {
-            #title-screen {
-                font-size: 10vw; /* Responsive font size */
-            }
-        }
-    </style>
+    }
+</style>
 </head>
 <body>
 
-    <div id="video-container">
-        <video id="myVideo" playsinline preload="auto">
-            <source src="taxiwars.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
-        
-        <video id="fireLoopVideo" playsinline preload="auto">
-            <source src="fireloop.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
+  <div id="video-container">
+    <video id="myVideo" playsinline preload="auto">
+        <source src="taxiwars.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    
+    <video id="fireLoopVideo1" playsinline preload="auto" loop>
+        <source src="fireloop.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
 
-        <div id="play-button"></div>
+    <video id="fireLoopVideo2" playsinline preload="auto" loop>
+        <source src="fireloop.mp4" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
 
-        <div id="outro-overlay">
-            <div id="title-screen">
-                <div>TAXI</div>
-                <div>WARS</div>
-            </div>
-            <div id="fund-button">FUND</div>
+    <div id="play-button"></div>
+
+    <div id="outro-overlay">
+        <div id="title-screen">
+            <div>TAXI</div>
+            <div>WARS</div>
         </div>
+        <div id="fund-button">FUND</div>
     </div>
+</div>
 
-    <script>
-       
+<script>
 document.addEventListener('DOMContentLoaded', (event) => {
+    // --- Elements ---
     const myVideo = document.getElementById('myVideo');
-    const fireLoopVideo = document.getElementById('fireLoopVideo');
+    const fireLoopVideo1 = document.getElementById('fireLoopVideo1');
+    const fireLoopVideo2 = document.getElementById('fireLoopVideo2'); // The new element
     const playButton = document.getElementById('play-button');
     const outroOverlay = document.getElementById('outro-overlay');
 
     // --- Configuration ---
-    const transitionBeforeEnd = 3.5;
+    const mainTransitionTime = 3.5;
+    const loopTransitionTime = 0.5; // How many seconds before a loop ends to start the next one
     const playbackRateDecrement = 0.05;
     const volumeDecrement = 0.1;
     const loopStartCut = 0.5;
-    const fadeDuration = 500;
+    const fadeDuration = 500; // Must match the CSS transition duration
 
-    let hasTransitioned = false;
-    let isFirstLoop = true;
-    let hasPlayedFireLoop = false;
+    // --- State ---
+    let hasTransitionedFromMain = false;
+    let isLoopTransitioning = false; // Prevents re-triggering during a fade
+    let activeLoop = fireLoopVideo1;   // The currently visible loop video
+    let inactiveLoop = fireLoopVideo2; // The hidden one, ready to play
+    let isFirstLoopCycle = true; // To avoid slowing down on the very first loop
 
     // --- Play Button Logic ---
     playButton.addEventListener('click', () => {
         myVideo.muted = false;
-        fireLoopVideo.muted = false;
+        fireLoopVideo1.muted = false;
+        fireLoopVideo2.muted = false;
+
+        // Ensure both loop videos are ready from the start
+        fireLoopVideo1.currentTime = loopStartCut;
+        fireLoopVideo2.currentTime = loopStartCut;
 
         myVideo.play().then(() => {
             playButton.style.display = 'none';
@@ -174,62 +196,85 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     });
 
-    // --- Main Video to Fire Loop Transition ---
+    // --- Main Video to First Loop Transition ---
     myVideo.addEventListener('timeupdate', () => {
-        if (myVideo.duration && !myVideo.paused && !hasTransitioned) {
-            if (myVideo.currentTime >= myVideo.duration - transitionBeforeEnd) {
+        if (myVideo.duration && !myVideo.paused && !hasTransitionedFromMain) {
+            if (myVideo.currentTime >= myVideo.duration - mainTransitionTime) {
+                hasTransitionedFromMain = true;
 
-                // Ensure fireLoopVideo starts playing a little early
-                if (!hasPlayedFireLoop) {
-                    fireLoopVideo.currentTime = 0;
-                    fireLoopVideo.play();
-                    hasPlayedFireLoop = true;
-                }
-                
-                // Start the crossfade simultaneously
+                // Start playing the first loop video from the beginning for a clean intro
+                activeLoop.currentTime = 0;
+                activeLoop.play();
+
+                // Crossfade by bringing the active loop video to the front and fading it in
+                activeLoop.style.zIndex = '3';
                 myVideo.style.opacity = '0';
-                fireLoopVideo.style.opacity = '1';
+                activeLoop.style.opacity = '1';
 
-                // Audio fade out
+                // Audio fade out for the main video
                 const fadeAudioInterval = setInterval(() => {
-                    myVideo.volume -= 0.05;
-                    if (myVideo.volume <= 0) {
+                    if (myVideo.volume > 0.05) {
+                        myVideo.volume -= 0.05;
+                    } else {
                         myVideo.volume = 0;
                         clearInterval(fadeAudioInterval);
                     }
                 }, fadeDuration / 20);
 
-                // Final cleanup after the fade is complete
+                // Final cleanup after the fade
                 setTimeout(() => {
                     myVideo.pause();
                     myVideo.style.display = 'none';
                 }, fadeDuration);
 
                 outroOverlay.style.display = 'flex';
-                hasTransitioned = true;
             }
         }
     });
 
-    // --- Fire Loop Logic (Slowing and Fading) ---
-    fireLoopVideo.addEventListener('timeupdate', () => {
-        if (fireLoopVideo.duration && fireLoopVideo.currentTime >= fireLoopVideo.duration - 0.1) {
-            
-            if (isFirstLoop) {
-                isFirstLoop = false;
-                fireLoopVideo.currentTime = loopStartCut;
-                fireLoopVideo.play();
-            } 
-            else {
-                fireLoopVideo.playbackRate = Math.max(0.1, fireLoopVideo.playbackRate - playbackRateDecrement);
-                fireLoopVideo.volume = Math.max(0, fireLoopVideo.volume - volumeDecrement);
-                fireLoopVideo.currentTime = loopStartCut;
-                fireLoopVideo.play();
+    // --- Unified Loop Handler for Seamless Fading ---
+    const handleLoopTransition = () => {
+        // Check if the active video is near its end and we're not already transitioning
+        if (activeLoop.duration && activeLoop.currentTime >= activeLoop.duration - loopTransitionTime && !isLoopTransitioning) {
+            isLoopTransitioning = true; // Lock to prevent this from re-triggering
+
+            // On subsequent loops, slow down and lower volume
+            if (!isFirstLoopCycle) {
+                const newRate = Math.max(0.1, activeLoop.playbackRate - playbackRateDecrement);
+                const newVolume = Math.max(0, activeLoop.volume - volumeDecrement);
+
+                // Apply to both so they stay in sync for the next transition
+                activeLoop.playbackRate = newRate;
+                inactiveLoop.playbackRate = newRate;
+                activeLoop.volume = newVolume;
+                inactiveLoop.volume = newVolume;
+            } else {
+                isFirstLoopCycle = false; // The first loop is done, so we can slow down next time
             }
+
+            // Prepare and play the inactive video, which will become the active one
+            inactiveLoop.currentTime = loopStartCut;
+            inactiveLoop.play();
+
+            // Set z-index to ensure the incoming video is on top, then fade it in
+            inactiveLoop.style.zIndex = parseInt(window.getComputedStyle(activeLoop).zIndex) + 1;
+            inactiveLoop.style.opacity = '1';
+            activeLoop.style.opacity = '0'; // Fade out the old video
+
+            // After the fade, swap their roles and unlock for the next cycle
+            setTimeout(() => {
+                // The video that just faded in is now the active one
+                [activeLoop, inactiveLoop] = [inactiveLoop, activeLoop];
+                isLoopTransitioning = false; // Unlock
+            }, fadeDuration);
         }
-    });
+    };
+
+    // Attach the same handler to both loop videos
+    fireLoopVideo1.addEventListener('timeupdate', handleLoopTransition);
+    fireLoopVideo2.addEventListener('timeupdate', handleLoopTransition);
 });
-    </script>
+</script>
 
 </body>
 </html>
