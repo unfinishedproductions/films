@@ -144,93 +144,91 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const myVideo = document.getElementById('myVideo');
-            const fireLoopVideo = document.getElementById('fireLoopVideo');
-            const playButton = document.getElementById('play-button');
-            const outroOverlay = document.getElementById('outro-overlay');
+       
+document.addEventListener('DOMContentLoaded', (event) => {
+    const myVideo = document.getElementById('myVideo');
+    const fireLoopVideo = document.getElementById('fireLoopVideo');
+    const playButton = document.getElementById('play-button');
+    const outroOverlay = document.getElementById('outro-overlay');
 
-            // --- Configuration ---
-            const transitionBeforeEnd = 3.5;
-            const playbackRateDecrement = 0.05;
-            const volumeDecrement = 0.1;
-            const loopStartCut = 0.5;
-            const fadeDuration = 500; // Half a second in milliseconds
+    // --- Configuration ---
+    const transitionBeforeEnd = 3.5;
+    const playbackRateDecrement = 0.05;
+    const volumeDecrement = 0.1;
+    const loopStartCut = 0.5;
+    const fadeDuration = 500;
 
-            let hasTransitioned = false;
-            let isFirstLoop = true;
+    let hasTransitioned = false;
+    let isFirstLoop = true;
+    let hasPlayedFireLoop = false;
 
-            // --- Play Button Logic ---
-            playButton.addEventListener('click', () => {
-                myVideo.muted = false;
-                fireLoopVideo.muted = false;
+    // --- Play Button Logic ---
+    playButton.addEventListener('click', () => {
+        myVideo.muted = false;
+        fireLoopVideo.muted = false;
 
-                myVideo.play().then(() => {
-                    playButton.style.display = 'none';
-                }).catch(error => {
-                    console.error("Video playback failed:", error);
-                });
-            });
-
-            // --- Main Video to Fire Loop Transition ---
-            myVideo.addEventListener('timeupdate', () => {
-                if (myVideo.duration && !myVideo.paused && !hasTransitioned) {
-                    if (myVideo.currentTime >= myVideo.duration - transitionBeforeEnd) {
-                        
-                        // Start playing the fire loop video before the fade begins
-                        fireLoopVideo.currentTime = 0;
-                        fireLoopVideo.play();
-
-                        // Start the fade with a small delay for playback sync
-                        setTimeout(() => {
-                            // Fade out myVideo
-                            myVideo.style.opacity = '0';
-                            
-                            // Fade in fireLoopVideo
-                            fireLoopVideo.style.opacity = '1';
-
-                            // The audio fade out
-                            const fadeAudioInterval = setInterval(() => {
-                                myVideo.volume -= 0.05; // Decrease volume gradually
-                                if (myVideo.volume <= 0) {
-                                    myVideo.volume = 0;
-                                    clearInterval(fadeAudioInterval);
-                                }
-                            }, fadeDuration / 20); // 20 steps over the fade duration
-
-                            // Hide myVideo completely after the fade is done
-                            setTimeout(() => {
-                                myVideo.pause();
-                                myVideo.style.display = 'none';
-                            }, fadeDuration);
-
-                        }, 100); // 100ms delay to let the video start
-
-                        // Display the overlay
-                        outroOverlay.style.display = 'flex';
-                        hasTransitioned = true;
-                    }
-                }
-            });
-
-            // --- Fire Loop Logic (Slowing and Fading) ---
-            fireLoopVideo.addEventListener('timeupdate', () => {
-                if (fireLoopVideo.duration && fireLoopVideo.currentTime >= fireLoopVideo.duration - 0.1) {
-                    
-                    if (isFirstLoop) {
-                        isFirstLoop = false;
-                        fireLoopVideo.currentTime = loopStartCut;
-                        fireLoopVideo.play();
-                    } 
-                    else {
-                        fireLoopVideo.playbackRate = Math.max(0.1, fireLoopVideo.playbackRate - playbackRateDecrement);
-                        fireLoopVideo.volume = Math.max(0, fireLoopVideo.volume - volumeDecrement);
-                        fireLoopVideo.currentTime = loopStartCut;
-                        fireLoopVideo.play();
-                    }
-                }
-            });
+        myVideo.play().then(() => {
+            playButton.style.display = 'none';
+        }).catch(error => {
+            console.error("Video playback failed:", error);
         });
+    });
+
+    // --- Main Video to Fire Loop Transition ---
+    myVideo.addEventListener('timeupdate', () => {
+        if (myVideo.duration && !myVideo.paused && !hasTransitioned) {
+            if (myVideo.currentTime >= myVideo.duration - transitionBeforeEnd) {
+
+                // Ensure fireLoopVideo starts playing a little early
+                if (!hasPlayedFireLoop) {
+                    fireLoopVideo.currentTime = 0;
+                    fireLoopVideo.play();
+                    hasPlayedFireLoop = true;
+                }
+                
+                // Start the crossfade simultaneously
+                myVideo.style.opacity = '0';
+                fireLoopVideo.style.opacity = '1';
+
+                // Audio fade out
+                const fadeAudioInterval = setInterval(() => {
+                    myVideo.volume -= 0.05;
+                    if (myVideo.volume <= 0) {
+                        myVideo.volume = 0;
+                        clearInterval(fadeAudioInterval);
+                    }
+                }, fadeDuration / 20);
+
+                // Final cleanup after the fade is complete
+                setTimeout(() => {
+                    myVideo.pause();
+                    myVideo.style.display = 'none';
+                }, fadeDuration);
+
+                outroOverlay.style.display = 'flex';
+                hasTransitioned = true;
+            }
+        }
+    });
+
+    // --- Fire Loop Logic (Slowing and Fading) ---
+    fireLoopVideo.addEventListener('timeupdate', () => {
+        if (fireLoopVideo.duration && fireLoopVideo.currentTime >= fireLoopVideo.duration - 0.1) {
+            
+            if (isFirstLoop) {
+                isFirstLoop = false;
+                fireLoopVideo.currentTime = loopStartCut;
+                fireLoopVideo.play();
+            } 
+            else {
+                fireLoopVideo.playbackRate = Math.max(0.1, fireLoopVideo.playbackRate - playbackRateDecrement);
+                fireLoopVideo.volume = Math.max(0, fireLoopVideo.volume - volumeDecrement);
+                fireLoopVideo.currentTime = loopStartCut;
+                fireLoopVideo.play();
+            }
+        }
+    });
+});
     </script>
 
 </body>
