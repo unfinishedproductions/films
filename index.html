@@ -1,4 +1,4 @@
-   <!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -24,10 +24,6 @@
             width: 100%;
             height: 100%;
             object-fit: fill;
-        }
-
-        #outroVideo {
-            display: none; /* Hidden by default */
         }
 
         /* --- Play Button Styles --- */
@@ -82,11 +78,6 @@
             <source src="taxiwars.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
-
-        <video id="outroVideo" loop muted playsinline>
-            <source src="taxiwars.mp4" type="video/mp4">
-            Your browser does not support the video tag.
-        </video>
         
         <div id="play-button"></div>
 
@@ -99,12 +90,10 @@
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const myVideo = document.getElementById('myVideo');
-            const outroVideo = document.getElementById('outroVideo');
             const playButton = document.getElementById('play-button');
             const titleScreen = document.getElementById('title-screen');
 
-            // --- Main Video Logic ---
-            // Listener for the play button to start the first video
+            // --- Play Button Logic ---
             playButton.addEventListener('click', () => {
                 myVideo.play().then(() => {
                     playButton.style.display = 'none';
@@ -113,30 +102,26 @@
                 });
             });
 
-            // Flag to ensure the end logic only runs once
-            let hasTriggered = false;
+            // Flag to ensure the title screen only appears once
+            let titleScreenShown = false;
 
-            // Listener to check the time and trigger the transition
+            // --- Looping the last 2 seconds ---
             myVideo.addEventListener('timeupdate', () => {
-                // The 'myVideo.duration' property may be NaN until the video has loaded metadata.
-                if (!hasTriggered && myVideo.duration && myVideo.currentTime >= myVideo.duration - 2) {
+                // Check if the video has loaded metadata and is playing
+                if (myVideo.duration && !myVideo.paused) {
                     
-                    // Stop the main video
-                    myVideo.pause();
-                    
-                    // Hide the main video and play button
-                    myVideo.style.display = 'none';
-                    playButton.style.display = 'none';
-                    
-                    // Unhide and play the looping outro video
-                    outroVideo.style.display = 'block';
-                    outroVideo.play();
-                    
-                    // Unhide the title screen text
-                    titleScreen.style.display = 'block';
+                    // Check if we are within the last 2 seconds
+                    if (myVideo.currentTime >= myVideo.duration - 2) {
+                        
+                        // Jump back to 2 seconds before the end
+                        myVideo.currentTime = myVideo.duration - 2;
 
-                    // Set the flag to prevent this from running again
-                    hasTriggered = true;
+                        // Unhide the title screen only the first time this happens
+                        if (!titleScreenShown) {
+                            titleScreen.style.display = 'block';
+                            titleScreenShown = true;
+                        }
+                    }
                 }
             });
         });
