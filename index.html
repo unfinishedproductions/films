@@ -257,7 +257,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
             inactiveLoop.play();
 
             // Set z-index to ensure the incoming video is on top, then fade it in
-            inactiveLoop.style.zIndex = parseInt(window.getComputedStyle(activeLoop).zIndex) + 1;
+inactiveLoop.style.zIndex = '3';
+activeLoop.style.zIndex = '2';
             inactiveLoop.style.opacity = '1';
             activeLoop.style.opacity = '0'; // Fade out the old video
 
