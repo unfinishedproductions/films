@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>unfinished.productions presents TAXI WARS</title>
+    <title>TAXI WARS</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
@@ -29,6 +29,14 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transition: opacity 1s ease-in-out;
+        }
+
+        #fireLoopVideo {
+            display: none; /* Hidden by default */
+            position: absolute;
+            top: 0;
+            left: 0;
         }
 
         /* --- Play Button Styles --- */
@@ -66,10 +74,10 @@
             left: 50%;
             transform: translate(-50%, -50%);
             z-index: 11;
-            display: none; /* Hidden by default */
+            display: none;
             flex-direction: column;
             align-items: center;
-            pointer-events: none; /* Clicks pass through by default */
+            pointer-events: none;
         }
 
         /* --- Title Screen Styles --- */
@@ -78,13 +86,13 @@
             color: #fff;
             font-weight: normal;
             font-size: 10vw;
-            line-height: 0.8; /* Smaller line height */
-            margin-bottom: 15px; /* Space between text and button */
+            line-height: 0.8;
+            margin-bottom: 15px;
         }
         
         /* --- Fund Button Styles --- */
         #fund-button {
-            pointer-events: auto; /* Re-enable clicks for the button */
+            pointer-events: auto;
             cursor: pointer;
             padding: 15px 40px;
             background-color: rgba(0, 0, 0, 0.6);
@@ -96,13 +104,13 @@
             white-space: nowrap;
         }
 
-        /* --- Mobile-specific styles for the title text --- */
+        /* --- Mobile-specific styles --- */
         @media (max-width: 800px) {
             #title-screen {
-                font-size: 15vw; /* Make words larger */
+                font-size: 15vw;
             }
             #title-screen div {
-                width: 90%; /* Occupy 90% of the screen width */
+                width: 90%;
                 margin: 0 5%;
             }
         }
@@ -116,6 +124,11 @@
             Your browser does not support the video tag.
         </video>
         
+        <video id="fireLoopVideo" playsinline preload="auto">
+            <source src="fireloop.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+
         <div id="play-button"></div>
 
         <div id="outro-overlay">
@@ -130,15 +143,23 @@
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const myVideo = document.getElementById('myVideo');
+            const fireLoopVideo = document.getElementById('fireLoopVideo');
             const playButton = document.getElementById('play-button');
             const outroOverlay = document.getElementById('outro-overlay');
 
-            // --- Configuration for the loop ---
-            const loopStartBeforeEnd = 4.2; // Start looping 4 seconds before the end
-            const loopDuration = 1;       // The loop segment is 2 seconds long
+            // --- Configuration for the transition and loop effect ---
+            const transitionBeforeEnd = 4; // Start the transition this many seconds before the main video ends
+            const playbackRateDecrement = 0.05; // How much to slow down each loop
+            const volumeDecrement = 0.1; // How much to lower the volume each loop
+
+            let hasTransitioned = false;
 
             // --- Play Button Logic ---
             playButton.addEventListener('click', () => {
+                // Unmute and play both videos, but only one is visible
+                myVideo.muted = false;
+                fireLoopVideo.muted = false;
+
                 myVideo.play().then(() => {
                     playButton.style.display = 'none';
                 }).catch(error => {
@@ -146,23 +167,35 @@
                 });
             });
 
-            // --- Looping the last few seconds ---
+            // --- Main Video to Fire Loop Transition ---
             myVideo.addEventListener('timeupdate', () => {
-                if (myVideo.duration && !myVideo.paused) {
-                    
-                    const loopStartTime = myVideo.duration - loopStartBeforeEnd;
-                    const loopEndTime = myVideo.duration - (loopStartBeforeEnd - loopDuration);
-
-                    // If we're past the loop end time, jump back to the start of the loop
-                    if (myVideo.currentTime >= loopEndTime) {
-                        myVideo.currentTime = loopStartTime;
-                    }
-
-                    // Show the overlay when the video first enters the loop segment
-                    if (myVideo.currentTime >= loopStartTime && outroOverlay.style.display !== 'flex') {
+                if (myVideo.duration && !myVideo.paused && !hasTransitioned) {
+                    if (myVideo.currentTime >= myVideo.duration - transitionBeforeEnd) {
+                        
+                        // Pause and hide the main video
+                        myVideo.pause();
+                        myVideo.style.display = 'none';
+                        
+                        // Display and play the fire loop video
+                        fireLoopVideo.style.display = 'block';
+                        fireLoopVideo.play();
+                        
+                        // Display the overlay
                         outroOverlay.style.display = 'flex';
+
+                        hasTransitioned = true;
                     }
                 }
+            });
+
+            // --- Fire Loop Logic (Slowing and Fading) ---
+            fireLoopVideo.addEventListener('ended', () => {
+                // Decrease playback speed and volume
+                fireLoopVideo.playbackRate = Math.max(0.1, fireLoopVideo.playbackRate - playbackRateDecrement);
+                fireLoopVideo.volume = Math.max(0, fireLoopVideo.volume - volumeDecrement);
+
+                // Restart the video
+                fireLoopVideo.play();
             });
         });
     </script>
