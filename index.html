@@ -29,7 +29,6 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: opacity 1s ease-in-out;
         }
 
         #fireLoopVideo {
@@ -119,7 +118,7 @@
 <body>
 
     <div id="video-container">
-        <video id="myVideo" playsinline>
+        <video id="myVideo" playsinline preload="auto">
             <source src="taxiwars.mp4" type="video/mp4">
             Your browser does not support the video tag.
         </video>
@@ -147,16 +146,17 @@
             const playButton = document.getElementById('play-button');
             const outroOverlay = document.getElementById('outro-overlay');
 
-            // --- Configuration for the transition and loop effect ---
-            const transitionBeforeEnd = 4; // Start the transition this many seconds before the main video ends
-            const playbackRateDecrement = 0.05; // How much to slow down each loop
-            const volumeDecrement = 0.1; // How much to lower the volume each loop
+            // --- Configuration ---
+            const transitionBeforeEnd = 4;
+            const playbackRateDecrement = 0.05;
+            const volumeDecrement = 0.1;
+            const loopStartCut = 0.002;
 
             let hasTransitioned = false;
+            let isFirstLoop = true;
 
             // --- Play Button Logic ---
             playButton.addEventListener('click', () => {
-                // Unmute and play both videos, but only one is visible
                 myVideo.muted = false;
                 fireLoopVideo.muted = false;
 
@@ -172,30 +172,40 @@
                 if (myVideo.duration && !myVideo.paused && !hasTransitioned) {
                     if (myVideo.currentTime >= myVideo.duration - transitionBeforeEnd) {
                         
-                        // Pause and hide the main video
                         myVideo.pause();
                         myVideo.style.display = 'none';
                         
-                        // Display and play the fire loop video
                         fireLoopVideo.style.display = 'block';
+                        
+                        // The initial play is a full one, so we start at 0
+                        fireLoopVideo.currentTime = 0;
                         fireLoopVideo.play();
                         
-                        // Display the overlay
                         outroOverlay.style.display = 'flex';
-
                         hasTransitioned = true;
                     }
                 }
             });
 
             // --- Fire Loop Logic (Slowing and Fading) ---
-            fireLoopVideo.addEventListener('ended', () => {
-                // Decrease playback speed and volume
-                fireLoopVideo.playbackRate = Math.max(0.1, fireLoopVideo.playbackRate - playbackRateDecrement);
-                fireLoopVideo.volume = Math.max(0, fireLoopVideo.volume - volumeDecrement);
-
-                // Restart the video
-                fireLoopVideo.play();
+            fireLoopVideo.addEventListener('timeupdate', () => {
+                // We use a small buffer to ensure the rewind happens before the video truly ends
+                if (fireLoopVideo.duration && fireLoopVideo.currentTime >= fireLoopVideo.duration - 0.1) {
+                    
+                    if (isFirstLoop) {
+                        // After the first loop, we prepare for the next loops
+                        isFirstLoop = false;
+                        fireLoopVideo.currentTime = loopStartCut;
+                        fireLoopVideo.play();
+                    } 
+                    else {
+                        // For all subsequent loops, we decrease volume and speed
+                        fireLoopVideo.playbackRate = Math.max(0.1, fireLoopVideo.playbackRate - playbackRateDecrement);
+                        fireLoopVideo.volume = Math.max(0, fireLoopVideo.volume - volumeDecrement);
+                        fireLoopVideo.currentTime = loopStartCut;
+                        fireLoopVideo.play();
+                    }
+                }
             });
         });
     </script>
