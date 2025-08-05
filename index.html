@@ -32,7 +32,7 @@
             position: absolute;
             top: 0;
             left: 0;
-            transition: opacity 0.5s ease-in-out; /* The fade transition */
+            transition: opacity 0.5s ease-in-out;
         }
 
         #myVideo {
@@ -42,7 +42,7 @@
         
         #fireLoopVideo {
             z-index: 2;
-            opacity: 0; /* Hidden by default */
+            opacity: 0;
         }
 
         /* --- Play Button Styles --- */
@@ -86,14 +86,15 @@
             pointer-events: none;
         }
 
-        /* --- Title Screen Styles --- */
+        /* --- Title Screen Styles (Fixed on large screens) --- */
         #title-screen {
             text-align: center;
             color: #fff;
             font-weight: normal;
-            font-size: 10vw;
+            font-size: 120px; /* Fixed font size for larger screens */
             line-height: 0.8;
             margin-bottom: 15px;
+            max-width: 90%; /* Creates the shrinking side margins */
         }
         
         /* --- Fund Button Styles --- */
@@ -110,14 +111,10 @@
             white-space: nowrap;
         }
 
-        /* --- Mobile-specific styles --- */
-        @media (max-width: 800px) {
+        /* --- Mobile-specific styles (Text shrinks below this width) --- */
+        @media (max-width: 1200px) {
             #title-screen {
-                font-size: 15vw;
-            }
-            #title-screen div {
-                width: 90%;
-                margin: 0 5%;
+                font-size: 10vw; /* Responsive font size */
             }
         }
     </style>
