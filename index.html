@@ -33,7 +33,7 @@
         position: absolute;
         top: 0;
         left: 0;
-        transition: opacity 0.6s ease-in-out;
+        transition: opacity 0.5s ease-in-out;
     }
 
     #myVideo {
@@ -167,12 +167,12 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const outroOverlay = document.getElementById('outro-overlay');
 
     // --- Configuration ---
-    const mainTransitionTime = 3.8;
-    const loopTransitionTime = 0.6; // How many seconds before a loop ends to start the next one
+    const mainTransitionTime = 3.5;
+    const loopTransitionTime = 0.5; // How many seconds before a loop ends to start the next one
     const playbackRateDecrement = 0.05;
     const volumeDecrement = 0.1;
-    const loopStartCut = 0.6;
-    const fadeDuration = 600; // Must match the CSS transition duration
+    const loopStartCut = 0.5;
+    const fadeDuration = 500; // Must match the CSS transition duration
 
     // --- State ---
     let hasTransitionedFromMain = false;
