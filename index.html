@@ -190,7 +190,7 @@
             // --- Fire Loop Logic (Slowing and Fading) ---
             fireLoopVideo.addEventListener('timeupdate', () => {
                 // We use a small buffer to ensure the rewind happens before the video truly ends
-                if (fireLoopVideo.duration && fireLoopVideo.currentTime >= fireLoopVideo.duration - 0.1) {
+                if (fireLoopVideo.duration && fireLoopVideo.currentTime >= fireLoopVideo.duration - 1) {
                     
                     if (isFirstLoop) {
                         // After the first loop, we prepare for the next loops
