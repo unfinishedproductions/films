@@ -1,9 +1,13 @@
-    <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>unfinished.productions presents TAXI WARS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap" rel="stylesheet">
+
     <style>
         body, html {
             margin: 0;
@@ -11,7 +15,8 @@
             width: 100%;
             height: 100%;
             background-color: #000;
-            overflow: hidden; /* Prevent scrolling */
+            overflow: hidden;
+            font-family: 'Archivo Black', sans-serif; /* Set the new font */
         }
 
         #video-container {
@@ -23,7 +28,7 @@
         video {
             width: 100%;
             height: 100%;
-            object-fit: fill;
+            object-fit: cover; /* Changed to fill height without distortion */
         }
 
         /* --- Play Button Styles --- */
@@ -32,8 +37,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 80px; /* Adjust size as needed */
-            height: 80px; /* Adjust size as needed */
+            width: 80px;
+            height: 80px;
             cursor: pointer;
             z-index: 10;
             background-color: rgba(0, 0, 0, 0.5);
@@ -53,6 +58,41 @@
             border-left: 25px solid rgba(255, 255, 255, 0.8);
             margin-left: 5px;
         }
+
+        /* --- Title Screen Styles --- */
+        #title-screen {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+            z-index: 11;
+            text-align: center;
+            color: #fff;
+            font-weight: normal; /* Archivo Black is already heavy */
+            font-size: 10vw;
+            line-height: 1.2;
+            pointer-events: none;
+        }
+        
+        /* --- Fund Button Styles --- */
+        #fund-button {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 12;
+            cursor: pointer;
+            padding: 15px 40px;
+            background-color: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 2vw;
+            font-weight: normal; /* Archivo Black is already heavy */
+            border-radius: 50px;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -64,15 +104,25 @@
         </video>
         
         <div id="play-button"></div>
+
+        <div id="title-screen">
+            <div>TAXI</div>
+            <div>WARS</div>
+        </div>
+
+        <div id="fund-button">FUND</div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const myVideo = document.getElementById('myVideo');
             const playButton = document.getElementById('play-button');
+            const titleScreen = document.getElementById('title-screen');
+            const fundButton = document.getElementById('fund-button');
 
-            // --- Configuration variable for easy editing ---
-            const pauseBeforeEnd = 5; // Pause the video this many seconds before it ends
+            // --- Configuration for the loop ---
+            const loopDuration = 2;
+            const loopStartBeforeEnd = 5;
 
             // --- Play Button Logic ---
             playButton.addEventListener('click', () => {
@@ -83,25 +133,25 @@
                 });
             });
 
-            // Flag to ensure the pause logic only runs once
-            let hasPaused = false;
+            // Flag to ensure the text and button only appear once
+            let loopHasStarted = false;
 
-            // --- Pausing the video before it ends ---
+            // --- Looping the last few seconds ---
             myVideo.addEventListener('timeupdate', () => {
-                // Check if the video has loaded metadata and is playing
-                if (myVideo.duration && !myVideo.paused && !hasPaused) {
+                if (myVideo.duration && !myVideo.paused) {
                     
-                    // Check if we are within the last few seconds
-                    if (myVideo.currentTime >= myVideo.duration - pauseBeforeEnd) {
-                        
-                        // Pause the video
-                        myVideo.pause();
-                        
-                        // Set the flag to prevent this from running again
-                        hasPaused = true;
+                    const loopStartTime = myVideo.duration - loopStartBeforeEnd;
+                    const loopEndTime = myVideo.duration - (loopStartBeforeEnd - loopDuration);
 
-                        // Optionally unhide the play button here if desired
-                        // playButton.style.display = 'flex';
+                    if (myVideo.currentTime >= loopEndTime) {
+                        
+                        myVideo.currentTime = loopStartTime;
+
+                        if (!loopHasStarted) {
+                            titleScreen.style.display = 'block';
+                            fundButton.style.display = 'block';
+                            loopHasStarted = true;
+                        }
                     }
                 }
             });
