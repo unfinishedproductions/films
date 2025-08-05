@@ -16,7 +16,7 @@
             height: 100%;
             background-color: #000;
             overflow: hidden;
-            font-family: 'Archivo Black', sans-serif; /* Set the new font */
+            font-family: 'Archivo Black', sans-serif;
         }
 
         #video-container {
@@ -28,7 +28,7 @@
         video {
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Changed to fill height without distortion */
+            object-fit: cover;
         }
 
         /* --- Play Button Styles --- */
@@ -59,39 +59,52 @@
             margin-left: 5px;
         }
 
-        /* --- Title Screen Styles --- */
-        #title-screen {
+        /* --- Overlay Container for Text and Button --- */
+        #outro-overlay {
             position: absolute;
-            top: 40%;
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            display: none;
             z-index: 11;
+            display: none; /* Hidden by default */
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none; /* Clicks pass through by default */
+        }
+
+        /* --- Title Screen Styles --- */
+        #title-screen {
             text-align: center;
             color: #fff;
-            font-weight: normal; /* Archivo Black is already heavy */
+            font-weight: normal;
             font-size: 10vw;
-            line-height: 1.2;
-            pointer-events: none;
+            line-height: 0.8; /* Smaller line height */
+            margin-bottom: 15px; /* Space between text and button */
         }
         
         /* --- Fund Button Styles --- */
         #fund-button {
-            position: absolute;
-            bottom: 10%;
-            left: 50%;
-            transform: translateX(-50%);
-            display: none;
-            z-index: 12;
+            pointer-events: auto; /* Re-enable clicks for the button */
             cursor: pointer;
             padding: 15px 40px;
             background-color: rgba(0, 0, 0, 0.6);
             color: #fff;
             font-size: 2vw;
-            font-weight: normal; /* Archivo Black is already heavy */
+            font-weight: normal;
             border-radius: 50px;
             border: 2px solid rgba(255, 255, 255, 0.8);
             white-space: nowrap;
+        }
+
+        /* --- Mobile-specific styles for the title text --- */
+        @media (max-width: 800px) {
+            #title-screen {
+                font-size: 15vw; /* Make words larger */
+            }
+            #title-screen div {
+                width: 90%; /* Occupy 90% of the screen width */
+                margin: 0 5%;
+            }
         }
     </style>
 </head>
@@ -105,24 +118,24 @@
         
         <div id="play-button"></div>
 
-        <div id="title-screen">
-            <div>TAXI</div>
-            <div>WARS</div>
+        <div id="outro-overlay">
+            <div id="title-screen">
+                <div>TAXI</div>
+                <div>WARS</div>
+            </div>
+            <div id="fund-button">FUND</div>
         </div>
-
-        <div id="fund-button">FUND</div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const myVideo = document.getElementById('myVideo');
             const playButton = document.getElementById('play-button');
-            const titleScreen = document.getElementById('title-screen');
-            const fundButton = document.getElementById('fund-button');
+            const outroOverlay = document.getElementById('outro-overlay');
 
             // --- Configuration for the loop ---
-            const loopDuration = 2;
-            const loopStartBeforeEnd = 5;
+            const loopStartBeforeEnd = 4; // Start looping 4 seconds before the end
+            const loopDuration = 2;       // The loop segment is 2 seconds long
 
             // --- Play Button Logic ---
             playButton.addEventListener('click', () => {
@@ -133,9 +146,6 @@
                 });
             });
 
-            // Flag to ensure the text and button only appear once
-            let loopHasStarted = false;
-
             // --- Looping the last few seconds ---
             myVideo.addEventListener('timeupdate', () => {
                 if (myVideo.duration && !myVideo.paused) {
@@ -143,15 +153,14 @@
                     const loopStartTime = myVideo.duration - loopStartBeforeEnd;
                     const loopEndTime = myVideo.duration - (loopStartBeforeEnd - loopDuration);
 
+                    // If we're past the loop end time, jump back to the start of the loop
                     if (myVideo.currentTime >= loopEndTime) {
-                        
                         myVideo.currentTime = loopStartTime;
+                    }
 
-                        if (!loopHasStarted) {
-                            titleScreen.style.display = 'block';
-                            fundButton.style.display = 'block';
-                            loopHasStarted = true;
-                        }
+                    // Show the overlay when the video first enters the loop segment
+                    if (myVideo.currentTime >= loopStartTime && outroOverlay.style.display !== 'flex') {
+                        outroOverlay.style.display = 'flex';
                     }
                 }
             });
