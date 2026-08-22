@@ -2,1168 +2,959 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
->
-
-<title>Arctic Base 360 Viewer</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Arctic Base 360 Editor</title>
 <style>
-html,
-body {
-  margin: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-
-  background: #000;
-
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-
-  overscroll-behavior: none;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-#app {
-  position: fixed;
-  inset: 0;
-}
-
-canvas {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  touch-action: none;
-}
-
-#status {
-  position: fixed;
-
-  top:
-    max(
-      12px,
-      env(safe-area-inset-top)
-    );
-
-  left: 12px;
-
-  z-index: 10;
-
-  padding:
-    7px
-    10px;
-
-  border-radius: 9px;
-
-  background:
-    rgba(0,0,0,.52);
-
-  color: white;
-
-  font-size: 12px;
-
-  pointer-events: none;
-
-  backdrop-filter:
-    blur(8px);
-}
-
-#error {
-  position: fixed;
-
-  left: 12px;
-  right: 12px;
-
-  top: 60px;
-
-  z-index: 20;
-
-  display: none;
-
-  padding: 12px;
-
-  border-radius: 10px;
-
-  color: white;
-
-  background:
-    rgba(125,0,0,.92);
-
-  font-size: 13px;
-
-  line-height: 1.4;
-}
-
-#crosshair {
-  position: fixed;
-
-  left: 50%;
-  top: 50%;
-
-  width: 4px;
-  height: 4px;
-
-  margin-left: -2px;
-  margin-top: -2px;
-
-  border-radius: 50%;
-
-  background:
-    rgba(255,255,255,.65);
-
-  pointer-events: none;
-}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#app{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+button{font:inherit;-webkit-tap-highlight-color:transparent}
+#menuBtn{position:fixed;top:max(14px,env(safe-area-inset-top));right:14px;z-index:60;width:48px;height:48px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(10,10,10,.62);color:#fff;font-size:25px;display:grid;place-items:center;backdrop-filter:blur(12px)}
+#menu{position:fixed;top:70px;right:14px;z-index:55;width:min(350px,calc(100vw - 28px));max-height:calc(100vh - 90px);overflow:auto;display:none;padding:12px;background:rgba(10,10,10,.80);border:1px solid rgba(255,255,255,.16);border-radius:15px;color:#fff;backdrop-filter:blur(14px)}
+#menu.open{display:block}
+.sectionTitle{margin:4px 0 8px;font-size:12px;opacity:.68;text-transform:uppercase;letter-spacing:.08em}
+.menuGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.menuAction{min-height:42px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.07);color:#fff}
+.menuAction.active{outline:2px solid #fff;background:rgba(255,255,255,.15)}
+.worldList{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.worldCard{position:relative;overflow:hidden;padding:0;aspect-ratio:1.25;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:#111}
+.worldCard img{width:100%;height:100%;object-fit:cover;display:block}
+.worldCard span{position:absolute;left:0;right:0;bottom:0;padding:5px;font-size:10px;text-align:center;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.86))}
+.worldCard.active{outline:2px solid #fff}
+#coords{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.12);font-size:11px;line-height:1.5;opacity:.78}
+#arrowOverlay{position:fixed;right:10px;bottom:max(10px,env(safe-area-inset-bottom));z-index:50;width:220px;height:190px}
+#arrowOverlay canvas{width:100%;height:100%;touch-action:none}
+#directorUI{position:fixed;inset:0;z-index:70;display:none;pointer-events:none}
+body.director #directorUI{display:block}
+body.director #menu,body.director #menuBtn{display:none!important}
+body.director #arrowOverlay{z-index:80}
+#directorLabel{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;padding:7px 10px;border-radius:9px;color:#fff;background:rgba(0,0,0,.45);font-size:12px;backdrop-filter:blur(8px)}
+#recordBtn{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:66px;height:66px;padding:0;border:4px solid #fff;border-radius:50%;background:rgba(0,0,0,.28);display:grid;place-items:center;pointer-events:auto}
+#recordBtn:after{content:"";width:38px;height:38px;border-radius:50%;background:#ef3d43}
+#recordBtn.recording:after{width:27px;height:27px;border-radius:5px}
+#recordStatus{position:absolute;left:96px;bottom:max(41px,calc(env(safe-area-inset-bottom) + 22px));color:#fff;font-size:12px;text-shadow:0 1px 5px #000}
+#previewPanel{position:fixed;inset:0;z-index:100;display:none;background:#000}
+#previewPanel.open{display:block}
+#previewVideo{width:100%;height:100%;object-fit:contain}
+#closePreview{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:45px;height:45px;border-radius:50%;border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(0,0,0,.58);font-size:25px}
+#previewControls{position:absolute;left:0;right:0;bottom:max(16px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:9px}
+.previewButton{padding:10px 14px;border:1px solid rgba(255,255,255,.25);border-radius:10px;color:#fff;background:rgba(0,0,0,.68)}
+#cameraReference,#cameraFlowCanvas{display:none}
+#errorBox{display:none;position:fixed;left:12px;right:12px;top:74px;z-index:200;padding:10px 12px;border-radius:10px;background:rgba(110,0,0,.92);color:#fff;font-size:12px}
 </style>
 </head>
-
 <body>
-
 <div id="app"></div>
+<div id="errorBox"></div>
 
-<div id="status">
-  Loading Arctic Base…
+<button id="menuBtn" aria-label="Menu">☰</button>
+
+<div id="menu">
+  <div class="sectionTitle">Mannequins</div>
+  <div class="menuGrid">
+    <button class="menuAction active" id="moveModeBtn">Move Doll</button>
+    <button class="menuAction" id="poseModeBtn">Pose Doll</button>
+    <button class="menuAction" id="addDollBtn">+ Add Doll</button>
+    <button class="menuAction" id="removeDollBtn">− Remove Doll</button>
+    <button class="menuAction" id="resetPoseBtn">Reset Pose</button>
+    <button class="menuAction" id="gridBtn">Toggle Grid</button>
+  </div>
+
+  <div class="sectionTitle" style="margin-top:16px">Camera</div>
+  <div class="menuGrid">
+    <button class="menuAction" id="homeBtn">Home</button>
+    <button class="menuAction" id="groundBtn">Ground Shot</button>
+    <button class="menuAction" id="highBtn">High Shot</button>
+  </div>
+
+  <div class="sectionTitle" style="margin-top:16px">Worlds</div>
+  <div class="worldList" id="worldList"></div>
+  <div id="coords"></div>
 </div>
 
-<div id="error"></div>
+<div id="arrowOverlay"></div>
 
-<div id="crosshair"></div>
+<div id="directorUI">
+  <div id="directorLabel">DIRECTOR</div>
+  <button id="recordBtn" aria-label="Record"></button>
+  <div id="recordStatus">REC</div>
+</div>
 
+<div id="previewPanel">
+  <video id="previewVideo" controls playsinline></video>
+  <button id="closePreview">×</button>
+  <div id="previewControls">
+    <button class="previewButton" id="replayBtn">Replay</button>
+    <button class="previewButton" id="startOverBtn">Start Over</button>
+    <button class="previewButton" id="downloadBtn">Download</button>
+  </div>
+</div>
+
+<video id="cameraReference" playsinline muted></video>
+<canvas id="cameraFlowCanvas" width="96" height="54"></canvas>
 
 <script type="importmap">
-{
-  "imports": {
-    "three":
-    "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js"
-  }
-}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js"}}
 </script>
-
 
 <script type="module">
-
 import * as THREE from "three";
 
+const IMG_ARCTIC="./arctic_lab_panorama_4096x2048.png";
 
-/* =========================================================
-   IMAGE
+const $=id=>document.getElementById(id);
+const app=$("app"),menuBtn=$("menuBtn"),menu=$("menu"),coords=$("coords"),worldList=$("worldList"),errorBox=$("errorBox");
+const moveModeBtn=$("moveModeBtn"),poseModeBtn=$("poseModeBtn"),addDollBtn=$("addDollBtn"),removeDollBtn=$("removeDollBtn"),resetPoseBtn=$("resetPoseBtn"),gridBtn=$("gridBtn");
+const homeBtn=$("homeBtn"),groundBtn=$("groundBtn"),highBtn=$("highBtn");
 
-   PUT THIS FILE BESIDE index.html:
+function showError(message){
+  console.error(message);
+  errorBox.style.display="block";
+  errorBox.textContent=String(message);
+}
+addEventListener("error",e=>{if(e.message)showError(e.message)});
+addEventListener("unhandledrejection",e=>showError("Unhandled error: "+(e.reason?.message||e.reason||"unknown")));
 
-   arctic_lab_panorama_4096x2048.png
+/* MAIN THREE SCENE */
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.02,200);
+const renderer=new THREE.WebGLRenderer({
+  antialias:true,
+  powerPreference:"high-performance",
+  preserveDrawingBuffer:true
+});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputColorSpace=THREE.SRGBColorSpace;
+app.appendChild(renderer.domElement);
 
-   GitHub example:
-
-   /your-repository/
-       index.html
-       arctic_lab_panorama_4096x2048.png
-========================================================= */
-
-const IMAGE_URL =
-  "./arctic_lab_panorama_4096x2048.png";
-
-
-const app =
-  document.getElementById(
-    "app"
-  );
-
-
-const status =
-  document.getElementById(
-    "status"
-  );
-
-
-const errorBox =
-  document.getElementById(
-    "error"
-  );
-
-
-function showError(
-  message
-){
-
-  console.error(
-    message
-  );
-
-
-  errorBox.style.display =
-    "block";
-
-
-  errorBox.textContent =
-    message;
-
-
-  status.textContent =
-    "IMAGE LOAD FAILED";
-
+/* CAMERA */
+const cameraBase=new THREE.Vector3(0,1.6,0);
+let yaw=0,pitch=0,targetFov=70;
+function constrainCamera(){
+  const d=Math.hypot(cameraBase.x,cameraBase.z),max=2.75;
+  if(d>max){cameraBase.x*=max/d;cameraBase.z*=max/d}
+  cameraBase.y=THREE.MathUtils.clamp(cameraBase.y,.16,3.4);
 }
 
+/* WORLDS: one full inward-facing equirectangular sphere */
+const worlds=[
+  {
+    id:"arctic",
+    name:"Arctic Base",
+    src:IMG_ARCTIC,
+    radius:12,
+    centerY:1.45
+  }
+];
+let activeWorld=worlds[0],worldToken=0;
+const environment=new THREE.Group();
+scene.add(environment);
 
-/* =========================================================
-   SCENE
-========================================================= */
+function loadTexture(src){
+  return new Promise((resolve,reject)=>{
+    new THREE.TextureLoader().load(
+      src,
+      tex=>{tex.colorSpace=THREE.SRGBColorSpace;resolve(tex)},
+      undefined,
+      err=>reject(err||new Error("Texture load failed"))
+    );
+  });
+}
+function disposeObject(o){
+  o.geometry?.dispose();
+  const mats=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];
+  mats.forEach(m=>{m.map?.dispose();m.dispose()});
+}
+async function loadWorld(world){
+  const token=++worldToken;
+  activeWorld=world;
+  renderWorldCards();
 
-const scene =
-  new THREE.Scene();
+  try{
+    const texture=await loadTexture(world.src);
+    if(token!==worldToken){texture.dispose();return}
 
+    while(environment.children.length){
+      const o=environment.children[0];
+      environment.remove(o);
+      disposeObject(o);
+    }
 
-/* =========================================================
-   CAMERA
+    texture.wrapS=THREE.RepeatWrapping;
+    texture.wrapT=THREE.ClampToEdgeWrapping;
+    texture.repeat.set(-1,1);
+    texture.offset.set(1,0);
+    texture.minFilter=THREE.LinearMipmapLinearFilter;
+    texture.magFilter=THREE.LinearFilter;
+    texture.generateMipmaps=true;
+    texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    texture.needsUpdate=true;
 
-   Camera sits at the exact center of the panorama sphere.
+    const sphere=new THREE.Mesh(
+      new THREE.SphereGeometry(world.radius,256,128),
+      new THREE.MeshBasicMaterial({
+        map:texture,
+        side:THREE.BackSide,
+        depthWrite:true
+      })
+    );
+    sphere.position.set(0,world.centerY,0);
+    sphere.name="equirectangularWorld";
+    environment.add(sphere);
+    errorBox.style.display="none";
+  }catch(err){
+    showError("Could not load ./arctic_lab_panorama_4096x2048.png. Put the PNG in the same folder as this HTML. "+(err?.message||String(err)));
+  }
+}
+function renderWorldCards(){
+  worldList.innerHTML="";
+  worlds.forEach(world=>{
+    const button=document.createElement("button");
+    button.className="worldCard"+(world===activeWorld?" active":"");
+    const img=document.createElement("img");
+    img.src=world.src;
+    img.alt=world.name;
+    const label=document.createElement("span");
+    label.textContent=world.name;
+    button.append(img,label);
+    button.onclick=async()=>{
+      await loadWorld(world);
+      cameraBase.set(0,1.6,0);yaw=0;pitch=0;targetFov=70;
+    };
+    worldList.appendChild(button);
+  });
+}
 
-   This is important.
-
-   A standard 360 equirectangular image represents light
-   captured from one point in space.
-
-   At the capture point it appears undistorted.
-========================================================= */
-
-const camera =
-  new THREE.PerspectiveCamera(
-
-    70,
-
-    window.innerWidth /
-    window.innerHeight,
-
-    0.01,
-
-    100
-
-  );
-
-
-camera.position.set(
-
-  0,
-
-  0,
-
-  0
-
+/* CIRCULAR GRID */
+const GRID_RADIUS=3;
+const gridGroup=new THREE.Group();
+scene.add(gridGroup);
+const gridMaterial=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.32});
+for(let r=.5;r<=GRID_RADIUS;r+=.5){
+  const pts=[];
+  for(let i=0;i<=128;i++){
+    const a=i/128*Math.PI*2;
+    pts.push(new THREE.Vector3(Math.cos(a)*r,.012,Math.sin(a)*r));
+  }
+  gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gridMaterial));
+}
+for(let i=0;i<24;i++){
+  const a=i/24*Math.PI*2;
+  gridGroup.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0,.012,0),
+      new THREE.Vector3(Math.cos(a)*GRID_RADIUS,.012,Math.sin(a)*GRID_RADIUS)
+    ]),
+    gridMaterial
+  ));
+}
+const floorHit=new THREE.Mesh(
+  new THREE.CircleGeometry(GRID_RADIUS,128),
+  new THREE.MeshBasicMaterial({transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false,colorWrite:false})
 );
+floorHit.rotation.x=-Math.PI/2;
+scene.add(floorHit);
 
+/* MANNEQUIN LIGHTS */
+scene.add(new THREE.HemisphereLight(0xffffff,0x4a4037,2.1));
+const dollLight=new THREE.DirectionalLight(0xffffff,2.4);
+dollLight.position.set(4,6,3);
+scene.add(dollLight);
 
-camera.rotation.order =
-  "YXZ";
+/* MANNEQUINS */
+const wood=new THREE.MeshStandardMaterial({color:0xc89d67,roughness:.72});
+const jointMaterial=new THREE.MeshStandardMaterial({color:0xd9b27d,roughness:.67});
+const dolls=[],dollMeshes=[];
+let selectedDoll=null,dollMode="move",dollCounter=0;
 
+const joint=(r=.085)=>new THREE.Mesh(new THREE.SphereGeometry(r,20,14),jointMaterial);
+function limb(length,r=.075){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.92,length,18),wood);
+  m.position.y=-length/2;
+  return m;
+}
+function addOutline(mesh){
+  const o=new THREE.LineSegments(
+    new THREE.EdgesGeometry(mesh.geometry,24),
+    new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.98,depthTest:false})
+  );
+  o.visible=false;o.renderOrder=30;o.scale.setScalar(1.025);
+  mesh.add(o);mesh.userData.outline=o;
+}
+function selectDoll(d){
+  selectedDoll=d;
+  dolls.forEach(root=>root.traverse(o=>{
+    if(o.isMesh&&o.userData.outline)o.userData.outline.visible=(root===d);
+  }));
+}
+function createDoll(x=0,z=-2){
+  dollCounter++;
+  const root=new THREE.Group();
+  root.position.set(x,0,z);
+  root.userData.name=`Mannequin ${dollCounter}`;
+  scene.add(root);
 
-/* =========================================================
-   RENDERER
-========================================================= */
+  const hips=new THREE.Group();hips.position.y=.95;root.add(hips);
+  hips.add(new THREE.Mesh(new THREE.CylinderGeometry(.20,.24,.30,18),wood));
 
-const renderer =
-  new THREE.WebGLRenderer({
+  const torsoPivot=new THREE.Group();torsoPivot.position.y=.34;hips.add(torsoPivot);
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.20,.15,.55,18),wood);torso.position.y=.26;torsoPivot.add(torso);
+  const neck=joint(.075);neck.position.y=.60;torsoPivot.add(neck);
+  const headPivot=new THREE.Group();headPivot.position.y=.69;torsoPivot.add(headPivot);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.19,24,18),wood);head.scale.set(.85,1.08,.85);head.position.y=.12;headPivot.add(head);
 
-    antialias:
-      true,
+  function arm(side){
+    const shoulder=new THREE.Group();shoulder.position.set(side*.24,.47,0);shoulder.rotation.z=side>0?-.16:.16;torsoPivot.add(shoulder);
+    const sj=joint(.085);shoulder.add(sj);
+    const upper=limb(.40,.07);shoulder.add(upper);
+    const elbow=new THREE.Group();elbow.position.y=-.40;shoulder.add(elbow);
+    const ej=joint(.075);elbow.add(ej);
+    const lower=limb(.36,.06);elbow.add(lower);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.085,16,12),wood);hand.scale.set(.72,1.1,.58);hand.position.y=-.40;lower.add(hand);
+    [sj,upper].forEach(o=>o.userData.poseGroup=shoulder);
+    [ej,lower,hand].forEach(o=>o.userData.poseGroup=elbow);
+  }
+  function leg(side){
+    const hip=new THREE.Group();hip.position.set(side*.13,-.16,0);hips.add(hip);
+    const hj=joint(.09);hip.add(hj);
+    const upper=limb(.48,.085);hip.add(upper);
+    const knee=new THREE.Group();knee.position.y=-.48;hip.add(knee);
+    const kj=joint(.08);knee.add(kj);
+    const lower=limb(.46,.072);knee.add(lower);
+    const foot=new THREE.Mesh(new THREE.BoxGeometry(.13,.10,.28),wood);foot.position.set(0,-.49,.07);lower.add(foot);
+    [hj,upper].forEach(o=>o.userData.poseGroup=hip);
+    [kj,lower,foot].forEach(o=>o.userData.poseGroup=knee);
+  }
+  arm(-1);arm(1);leg(-1);leg(1);
 
-    powerPreference:
-      "high-performance",
-
-    alpha:
-      false
-
+  root.traverse(o=>{
+    if(o.isMesh){
+      o.userData.doll=root;
+      if(!o.userData.poseGroup)o.userData.poseGroup=(o===head)?headPivot:torsoPivot;
+      dollMeshes.push(o);addOutline(o);
+    }
   });
 
+  dolls.push(root);
+  selectDoll(root);
+  return root;
+}
+function removeSelectedDoll(){
+  if(!selectedDoll)return;
+  const d=selectedDoll;
+  const i=dolls.indexOf(d);if(i>=0)dolls.splice(i,1);
+  for(let j=dollMeshes.length-1;j>=0;j--)if(dollMeshes[j].userData.doll===d)dollMeshes.splice(j,1);
+  scene.remove(d);
+  selectedDoll=dolls.at(-1)||null;
+  if(selectedDoll)selectDoll(selectedDoll);
+}
+createDoll(0,-2.1);
 
-renderer.setSize(
+/* MENU */
+menuBtn.onclick=()=>menu.classList.toggle("open");
+moveModeBtn.onclick=()=>{dollMode="move";moveModeBtn.classList.add("active");poseModeBtn.classList.remove("active")};
+poseModeBtn.onclick=()=>{dollMode="pose";poseModeBtn.classList.add("active");moveModeBtn.classList.remove("active")};
+addDollBtn.onclick=()=>createDoll(Math.max(-1.8,Math.min(1.8,dolls.length*.32-.5)),-2);
+removeDollBtn.onclick=removeSelectedDoll;
+resetPoseBtn.onclick=()=>{if(!selectedDoll)return;selectedDoll.traverse(o=>{if(o.isGroup&&o!==selectedDoll)o.rotation.set(0,0,0)})};
+gridBtn.onclick=()=>gridGroup.visible=!gridGroup.visible;
+homeBtn.onclick=()=>{cameraBase.set(0,1.6,0);yaw=0;pitch=0;targetFov=70};
+groundBtn.onclick=()=>{cameraBase.y=.23;pitch=-.02};
+highBtn.onclick=()=>{cameraBase.y=3;pitch=-.48};
 
-  window.innerWidth,
+/* SCENE POINTER INPUT */
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+function updateRay(x,y){
+  const r=renderer.domElement.getBoundingClientRect();
+  pointer.x=((x-r.left)/r.width)*2-1;
+  pointer.y=-((y-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(pointer,camera);
+}
+function getDollHit(x,y){updateRay(x,y);return raycaster.intersectObjects(dollMeshes,false)[0]||null}
 
-  window.innerHeight
+let pointerAction="none",poseGroup=null,lastX=0,lastY=0,startX=0,startY=0,pointerMoved=false;
+const carryOffset=new THREE.Vector3(),activePointers=new Map();
+let pinchStartDistance=0,pinchStartFov=70;
 
-);
+renderer.domElement.onpointerdown=e=>{
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(activePointers.size===2){
+    const p=[...activePointers.values()];
+    pinchStartDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+    pinchStartFov=targetFov;pointerAction="pinch";return;
+  }
+  lastX=startX=e.clientX;lastY=startY=e.clientY;pointerMoved=false;
 
+  if(directorMode){
+    pointerAction="camera";
+    renderer.domElement.setPointerCapture(e.pointerId);
+    return;
+  }
 
-renderer.setPixelRatio(
+  const hit=getDollHit(e.clientX,e.clientY);
+  if(hit){
+    const doll=hit.object.userData.doll;
+    if(doll!==selectedDoll){selectDoll(doll);pointerAction="none";return}
+    if(dollMode==="move"){
+      pointerAction="moveDoll";
+      updateRay(e.clientX,e.clientY);
+      const floor=raycaster.intersectObject(floorHit,false)[0];
+      if(floor)carryOffset.set(selectedDoll.position.x-floor.point.x,0,selectedDoll.position.z-floor.point.z);
+      selectedDoll.position.y=.20;
+      renderer.domElement.setPointerCapture(e.pointerId);
+      return;
+    }
+    pointerAction="pose";
+    poseGroup=hit.object.userData.poseGroup;
+    renderer.domElement.setPointerCapture(e.pointerId);
+    return;
+  }
 
-  Math.min(
+  pointerAction="camera";
+  renderer.domElement.setPointerCapture(e.pointerId);
+};
 
-    window.devicePixelRatio,
+renderer.domElement.onpointermove=e=>{
+  if(activePointers.has(e.pointerId))activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
 
-    2
+  if(activePointers.size===2&&pinchStartDistance){
+    const p=[...activePointers.values()];
+    const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+    targetFov=THREE.MathUtils.clamp(pinchStartFov*(pinchStartDistance/d),20,105);
+    pointerAction="pinch";return;
+  }
 
-  )
+  const dx=e.clientX-lastX,dy=e.clientY-lastY;
+  lastX=e.clientX;lastY=e.clientY;
+  if(Math.hypot(e.clientX-startX,e.clientY-startY)>7)pointerMoved=true;
 
-);
+  if(pointerAction==="camera"){
+    yaw-=dx*.004;
+    pitch=THREE.MathUtils.clamp(pitch-dy*.004,-Math.PI/2+.015,Math.PI/2-.015);
+  }else if(pointerAction==="moveDoll"&&selectedDoll){
+    updateRay(e.clientX,e.clientY);
+    const floor=raycaster.intersectObject(floorHit,false)[0];
+    if(floor){
+      const x=floor.point.x+carryOffset.x,z=floor.point.z+carryOffset.z;
+      if(Math.hypot(x,z)<=GRID_RADIUS-.15){selectedDoll.position.x=x;selectedDoll.position.z=z}
+      selectedDoll.position.y=.20;
+    }
+  }else if(pointerAction==="pose"&&poseGroup){
+    poseGroup.rotation.z=THREE.MathUtils.clamp(poseGroup.rotation.z+dx*.012,-2.7,2.7);
+    poseGroup.rotation.x=THREE.MathUtils.clamp(poseGroup.rotation.x+dy*.012,-2.5,2.5);
+  }
+};
 
+function finishPointer(e){
+  activePointers.delete(e.pointerId);
+  if(activePointers.size<2)pinchStartDistance=0;
+  if(pointerAction==="moveDoll"&&selectedDoll){
+    selectedDoll.position.y=0;
+  }else if(pointerAction==="camera"&&!pointerMoved&&!directorMode){
+    updateRay(e.clientX,e.clientY);
+    const floor=raycaster.intersectObject(floorHit,false)[0];
+    if(floor){cameraBase.x=floor.point.x;cameraBase.z=floor.point.z;constrainCamera()}
+  }
+  pointerAction="none";poseGroup=null;
+  try{renderer.domElement.releasePointerCapture(e.pointerId)}catch{}
+}
+renderer.domElement.onpointerup=finishPointer;
+renderer.domElement.onpointercancel=finishPointer;
 
-renderer.outputColorSpace =
-  THREE.SRGBColorSpace;
+renderer.domElement.addEventListener("wheel",e=>{
+  e.preventDefault();
+  targetFov=THREE.MathUtils.clamp(targetFov+e.deltaY*.03,20,105);
+},{passive:false});
 
-
-app.appendChild(
-  renderer.domElement
-);
-
-
-/* =========================================================
-   LOAD THE ACTUAL 4096 × 2048 PNG
-
-   This is deliberately direct.
-
-   NO fetch()
-   NO createImageBitmap()
-   NO canvas resize
-   NO AVIF conversion
-   NO ChatGPT URL
-   NO base64 conversion
-
-   THREE.TextureLoader reads the original PNG.
-========================================================= */
-
-let texture;
-
-
-try {
-
-  texture =
-
-    await new THREE
-      .TextureLoader()
-      .loadAsync(
-
-        IMAGE_URL
-
-      );
-
+/* CAMERA MOVEMENT */
+function moveRelative(forward,right,vertical=0){
+  const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+  const r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  cameraBase.addScaledVector(f,forward);
+  cameraBase.addScaledVector(r,right);
+  cameraBase.y+=vertical;
+  constrainCamera();
 }
 
+/* 3D BUTTON CLUSTER */
+const controlScene=new THREE.Scene();
+const controlCamera=new THREE.PerspectiveCamera(40,220/190,.1,100);
+controlCamera.position.set(0,4.7,6.4);controlCamera.lookAt(0,0,0);
 
-catch(
-  err
-){
+const controlRenderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+controlRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+controlRenderer.setSize(220,190);
+controlRenderer.setClearColor(0,0);
+$("arrowOverlay").appendChild(controlRenderer.domElement);
 
-  console.error(
-    "TextureLoader error:",
-    err
+controlScene.add(new THREE.HemisphereLight(0xffffff,0x181818,2.6));
+const controlLight=new THREE.DirectionalLight(0xffffff,2.5);controlLight.position.set(3,5,5);controlScene.add(controlLight);
+const controlGroup=new THREE.Group();controlGroup.rotation.x=-.12;controlScene.add(controlGroup);
+const controlMaterial=new THREE.MeshStandardMaterial({color:0x242424,roughness:.40,metalness:.18});
+const pressedMaterial=new THREE.MeshStandardMaterial({color:0x696969,roughness:.35});
+const whiteMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.25});
+const controlHitMeshes=[];
+
+function create3DControl(action,x,z,rotation,scale=1){
+  const group=new THREE.Group();group.position.set(x,0,z);group.userData.action=action;
+
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(.55*scale,.58*scale,.22*scale,30),controlMaterial);
+  base.userData.control=group;group.add(base);
+
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.48*scale,.50*scale,.08*scale,30),controlMaterial);
+  cap.position.y=.15*scale;cap.userData.control=group;group.add(cap);
+
+  const shape=new THREE.Shape();
+  shape.moveTo(0,.48);shape.lineTo(.34,.05);shape.lineTo(.14,.05);shape.lineTo(.14,-.42);
+  shape.lineTo(-.14,-.42);shape.lineTo(-.14,.05);shape.lineTo(-.34,.05);shape.closePath();
+
+  const arrow=new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shape,{depth:.075,bevelEnabled:true,bevelThickness:.025,bevelSize:.025,bevelSegments:2}),
+    whiteMaterial
   );
+  arrow.rotation.x=-Math.PI/2;
+  arrow.rotation.z=rotation;
+  arrow.position.y=.22*scale;
+  arrow.scale.setScalar(.72*scale);
+  group.add(arrow);
 
-
-  showError(
-
-    "Could not load "
-    +
-
-    IMAGE_URL
-    +
-
-    ". Make sure the PNG and this HTML file are in the same GitHub folder and that capitalization matches exactly."
-
-  );
-
-
-  throw err;
-
+  controlGroup.add(group);
+  controlHitMeshes.push(base,cap);
 }
 
+create3DControl("forward",0,-1,0);
+create3DControl("back",0,1,Math.PI);
+create3DControl("left",-1,0,Math.PI/2);
+create3DControl("right",1,0,-Math.PI/2);
+create3DControl("up",1.75,-.60,0,.82);
+create3DControl("down",1.75,.67,Math.PI,.82);
 
-/* =========================================================
-   VERIFY IMAGE RESOLUTION
-========================================================= */
+const controlRaycaster=new THREE.Raycaster(),controlPointer=new THREE.Vector2();
+let heldControl=null,pressedControl=null;
 
-const imageWidth =
+function performControl(action){
+  if(action==="forward")moveRelative(.07,0);
+  else if(action==="back")moveRelative(-.07,0);
+  else if(action==="left")moveRelative(0,-.07);
+  else if(action==="right")moveRelative(0,.07);
+  else if(action==="up")moveRelative(0,0,.05);
+  else if(action==="down")moveRelative(0,0,-.05);
+}
+function pickControl(e){
+  const r=controlRenderer.domElement.getBoundingClientRect();
+  controlPointer.x=((e.clientX-r.left)/r.width)*2-1;
+  controlPointer.y=-((e.clientY-r.top)/r.height)*2+1;
+  controlRaycaster.setFromCamera(controlPointer,controlCamera);
+  const hit=controlRaycaster.intersectObjects(controlHitMeshes,false)[0];
+  return hit?hit.object.userData.control:null;
+}
+controlRenderer.domElement.onpointerdown=e=>{
+  e.preventDefault();
+  const c=pickControl(e);
+  if(!c)return;
+  heldControl=c.userData.action;
+  pressedControl=c;
+  c.position.y=-.07;
+  c.children.forEach(ch=>{if(ch.material===controlMaterial)ch.material=pressedMaterial});
+  controlRenderer.domElement.setPointerCapture(e.pointerId);
+};
+function releaseControl(e){
+  if(pressedControl){
+    pressedControl.position.y=0;
+    pressedControl.children.forEach(ch=>{if(ch.material===pressedMaterial)ch.material=controlMaterial});
+  }
+  heldControl=pressedControl=null;
+  try{controlRenderer.domElement.releasePointerCapture(e.pointerId)}catch{}
+}
+controlRenderer.domElement.onpointerup=releaseControl;
+controlRenderer.domElement.onpointercancel=releaseControl;
 
-  texture.image
-  ?.naturalWidth
+/* DIRECTOR MODE */
+const PHONE_LIKE=matchMedia("(pointer: coarse)").matches||navigator.maxTouchPoints>0;
+let directorMode=false;
+function updateInterfaceMode(){
+  directorMode=PHONE_LIKE&&innerWidth>innerHeight;
+  document.body.classList.toggle("director",directorMode);
+  if(directorMode)menu.classList.remove("open");
+}
+updateInterfaceMode();
 
-  ||
+/* PHONE ORIENTATION */
+let deviceYaw=0,devicePitch=0,deviceRoll=0,zeroAlpha=null,zeroBeta=null,zeroGamma=null;
+const radians=d=>(d||0)*Math.PI/180;
 
-  texture.image
-  ?.width
+addEventListener("deviceorientation",e=>{
+  if(!directorMode)return;
+  const a=radians(e.alpha),b=radians(e.beta),g=radians(e.gamma);
+  if(zeroAlpha===null){zeroAlpha=a;zeroBeta=b;zeroGamma=g}
+  let dy=a-zeroAlpha;
+  while(dy>Math.PI)dy-=Math.PI*2;
+  while(dy<-Math.PI)dy+=Math.PI*2;
+  deviceYaw=dy;
+  devicePitch=b-zeroBeta;
+  deviceRoll=g-zeroGamma;
+},true);
 
-  ||
+/* ACCELEROMETER HANDHELD MOTION */
+const physicalOffset=new THREE.Vector3(),physicalVelocity=new THREE.Vector3(),physicalRotation=new THREE.Vector3();
+let lastMotionTime=performance.now(),stepEnergy=0;
 
-  0;
+addEventListener("devicemotion",e=>{
+  if(!directorMode)return;
+  const now=performance.now();
+  const dt=Math.min(.05,Math.max(.004,(now-lastMotionTime)/1000));
+  lastMotionTime=now;
+  const a=e.acceleration;
+  if(!a)return;
 
+  const ax=a.x||0,ay=a.y||0,az=a.z||0;
+  physicalRotation.x+=ay*.0004;
+  physicalRotation.y+=ax*.00035;
+  physicalRotation.z+=ax*.00022;
+  physicalVelocity.x+=ax*dt*.009;
+  physicalVelocity.y+=-ay*dt*.006;
+  physicalVelocity.z+=-az*dt*.009;
 
-const imageHeight =
+  const magnitude=Math.hypot(ax,ay,az);
+  if(magnitude>1.25)stepEnergy=Math.min(1,stepEnergy+magnitude*.03);
+},true);
 
-  texture.image
-  ?.naturalHeight
-
-  ||
-
-  texture.image
-  ?.height
-
-  ||
-
-  0;
-
-
-console.log(
-
-  "Loaded panorama:",
-
-  IMAGE_URL,
-
-  imageWidth +
-  " × " +
-  imageHeight
-
-);
-
-
-status.textContent =
-
-  `ARCTIC BASE · ${imageWidth} × ${imageHeight}`;
-
-
-/*
-Warn visibly if GitHub contains the wrong image.
-*/
-
-if(
-
-  imageWidth !==
-  4096
-
-  ||
-
-  imageHeight !==
-  2048
-
-){
-
-  status.textContent =
-
-    `WARNING · IMAGE IS ${imageWidth} × ${imageHeight}`;
-
-
-  console.warn(
-
-    "Expected 4096 × 2048, received:",
-
-    imageWidth,
-
-    imageHeight
-
-  );
-
+async function requestSensors(){
+  try{
+    if(typeof DeviceMotionEvent!=="undefined"&&typeof DeviceMotionEvent.requestPermission==="function"){
+      const r=await DeviceMotionEvent.requestPermission();
+      if(r!=="granted")console.warn("Motion permission not granted");
+    }
+    if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
+      const r=await DeviceOrientationEvent.requestPermission();
+      if(r!=="granted")console.warn("Orientation permission not granted");
+    }
+  }catch(err){
+    console.warn("Sensor permission unavailable",err);
+  }
 }
 
-
-/* =========================================================
-   TEXTURE QUALITY
-========================================================= */
-
-texture.colorSpace =
-  THREE.SRGBColorSpace;
-
-
-texture.wrapS =
-  THREE.ClampToEdgeWrapping;
-
-
-texture.wrapT =
-  THREE.ClampToEdgeWrapping;
-
-
-texture.minFilter =
-  THREE.LinearMipmapLinearFilter;
-
-
-texture.magFilter =
-  THREE.LinearFilter;
-
-
-texture.generateMipmaps =
-  true;
-
-
-texture.anisotropy =
-
-  Math.min(
-
-    16,
-
-    renderer
-      .capabilities
-      .getMaxAnisotropy()
-
-  );
-
-
-texture.needsUpdate =
-  true;
-
-
-/* =========================================================
-   SPHERE
-
-   This is the method that previously looked right:
-
-              ONE panorama
-                    ↓
-             ONE entire sphere
-                    ↓
-           camera at sphere center
-
-   We DO NOT divide it into:
-
-   cylinder
-   +
-   ceiling dome
-   +
-   lower floor strip
-
-   That was what caused the horrible stretching.
-========================================================= */
-
-const sphereGeometry =
-  new THREE.SphereGeometry(
-
-    10,
-
-    256,
-
-    128
-
-  );
-
-
-/*
-Invert the X axis.
-
-This turns the normal outward-facing sphere into an
-inward-facing panorama sphere.
-
-This is the standard Three.js 360 panorama approach.
-*/
-
-sphereGeometry.scale(
-
-  -1,
-
-  1,
-
-  1
-
-);
-
-
-const sphereMaterial =
-  new THREE.MeshBasicMaterial({
-
-    map:
-      texture,
-
-    side:
-      THREE.FrontSide,
-
-    depthWrite:
-      false
-
-  });
-
-
-const panorama =
-  new THREE.Mesh(
-
-    sphereGeometry,
-
-    sphereMaterial
-
-  );
-
-
-panorama.frustumCulled =
-  false;
-
-
-scene.add(
-  panorama
-);
-
-
-/* =========================================================
-   LOOK CONTROLS
-========================================================= */
-
-let yaw =
-  0;
-
-
-let pitch =
-  0;
-
-
-let targetFov =
-  70;
-
-
-/* =========================================================
-   POINTER TRACKING
-========================================================= */
-
-const pointers =
-  new Map();
-
-
-let dragging =
-  false;
-
-
-let lastX =
-  0;
-
-
-let lastY =
-  0;
-
-
-let pinchStartDistance =
-  0;
-
-
-let pinchStartFov =
-  70;
-
-
-/* =========================================================
-   POINTER DOWN
-========================================================= */
-
-renderer
-  .domElement
-  .addEventListener(
-
-    "pointerdown",
-
-    event => {
-
-      pointers.set(
-
-        event.pointerId,
-
-        {
-
-          x:
-            event.clientX,
-
-          y:
-            event.clientY
-
+/* OPTIONAL REAL CAMERA MOTION REFERENCE */
+const cameraReference=$("cameraReference"),cameraFlowCanvas=$("cameraFlowCanvas");
+const flowContext=cameraFlowCanvas.getContext("2d",{willReadFrequently:true});
+let cameraReferenceStream=null,cameraReferenceActive=false,previousFlowFrame=null,opticalX=0,opticalY=0,flowCounter=0;
+
+async function startCameraReference(){
+  if(cameraReferenceActive)return true;
+  if(!navigator.mediaDevices?.getUserMedia)return false;
+  try{
+    cameraReferenceStream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:{ideal:"environment"},
+        width:{ideal:320},
+        height:{ideal:180},
+        frameRate:{ideal:30,max:30}
+      },
+      audio:false
+    });
+    cameraReference.srcObject=cameraReferenceStream;
+    await cameraReference.play();
+    cameraReferenceActive=true;
+    return true;
+  }catch(err){
+    console.warn("Camera reference unavailable; recording still works without it.",err);
+    return false;
+  }
+}
+
+function sampleOpticalMotion(){
+  if(!cameraReferenceActive||cameraReference.readyState<2)return;
+  if(++flowCounter%3)return;
+
+  const w=cameraFlowCanvas.width,h=cameraFlowCanvas.height;
+  flowContext.drawImage(cameraReference,0,0,w,h);
+  const px=flowContext.getImageData(0,0,w,h).data;
+  const frame=new Uint8Array(w*h);
+
+  for(let i=0,j=0;i<px.length;i+=4,j++)frame[j]=(px[i]*3+px[i+1]*6+px[i+2])/10;
+
+  if(previousFlowFrame){
+    let bestScore=Infinity,bestX=0,bestY=0;
+
+    for(let oy=-3;oy<=3;oy++){
+      for(let ox=-4;ox<=4;ox++){
+        let score=0,count=0;
+
+        for(let y=8;y<h-8;y+=5){
+          for(let x=8;x<w-8;x+=5){
+            const a=frame[y*w+x];
+            const b=previousFlowFrame[(y+oy)*w+(x+ox)];
+            score+=Math.abs(a-b);
+            count++;
+          }
         }
 
-      );
-
-
-      /*
-      Two fingers = begin zoom.
-      */
-
-      if(
-        pointers.size ===
-        2
-      ){
-
-        const points =
-          [
-            ...pointers.values()
-          ];
-
-
-        pinchStartDistance =
-
-          Math.hypot(
-
-            points[0].x -
-            points[1].x,
-
-            points[0].y -
-            points[1].y
-
-          );
-
-
-        pinchStartFov =
-          targetFov;
-
-
-        dragging =
-          false;
-
-
-        return;
-
+        score/=Math.max(1,count);
+        if(score<bestScore){bestScore=score;bestX=ox;bestY=oy}
       }
-
-
-      dragging =
-        true;
-
-
-      lastX =
-        event.clientX;
-
-
-      lastY =
-        event.clientY;
-
-
-      try {
-
-        renderer
-          .domElement
-          .setPointerCapture(
-
-            event.pointerId
-
-          );
-
-      }
-
-      catch(
-        error
-      ){}
-
     }
 
-  );
-
-
-/* =========================================================
-   POINTER MOVE
-========================================================= */
-
-renderer
-  .domElement
-  .addEventListener(
-
-    "pointermove",
-
-    event => {
-
-      /*
-      Update stored finger position.
-      */
-
-      if(
-        pointers.has(
-          event.pointerId
-        )
-      ){
-
-        pointers.set(
-
-          event.pointerId,
-
-          {
-
-            x:
-              event.clientX,
-
-            y:
-              event.clientY
-
-          }
-
-        );
-
-      }
-
-
-      /* =====================================================
-         PINCH ZOOM
-      ===================================================== */
-
-      if(
-
-        pointers.size ===
-        2
-
-        &&
-
-        pinchStartDistance >
-        0
-
-      ){
-
-        const points =
-          [
-            ...pointers.values()
-          ];
-
-
-        const distance =
-
-          Math.hypot(
-
-            points[0].x -
-            points[1].x,
-
-            points[0].y -
-            points[1].y
-
-          );
-
-
-        targetFov =
-
-          THREE.MathUtils.clamp(
-
-            pinchStartFov
-
-            *
-
-            (
-              pinchStartDistance
-              /
-              distance
-            ),
-
-            25,
-
-            100
-
-          );
-
-
-        return;
-
-      }
-
-
-      /* =====================================================
-         ROTATE VIEW
-      ===================================================== */
-
-      if(
-        !dragging
-      ){
-
-        return;
-
-      }
-
-
-      const dx =
-
-        event.clientX -
-        lastX;
-
-
-      const dy =
-
-        event.clientY -
-        lastY;
-
-
-      lastX =
-        event.clientX;
-
-
-      lastY =
-        event.clientY;
-
-
-      yaw -=
-
-        dx *
-        0.004;
-
-
-      pitch -=
-
-        dy *
-        0.004;
-
-
-      pitch =
-
-        THREE.MathUtils.clamp(
-
-          pitch,
-
-          -Math.PI / 2 +
-          0.01,
-
-          Math.PI / 2 -
-          0.01
-
-        );
-
-    }
-
-  );
-
-
-/* =========================================================
-   POINTER RELEASE
-========================================================= */
-
-function releasePointer(
-  event
-){
-
-  pointers.delete(
-    event.pointerId
-  );
-
-
-  /*
-  If only one finger remains after pinch,
-  restart rotation using that finger.
-  */
-
-  if(
-    pointers.size ===
-    1
-  ){
-
-    const remaining =
-      [
-        ...pointers.values()
-      ][0];
-
-
-    lastX =
-      remaining.x;
-
-
-    lastY =
-      remaining.y;
-
-
-    dragging =
-      true;
-
-
-    pinchStartDistance =
-      0;
-
+    opticalX=THREE.MathUtils.lerp(opticalX,bestX,.15);
+    opticalY=THREE.MathUtils.lerp(opticalY,bestY,.15);
   }
 
-
-  else if(
-    pointers.size ===
-    0
-  ){
-
-    dragging =
-      false;
-
-
-    pinchStartDistance =
-      0;
-
-  }
-
-
-  try {
-
-    renderer
-      .domElement
-      .releasePointerCapture(
-
-        event.pointerId
-
-      );
-
-  }
-
-  catch(
-    error
-  ){}
-
+  previousFlowFrame=frame;
 }
 
+/* RECORDING */
+const recordBtn=$("recordBtn"),recordStatus=$("recordStatus"),previewPanel=$("previewPanel"),previewVideo=$("previewVideo");
+let recording=false,mediaRecorder=null,recordedParts=[],recordedVideo=null,recordingURL=null;
 
-renderer
-  .domElement
-  .addEventListener(
+function recorderSupported(){
+  return !!(window.MediaRecorder&&renderer.domElement.captureStream);
+}
 
-    "pointerup",
+function bestRecordingMime(){
+  const types=[
+    "video/webm;codecs=vp9",
+    "video/webm;codecs=vp8",
+    "video/webm",
+    "video/mp4"
+  ];
+  for(const type of types){
+    try{
+      if(MediaRecorder.isTypeSupported(type))return type;
+    }catch{}
+  }
+  return "";
+}
 
-    releasePointer
+async function startRecording(){
+  if(recording)return;
 
-  );
+  if(!recorderSupported()){
+    showError("Video recording is not supported by this browser. Try current Chrome or Edge on Android.");
+    return;
+  }
 
+  await requestSensors();
 
-renderer
-  .domElement
-  .addEventListener(
+  // Camera reference is optional. Failure must never stop the actual take.
+  startCameraReference().catch(()=>{});
 
-    "pointercancel",
+  zeroAlpha=zeroBeta=zeroGamma=null;
+  physicalOffset.set(0,0,0);
+  physicalVelocity.set(0,0,0);
+  physicalRotation.set(0,0,0);
+  opticalX=opticalY=0;
+  previousFlowFrame=null;
 
-    releasePointer
+  let stream;
+  try{
+    stream=renderer.domElement.captureStream(60);
+  }catch(err){
+    try{
+      stream=renderer.domElement.captureStream(30);
+    }catch(err2){
+      showError("The browser could not capture the Three.js canvas.");
+      return;
+    }
+  }
 
-  );
+  const mime=bestRecordingMime();
 
+  try{
+    const options={videoBitsPerSecond:16000000};
+    if(mime)options.mimeType=mime;
+    mediaRecorder=new MediaRecorder(stream,options);
+  }catch(err){
+    try{
+      mediaRecorder=new MediaRecorder(stream);
+    }catch(err2){
+      showError("MediaRecorder could not start: "+(err2?.message||err2));
+      return;
+    }
+  }
 
-/* =========================================================
-   DESKTOP MOUSE WHEEL ZOOM
-========================================================= */
+  recordedParts=[];
 
-renderer
-  .domElement
-  .addEventListener(
+  mediaRecorder.ondataavailable=e=>{
+    if(e.data&&e.data.size>0)recordedParts.push(e.data);
+  };
 
-    "wheel",
+  mediaRecorder.onerror=e=>{
+    showError("Recording error: "+(e.error?.message||"unknown recorder error"));
+  };
 
-    event => {
-
-      event.preventDefault();
-
-
-      targetFov =
-
-        THREE.MathUtils.clamp(
-
-          targetFov
-
-          +
-
-          event.deltaY *
-          0.03,
-
-          25,
-
-          100
-
-        );
-
-    },
-
-    {
-      passive:
-        false
+  mediaRecorder.onstop=()=>{
+    if(!recordedParts.length){
+      showError("The recording stopped but the browser returned no video data.");
+      return;
     }
 
+    recordedVideo=new Blob(
+      recordedParts,
+      {type:mediaRecorder.mimeType||mime||"video/webm"}
+    );
+
+    if(recordingURL)URL.revokeObjectURL(recordingURL);
+    recordingURL=URL.createObjectURL(recordedVideo);
+
+    previewVideo.src=recordingURL;
+    previewVideo.load();
+    previewPanel.classList.add("open");
+  };
+
+  try{
+    mediaRecorder.start(200);
+  }catch(err){
+    showError("Recording failed to start: "+(err?.message||err));
+    return;
+  }
+
+  recording=true;
+  recordBtn.classList.add("recording");
+  recordStatus.textContent="STOP";
+}
+
+function stopRecording(){
+  if(!recording)return;
+
+  recording=false;
+  recordBtn.classList.remove("recording");
+  recordStatus.textContent="REC";
+
+  if(mediaRecorder&&mediaRecorder.state!=="inactive"){
+    try{
+      mediaRecorder.requestData();
+    }catch{}
+    setTimeout(()=>{
+      try{
+        if(mediaRecorder.state!=="inactive")mediaRecorder.stop();
+      }catch{}
+    },80);
+  }
+}
+
+recordBtn.onclick=()=>recording?stopRecording():startRecording();
+
+$("closePreview").onclick=()=>{
+  previewVideo.pause();
+  previewPanel.classList.remove("open");
+};
+
+$("replayBtn").onclick=async()=>{
+  try{
+    previewVideo.currentTime=0;
+    await previewVideo.play();
+  }catch{}
+};
+
+$("startOverBtn").onclick=()=>{
+  previewVideo.pause();
+  previewPanel.classList.remove("open");
+  if(recordingURL){URL.revokeObjectURL(recordingURL);recordingURL=null}
+  recordedVideo=null;
+  recordedParts=[];
+};
+
+$("downloadBtn").onclick=()=>{
+  if(!recordedVideo)return;
+
+  const extension=(recordedVideo.type||"").includes("mp4")?"mp4":"webm";
+  const a=document.createElement("a");
+  a.href=recordingURL||URL.createObjectURL(recordedVideo);
+  a.download=`virtual-camera-${Date.now()}.${extension}`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+};
+
+/* DIRECTOR CAMERA */
+function updateDirectorCamera(dt){
+  sampleOpticalMotion();
+
+  physicalVelocity.multiplyScalar(Math.pow(.08,dt));
+  physicalOffset.addScaledVector(physicalVelocity,dt*1.5);
+  physicalOffset.multiplyScalar(Math.pow(.08,dt));
+  physicalRotation.multiplyScalar(Math.pow(.03,dt));
+
+  physicalOffset.x+=opticalX*.0001;
+  physicalOffset.y+=opticalY*.00007;
+
+  stepEnergy*=Math.pow(.15,dt);
+  const bob=Math.sin(performance.now()*.012)*stepEnergy*.022;
+
+  camera.position.copy(cameraBase).add(physicalOffset);
+  camera.position.y+=bob;
+
+  camera.rotation.order="YXZ";
+  camera.rotation.y=yaw-deviceYaw+physicalRotation.y;
+  camera.rotation.x=THREE.MathUtils.clamp(
+    pitch-devicePitch*.72+physicalRotation.x+opticalY*.0004,
+    -Math.PI/2+.015,
+    Math.PI/2-.015
   );
+  camera.rotation.z=THREE.MathUtils.clamp(
+    -deviceRoll*.17+physicalRotation.z-opticalX*.00035,
+    -.22,
+    .22
+  );
+}
 
+function updateStatus(){
+  coords.innerHTML=
+    `World: ${activeWorld.name}<br>`+
+    `Texture: 4096 × 2048<br>`+
+    `Camera: ${cameraBase.x.toFixed(2)}, ${cameraBase.y.toFixed(2)}, ${cameraBase.z.toFixed(2)}<br>`+
+    `FOV: ${Math.round(camera.fov)}°<br>`+
+    `Dolls: ${dolls.length}<br>`+
+    `Selected: ${selectedDoll?selectedDoll.userData.name:"none"}`;
+}
 
-/* =========================================================
-   RENDER LOOP
-========================================================= */
-
+/* RENDER LOOP */
+let previousFrame=performance.now();
 function animate(){
+  requestAnimationFrame(animate);
 
-  requestAnimationFrame(
-    animate
-  );
+  const now=performance.now();
+  const dt=Math.min(.05,Math.max(.001,(now-previousFrame)/1000));
+  previousFrame=now;
 
+  if(heldControl)performControl(heldControl);
 
-  /*
-  Smooth zoom.
-  */
-
-  camera.fov +=
-
-    (
-      targetFov -
-      camera.fov
-    )
-
-    *
-
-    0.14;
-
-
+  camera.fov+=(targetFov-camera.fov)*.13;
   camera.updateProjectionMatrix();
 
+  if(directorMode){
+    updateDirectorCamera(dt);
+  }else{
+    camera.position.copy(cameraBase);
+    camera.rotation.order="YXZ";
+    camera.rotation.y=yaw;
+    camera.rotation.x=pitch;
+    camera.rotation.z=0;
+  }
 
-  camera.rotation.y =
-    yaw;
-
-
-  camera.rotation.x =
-    pitch;
-
-
-  renderer.render(
-
-    scene,
-
-    camera
-
-  );
-
+  updateStatus();
+  renderer.render(scene,camera);
+  controlRenderer.render(controlScene,controlCamera);
 }
-
-
 animate();
 
-
-/* =========================================================
-   RESIZE / PHONE ROTATION
-========================================================= */
-
+/* RESIZE */
 function resize(){
-
-  camera.aspect =
-
-    window.innerWidth /
-    window.innerHeight;
-
-
+  camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  updateInterfaceMode();
 
-
-  renderer.setSize(
-
-    window.innerWidth,
-
-    window.innerHeight
-
-  );
-
-
-  renderer.setPixelRatio(
-
-    Math.min(
-
-      window.devicePixelRatio,
-
-      2
-
-    )
-
-  );
-
+  if(!directorMode&&recording)stopRecording();
 }
 
+addEventListener("resize",resize);
+screen.orientation?.addEventListener?.("change",resize);
 
-window.addEventListener(
-
-  "resize",
-
-  resize
-
-);
-
-
-screen.orientation
-  ?.addEventListener
-  ?.(
-    "change",
-
-    resize
-
-  );
-
+/* BOOT */
+renderWorldCards();
+await loadWorld(worlds[0]);
 </script>
-
 </body>
 </html>
