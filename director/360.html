@@ -8,7 +8,7 @@
   content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
 >
 
-<title>360 Virtual Production Volume</title>
+<title>Arctic Base 360 Viewer</title>
 
 <style>
 html,
@@ -17,6 +17,7 @@ body {
   width: 100%;
   height: 100%;
   overflow: hidden;
+
   background: #000;
 
   font-family:
@@ -40,336 +41,25 @@ body {
 
 canvas {
   display: block;
-  width: 100%;
-  height: 100%;
-  touch-action: none;
-}
 
-button {
-  font: inherit;
-  -webkit-tap-highlight-color: transparent;
-  user-select: none;
-}
-
-#menuBtn {
-  position: fixed;
-
-  top: max(
-    14px,
-    env(safe-area-inset-top)
-  );
-
-  right: 14px;
-
-  z-index: 60;
-
-  width: 48px;
-  height: 48px;
-
-  display: grid;
-  place-items: center;
-
-  border:
-    1px solid
-    rgba(255,255,255,.18);
-
-  border-radius: 14px;
-
-  background:
-    rgba(10,10,10,.62);
-
-  color: #fff;
-
-  font-size: 25px;
-
-  backdrop-filter:
-    blur(12px);
-}
-
-#menu {
-  position: fixed;
-
-  top: 70px;
-  right: 14px;
-
-  z-index: 55;
-
-  width:
-    min(
-      350px,
-      calc(100vw - 28px)
-    );
-
-  max-height:
-    calc(
-      100vh - 90px
-    );
-
-  overflow-y: auto;
-
-  display: none;
-
-  padding: 12px;
-
-  color: white;
-
-  background:
-    rgba(10,10,10,.80);
-
-  border:
-    1px solid
-    rgba(255,255,255,.16);
-
-  border-radius: 15px;
-
-  backdrop-filter:
-    blur(14px);
-}
-
-#menu.open {
-  display: block;
-}
-
-.sectionTitle {
-  margin:
-    4px
-    0
-    8px;
-
-  font-size: 12px;
-
-  opacity: .68;
-
-  text-transform: uppercase;
-
-  letter-spacing: .08em;
-}
-
-.menuGrid {
-  display: grid;
-
-  grid-template-columns:
-    1fr
-    1fr;
-
-  gap: 8px;
-}
-
-.menuAction {
-  min-height: 42px;
-
-  border:
-    1px solid
-    rgba(255,255,255,.15);
-
-  border-radius: 10px;
-
-  background:
-    rgba(255,255,255,.07);
-
-  color: #fff;
-}
-
-.menuAction.active {
-  outline:
-    2px solid
-    #fff;
-
-  background:
-    rgba(255,255,255,.15);
-}
-
-.menuAction:active {
-  transform:
-    translateY(1px);
-}
-
-.worldList {
-  display: grid;
-
-  grid-template-columns:
-    repeat(3,1fr);
-
-  gap: 7px;
-}
-
-.worldCard {
-  position: relative;
-
-  overflow: hidden;
-
-  padding: 0;
-
-  aspect-ratio: 1.25;
-
-  border:
-    1px solid
-    rgba(255,255,255,.16);
-
-  border-radius: 9px;
-
-  background: #111;
-}
-
-.worldCard img {
-  display: block;
-
-  width: 100%;
-  height: 100%;
-
-  object-fit: cover;
-}
-
-.worldCard span {
-  position: absolute;
-
-  left: 0;
-  right: 0;
-  bottom: 0;
-
-  padding: 5px;
-
-  font-size: 10px;
-
-  text-align: center;
-
-  color: white;
-
-  background:
-    linear-gradient(
-      transparent,
-      rgba(0,0,0,.88)
-    );
-}
-
-.worldCard.active {
-  outline:
-    2px solid
-    #fff;
-}
-
-#coords {
-  margin-top: 10px;
-
-  padding-top: 9px;
-
-  border-top:
-    1px solid
-    rgba(255,255,255,.12);
-
-  font-size: 11px;
-
-  line-height: 1.5;
-
-  opacity: .78;
-}
-
-#loading {
-  display: none;
-
-  position: fixed;
-
-  left: 50%;
-  top: 50%;
-
-  transform:
-    translate(-50%,-50%);
-
-  z-index: 90;
-
-  padding:
-    9px
-    13px;
-
-  border-radius: 11px;
-
-  color: white;
-
-  background:
-    rgba(0,0,0,.65);
-
-  font-size: 12px;
-
-  backdrop-filter:
-    blur(8px);
-
-  pointer-events: none;
-}
-
-#loading.visible {
-  display: block;
-}
-
-/* =====================================================
-   3D MOVEMENT CONTROLS
-===================================================== */
-
-#arrowOverlay {
-  position: fixed;
-
-  right: 10px;
-
-  bottom:
-    max(
-      10px,
-      env(safe-area-inset-bottom)
-    );
-
-  z-index: 50;
-
-  width: 220px;
-  height: 190px;
-
-  pointer-events: auto;
-}
-
-#arrowOverlay canvas {
   width: 100%;
   height: 100%;
 
   touch-action: none;
 }
 
-/* =====================================================
-   DIRECTOR MODE
-===================================================== */
-
-#directorUI {
+#status {
   position: fixed;
-
-  inset: 0;
-
-  z-index: 70;
-
-  display: none;
-
-  pointer-events: none;
-}
-
-body.director #directorUI {
-  display: block;
-}
-
-body.director #menu,
-body.director #menuBtn {
-  display:
-    none !important;
-}
-
-body.director #arrowOverlay {
-  z-index: 80;
-}
-
-#directorLabel {
-  position: absolute;
 
   top:
     max(
-      14px,
+      12px,
       env(safe-area-inset-top)
     );
 
-  left: 14px;
+  left: 12px;
+
+  z-index: 10;
 
   padding:
     7px
@@ -377,221 +67,63 @@ body.director #arrowOverlay {
 
   border-radius: 9px;
 
+  background:
+    rgba(0,0,0,.52);
+
   color: white;
 
-  background:
-    rgba(0,0,0,.45);
-
   font-size: 12px;
+
+  pointer-events: none;
 
   backdrop-filter:
     blur(8px);
 }
 
-#recordBtn {
-  position: absolute;
-
-  left: 18px;
-
-  bottom:
-    max(
-      18px,
-      env(safe-area-inset-bottom)
-    );
-
-  width: 66px;
-  height: 66px;
-
-  padding: 0;
-
-  display: grid;
-  place-items: center;
-
-  border:
-    4px solid
-    white;
-
-  border-radius: 50%;
-
-  background:
-    rgba(0,0,0,.28);
-
-  pointer-events: auto;
-}
-
-#recordBtn::after {
-  content: "";
-
-  width: 38px;
-  height: 38px;
-
-  border-radius: 50%;
-
-  background:
-    #ef3d43;
-}
-
-#recordBtn.recording::after {
-  width: 27px;
-  height: 27px;
-
-  border-radius: 5px;
-}
-
-#recordStatus {
-  position: absolute;
-
-  left: 96px;
-
-  bottom:
-    max(
-      41px,
-      calc(
-        env(safe-area-inset-bottom)
-        +
-        22px
-      )
-    );
-
-  color: white;
-
-  font-size: 12px;
-
-  text-shadow:
-    0 1px 5px
-    black;
-}
-
-/* =====================================================
-   RECORDED TAKE PREVIEW
-===================================================== */
-
-#previewPanel {
+#error {
   position: fixed;
 
-  inset: 0;
-
-  z-index: 100;
-
-  display: none;
-
-  background: black;
-}
-
-#previewPanel.open {
-  display: block;
-}
-
-#previewVideo {
-  width: 100%;
-  height: 100%;
-
-  object-fit: contain;
-
-  background: black;
-}
-
-#closePreview {
-  position: absolute;
-
-  top:
-    max(
-      14px,
-      env(safe-area-inset-top)
-    );
-
-  right: 14px;
-
-  width: 45px;
-  height: 45px;
-
-  border-radius: 50%;
-
-  border:
-    1px solid
-    rgba(255,255,255,.25);
-
-  color: white;
-
-  background:
-    rgba(0,0,0,.58);
-
-  font-size: 25px;
-}
-
-#previewControls {
-  position: absolute;
-
-  left: 0;
-  right: 0;
-
-  bottom:
-    max(
-      16px,
-      env(safe-area-inset-bottom)
-    );
-
-  display: flex;
-
-  justify-content: center;
-
-  gap: 9px;
-}
-
-.previewButton {
-  padding:
-    10px
-    14px;
-
-  border:
-    1px solid
-    rgba(255,255,255,.25);
-
-  border-radius: 10px;
-
-  color: white;
-
-  background:
-    rgba(0,0,0,.68);
-}
-
-/* =====================================================
-   ERRORS
-===================================================== */
-
-#errorBox {
-  display: none;
-
-  position: fixed;
-
-  top: 74px;
   left: 12px;
   right: 12px;
 
-  z-index: 200;
+  top: 60px;
 
-  padding:
-    10px
-    12px;
+  z-index: 20;
+
+  display: none;
+
+  padding: 12px;
 
   border-radius: 10px;
 
   color: white;
 
   background:
-    rgba(110,0,0,.92);
+    rgba(125,0,0,.92);
 
-  font-size: 12px;
+  font-size: 13px;
+
+  line-height: 1.4;
 }
 
-/* =====================================================
-   HIDDEN PHONE CAMERA
-===================================================== */
+#crosshair {
+  position: fixed;
 
-#cameraReference,
-#cameraFlowCanvas,
-#localImagePicker {
-  display: none;
+  left: 50%;
+  top: 50%;
+
+  width: 4px;
+  height: 4px;
+
+  margin-left: -2px;
+  margin-top: -2px;
+
+  border-radius: 50%;
+
+  background:
+    rgba(255,255,255,.65);
+
+  pointer-events: none;
 }
 </style>
 </head>
@@ -600,192 +132,13 @@ body.director #arrowOverlay {
 
 <div id="app"></div>
 
-<div id="loading">
-  Loading 4096 × 2048 world…
+<div id="status">
+  Loading Arctic Base…
 </div>
 
-<div id="errorBox"></div>
+<div id="error"></div>
 
-<button
-  id="menuBtn"
-  aria-label="Menu">
-  ☰
-</button>
-
-<div id="menu">
-
-  <div class="sectionTitle">
-    Mannequins
-  </div>
-
-  <div class="menuGrid">
-
-    <button
-      class="menuAction active"
-      id="moveModeBtn">
-      Move Doll
-    </button>
-
-    <button
-      class="menuAction"
-      id="poseModeBtn">
-      Pose Doll
-    </button>
-
-    <button
-      class="menuAction"
-      id="addDollBtn">
-      + Add Doll
-    </button>
-
-    <button
-      class="menuAction"
-      id="removeDollBtn">
-      − Remove Doll
-    </button>
-
-    <button
-      class="menuAction"
-      id="resetPoseBtn">
-      Reset Pose
-    </button>
-
-    <button
-      class="menuAction"
-      id="gridBtn">
-      Toggle Grid
-    </button>
-
-  </div>
-
-  <div
-    class="sectionTitle"
-    style="margin-top:16px">
-    Camera
-  </div>
-
-  <div class="menuGrid">
-
-    <button
-      class="menuAction"
-      id="homeBtn">
-      Home
-    </button>
-
-    <button
-      class="menuAction"
-      id="groundBtn">
-      Ground Shot
-    </button>
-
-    <button
-      class="menuAction"
-      id="highBtn">
-      High Shot
-    </button>
-
-    <button
-      class="menuAction"
-      id="localWorldBtn">
-      Load 360 Image
-    </button>
-
-  </div>
-
-  <div
-    class="sectionTitle"
-    style="margin-top:16px">
-    Worlds
-  </div>
-
-  <div
-    class="worldList"
-    id="worldList">
-  </div>
-
-  <div id="coords"></div>
-
-</div>
-
-
-<div id="arrowOverlay"></div>
-
-
-<div id="directorUI">
-
-  <div id="directorLabel">
-    DIRECTOR
-  </div>
-
-  <button
-    id="recordBtn"
-    aria-label="Record">
-  </button>
-
-  <div id="recordStatus">
-    REC
-  </div>
-
-</div>
-
-
-<div id="previewPanel">
-
-  <video
-    id="previewVideo"
-    controls
-    playsinline>
-  </video>
-
-  <button
-    id="closePreview">
-    ×
-  </button>
-
-  <div id="previewControls">
-
-    <button
-      class="previewButton"
-      id="replayBtn">
-      Replay
-    </button>
-
-    <button
-      class="previewButton"
-      id="startOverBtn">
-      Start Over
-    </button>
-
-    <button
-      class="previewButton"
-      id="downloadBtn">
-      Download
-    </button>
-
-  </div>
-
-</div>
-
-
-<input
-  id="localImagePicker"
-  type="file"
-  accept="image/*"
->
-
-
-<video
-  id="cameraReference"
-  playsinline
-  muted>
-</video>
-
-
-<canvas
-  id="cameraFlowCanvas"
-  width="96"
-  height="54">
-</canvas>
+<div id="crosshair"></div>
 
 
 <script type="importmap">
@@ -803,111 +156,40 @@ body.director #arrowOverlay {
 import * as THREE from "three";
 
 
-/* =====================================================
-   WORLD FILES
+/* =========================================================
+   IMAGE
 
-   These point at the original conversation images.
+   PUT THIS FILE BESIDE index.html:
 
-   The image is then rendered into a 4096 × 2048 canvas
-   before Three.js creates the panorama texture.
+   arctic_lab_panorama_4096x2048.png
 
-   If these authenticated ChatGPT URLs are unavailable
-   outside ChatGPT, use "Load 360 Image" in the menu.
-===================================================== */
+   GitHub example:
 
-const ARCTIC_SOURCE =
-  "https://chatgpt.com/backend-api/files/file_0000000008ec820e9ca3e60de29c5ffb/download";
+   /your-repository/
+       index.html
+       arctic_lab_panorama_4096x2048.png
+========================================================= */
 
-
-const APARTMENT_SOURCE =
-  "https://chatgpt.com/backend-api/files/file_00000000df4c820ebe64df065fd433bd/download";
-
-
-const MOUNTAIN_SOURCE =
-  "https://chatgpt.com/backend-api/files/file_00000000d924820ea8041ed7824665bc/download";
-
-
-/* =====================================================
-   DOM
-===================================================== */
-
-const $ =
-  id =>
-    document.getElementById(
-      id
-    );
+const IMAGE_URL =
+  "./arctic_lab_panorama_4096x2048.png";
 
 
 const app =
-  $("app");
+  document.getElementById(
+    "app"
+  );
 
 
-const menuBtn =
-  $("menuBtn");
-
-
-const menu =
-  $("menu");
-
-
-const coords =
-  $("coords");
-
-
-const loading =
-  $("loading");
+const status =
+  document.getElementById(
+    "status"
+  );
 
 
 const errorBox =
-  $("errorBox");
-
-
-const worldList =
-  $("worldList");
-
-
-const moveModeBtn =
-  $("moveModeBtn");
-
-
-const poseModeBtn =
-  $("poseModeBtn");
-
-
-const addDollBtn =
-  $("addDollBtn");
-
-
-const removeDollBtn =
-  $("removeDollBtn");
-
-
-const resetPoseBtn =
-  $("resetPoseBtn");
-
-
-const gridBtn =
-  $("gridBtn");
-
-
-const homeBtn =
-  $("homeBtn");
-
-
-const groundBtn =
-  $("groundBtn");
-
-
-const highBtn =
-  $("highBtn");
-
-
-const localWorldBtn =
-  $("localWorldBtn");
-
-
-const localImagePicker =
-  $("localImagePicker");
+  document.getElementById(
+    "error"
+  );
 
 
 function showError(
@@ -924,91 +206,69 @@ function showError(
 
 
   errorBox.textContent =
-    String(
-      message
-    );
+    message;
+
+
+  status.textContent =
+    "IMAGE LOAD FAILED";
 
 }
 
 
-function clearError(){
-
-  errorBox.style.display =
-    "none";
-
-}
-
-
-window.addEventListener(
-
-  "error",
-
-  event => {
-
-    if(
-      event.message
-    ){
-
-      showError(
-        event.message
-      );
-
-    }
-
-  }
-
-);
-
-
-window.addEventListener(
-
-  "unhandledrejection",
-
-  event => {
-
-    showError(
-
-      "Unhandled error: "
-
-      +
-
-      (
-        event.reason?.message
-        ||
-        event.reason
-        ||
-        "unknown"
-      )
-
-    );
-
-  }
-
-);
-
-
-/* =====================================================
-   MAIN THREE.JS SCENE
-===================================================== */
+/* =========================================================
+   SCENE
+========================================================= */
 
 const scene =
   new THREE.Scene();
 
+
+/* =========================================================
+   CAMERA
+
+   Camera sits at the exact center of the panorama sphere.
+
+   This is important.
+
+   A standard 360 equirectangular image represents light
+   captured from one point in space.
+
+   At the capture point it appears undistorted.
+========================================================= */
 
 const camera =
   new THREE.PerspectiveCamera(
 
     70,
 
-    innerWidth /
-    innerHeight,
+    window.innerWidth /
+    window.innerHeight,
 
-    .02,
+    0.01,
 
-    200
+    100
 
   );
 
+
+camera.position.set(
+
+  0,
+
+  0,
+
+  0
+
+);
+
+
+camera.rotation.order =
+  "YXZ";
+
+
+/* =========================================================
+   RENDERER
+========================================================= */
 
 const renderer =
   new THREE.WebGLRenderer({
@@ -1019,26 +279,30 @@ const renderer =
     powerPreference:
       "high-performance",
 
-    preserveDrawingBuffer:
-      true
+    alpha:
+      false
 
   });
+
+
+renderer.setSize(
+
+  window.innerWidth,
+
+  window.innerHeight
+
+);
 
 
 renderer.setPixelRatio(
 
   Math.min(
-    devicePixelRatio,
+
+    window.devicePixelRatio,
+
     2
+
   )
-
-);
-
-
-renderer.setSize(
-
-  innerWidth,
-  innerHeight
 
 );
 
@@ -1052,21 +316,289 @@ app.appendChild(
 );
 
 
-/* =====================================================
-   CAMERA BASE POSITION
-===================================================== */
+/* =========================================================
+   LOAD THE ACTUAL 4096 × 2048 PNG
 
-const cameraBase =
-  new THREE.Vector3(
+   This is deliberately direct.
 
-    0,
+   NO fetch()
+   NO createImageBitmap()
+   NO canvas resize
+   NO AVIF conversion
+   NO ChatGPT URL
+   NO base64 conversion
 
-    1.6,
+   THREE.TextureLoader reads the original PNG.
+========================================================= */
 
-    0
+let texture;
+
+
+try {
+
+  texture =
+
+    await new THREE
+      .TextureLoader()
+      .loadAsync(
+
+        IMAGE_URL
+
+      );
+
+}
+
+
+catch(
+  err
+){
+
+  console.error(
+    "TextureLoader error:",
+    err
+  );
+
+
+  showError(
+
+    "Could not load "
+    +
+
+    IMAGE_URL
+    +
+
+    ". Make sure the PNG and this HTML file are in the same GitHub folder and that capitalization matches exactly."
 
   );
 
+
+  throw err;
+
+}
+
+
+/* =========================================================
+   VERIFY IMAGE RESOLUTION
+========================================================= */
+
+const imageWidth =
+
+  texture.image
+  ?.naturalWidth
+
+  ||
+
+  texture.image
+  ?.width
+
+  ||
+
+  0;
+
+
+const imageHeight =
+
+  texture.image
+  ?.naturalHeight
+
+  ||
+
+  texture.image
+  ?.height
+
+  ||
+
+  0;
+
+
+console.log(
+
+  "Loaded panorama:",
+
+  IMAGE_URL,
+
+  imageWidth +
+  " × " +
+  imageHeight
+
+);
+
+
+status.textContent =
+
+  `ARCTIC BASE · ${imageWidth} × ${imageHeight}`;
+
+
+/*
+Warn visibly if GitHub contains the wrong image.
+*/
+
+if(
+
+  imageWidth !==
+  4096
+
+  ||
+
+  imageHeight !==
+  2048
+
+){
+
+  status.textContent =
+
+    `WARNING · IMAGE IS ${imageWidth} × ${imageHeight}`;
+
+
+  console.warn(
+
+    "Expected 4096 × 2048, received:",
+
+    imageWidth,
+
+    imageHeight
+
+  );
+
+}
+
+
+/* =========================================================
+   TEXTURE QUALITY
+========================================================= */
+
+texture.colorSpace =
+  THREE.SRGBColorSpace;
+
+
+texture.wrapS =
+  THREE.ClampToEdgeWrapping;
+
+
+texture.wrapT =
+  THREE.ClampToEdgeWrapping;
+
+
+texture.minFilter =
+  THREE.LinearMipmapLinearFilter;
+
+
+texture.magFilter =
+  THREE.LinearFilter;
+
+
+texture.generateMipmaps =
+  true;
+
+
+texture.anisotropy =
+
+  Math.min(
+
+    16,
+
+    renderer
+      .capabilities
+      .getMaxAnisotropy()
+
+  );
+
+
+texture.needsUpdate =
+  true;
+
+
+/* =========================================================
+   SPHERE
+
+   This is the method that previously looked right:
+
+              ONE panorama
+                    ↓
+             ONE entire sphere
+                    ↓
+           camera at sphere center
+
+   We DO NOT divide it into:
+
+   cylinder
+   +
+   ceiling dome
+   +
+   lower floor strip
+
+   That was what caused the horrible stretching.
+========================================================= */
+
+const sphereGeometry =
+  new THREE.SphereGeometry(
+
+    10,
+
+    256,
+
+    128
+
+  );
+
+
+/*
+Invert the X axis.
+
+This turns the normal outward-facing sphere into an
+inward-facing panorama sphere.
+
+This is the standard Three.js 360 panorama approach.
+*/
+
+sphereGeometry.scale(
+
+  -1,
+
+  1,
+
+  1
+
+);
+
+
+const sphereMaterial =
+  new THREE.MeshBasicMaterial({
+
+    map:
+      texture,
+
+    side:
+      THREE.FrontSide,
+
+    depthWrite:
+      false
+
+  });
+
+
+const panorama =
+  new THREE.Mesh(
+
+    sphereGeometry,
+
+    sphereMaterial
+
+  );
+
+
+panorama.frustumCulled =
+  false;
+
+
+scene.add(
+  panorama
+);
+
+
+/* =========================================================
+   LOOK CONTROLS
+========================================================= */
 
 let yaw =
   0;
@@ -1080,2313 +612,16 @@ let targetFov =
   70;
 
 
-function constrainCamera(){
+/* =========================================================
+   POINTER TRACKING
+========================================================= */
 
-  const distance =
-    Math.hypot(
+const pointers =
+  new Map();
 
-      cameraBase.x,
 
-      cameraBase.z
-
-    );
-
-
-  const radius =
-    2.75;
-
-
-  if(
-    distance >
-    radius
-  ){
-
-    cameraBase.x *=
-
-      radius /
-      distance;
-
-
-    cameraBase.z *=
-
-      radius /
-      distance;
-
-  }
-
-
-  cameraBase.y =
-    THREE.MathUtils.clamp(
-
-      cameraBase.y,
-
-      .16,
-
-      3.4
-
-    );
-
-}
-
-
-/* =====================================================
-   WORLDS
-===================================================== */
-
-const worlds = [
-
-  {
-    id:
-      "arctic",
-
-    name:
-      "Arctic Base",
-
-    src:
-      ARCTIC_SOURCE,
-
-    radius:
-      12,
-
-    centerY:
-      1.45
-  },
-
-  {
-    id:
-      "apartment",
-
-    name:
-      "90s Apartment",
-
-    src:
-      APARTMENT_SOURCE,
-
-    radius:
-      12,
-
-    centerY:
-      1.45
-  },
-
-  {
-    id:
-      "mountains",
-
-    name:
-      "Mountains",
-
-    src:
-      MOUNTAIN_SOURCE,
-
-    radius:
-      18,
-
-    centerY:
-      1.45
-  }
-
-];
-
-
-let activeWorld =
-  worlds[0];
-
-
-let worldToken =
-  0;
-
-
-let currentWorldCanvas =
-  null;
-
-
-const environment =
-  new THREE.Group();
-
-
-scene.add(
-  environment
-);
-
-
-/* =====================================================
-   LOAD IMAGE WITH AUTHENTICATION
-
-   Tries authenticated fetch first.
-
-   This means the normal source PNG can remain sharp
-   instead of embedding a tiny compressed thumbnail.
-===================================================== */
-
-async function loadImageBitmapFromURL(
-  url
-){
-
-  const response =
-    await fetch(
-
-      url,
-
-      {
-        credentials:
-          "include",
-
-        cache:
-          "force-cache"
-      }
-
-    );
-
-
-  if(
-    !response.ok
-  ){
-
-    throw new Error(
-
-      `Image request failed: ${response.status}`
-
-    );
-
-  }
-
-
-  const blob =
-    await response.blob();
-
-
-  return await createImageBitmap(
-    blob
-  );
-
-}
-
-
-/* =====================================================
-   FORCE ACTIVE WORLD TO 4096 × 2048
-
-   The Three.js texture is actually backed by a
-   4096 × 2048 canvas.
-
-   High-quality browser resampling is used when the
-   original source resolution differs.
-===================================================== */
-
-function build4096PanoramaCanvas(
-  image
-){
-
-  const canvas =
-    document.createElement(
-      "canvas"
-    );
-
-
-  canvas.width =
-    4096;
-
-
-  canvas.height =
-    2048;
-
-
-  const context =
-    canvas.getContext(
-
-      "2d",
-
-      {
-        alpha:
-          false,
-
-        desynchronized:
-          false
-      }
-
-    );
-
-
-  context.imageSmoothingEnabled =
-    true;
-
-
-  context.imageSmoothingQuality =
-    "high";
-
-
-  context.fillStyle =
-    "#000";
-
-
-  context.fillRect(
-
-    0,
-
-    0,
-
-    4096,
-
-    2048
-
-  );
-
-
-  context.drawImage(
-
-    image,
-
-    0,
-
-    0,
-
-    4096,
-
-    2048
-
-  );
-
-
-  return canvas;
-
-}
-
-
-/* =====================================================
-   DISPOSE OLD WORLD
-===================================================== */
-
-function disposeObject(
-  object
-){
-
-  object.geometry
-    ?.dispose();
-
-
-  if(
-    object.material
-  ){
-
-    const materials =
-
-      Array.isArray(
-        object.material
-      )
-
-      ?
-
-      object.material
-
-      :
-
-      [
-        object.material
-      ];
-
-
-    materials.forEach(
-
-      material => {
-
-        material.map
-          ?.dispose();
-
-
-        material.dispose();
-
-      }
-
-    );
-
-  }
-
-}
-
-
-/* =====================================================
-   CORRECT 360 PROJECTION
-
-   THIS IS THE MAPPING THAT WORKED EARLIER:
-
-   ONE full 2:1 equirectangular panorama
-   mapped ONCE onto the inside of ONE sphere.
-
-   No cylinder.
-   No wall slicing.
-   No separate dome.
-   No lower band.
-===================================================== */
-
-async function installPanorama(
-  source,
-  world
-){
-
-  const token =
-    ++worldToken;
-
-
-  activeWorld =
-    world;
-
-
-  loading.classList.add(
-    "visible"
-  );
-
-
-  clearError();
-
-
-  try {
-
-    let bitmap;
-
-
-    if(
-      typeof source ===
-      "string"
-    ){
-
-      bitmap =
-        await loadImageBitmapFromURL(
-          source
-        );
-
-    }
-
-
-    else {
-
-      bitmap =
-        await createImageBitmap(
-          source
-        );
-
-    }
-
-
-    if(
-      token !==
-      worldToken
-    ){
-
-      bitmap.close?.();
-
-      return;
-
-    }
-
-
-    const panoramaCanvas =
-      build4096PanoramaCanvas(
-        bitmap
-      );
-
-
-    bitmap.close?.();
-
-
-    while(
-      environment.children.length
-    ){
-
-      const object =
-        environment.children[0];
-
-
-      environment.remove(
-        object
-      );
-
-
-      disposeObject(
-        object
-      );
-
-    }
-
-
-    currentWorldCanvas =
-      panoramaCanvas;
-
-
-    const texture =
-      new THREE.CanvasTexture(
-        panoramaCanvas
-      );
-
-
-    texture.colorSpace =
-      THREE.SRGBColorSpace;
-
-
-    texture.wrapS =
-      THREE.RepeatWrapping;
-
-
-    texture.wrapT =
-      THREE.ClampToEdgeWrapping;
-
-
-    /*
-    Horizontal flip because the camera sees
-    the texture from inside the sphere.
-    */
-
-    texture.repeat.set(
-
-      -1,
-
-      1
-
-    );
-
-
-    texture.offset.set(
-
-      1,
-
-      0
-
-    );
-
-
-    texture.minFilter =
-      THREE.LinearMipmapLinearFilter;
-
-
-    texture.magFilter =
-      THREE.LinearFilter;
-
-
-    texture.generateMipmaps =
-      true;
-
-
-    texture.anisotropy =
-      Math.min(
-
-        8,
-
-        renderer.capabilities
-          .getMaxAnisotropy()
-
-      );
-
-
-    texture.needsUpdate =
-      true;
-
-
-    const sphere =
-      new THREE.Mesh(
-
-        new THREE.SphereGeometry(
-
-          world.radius,
-
-          256,
-
-          128
-
-        ),
-
-        new THREE.MeshBasicMaterial({
-
-          map:
-            texture,
-
-          side:
-            THREE.BackSide
-
-        })
-
-      );
-
-
-    sphere.position.set(
-
-      0,
-
-      world.centerY,
-
-      0
-
-    );
-
-
-    sphere.name =
-      "Equirectangular360World";
-
-
-    environment.add(
-      sphere
-    );
-
-
-    renderWorldCards();
-
-
-    clearError();
-
-  }
-
-
-  catch(
-    error
-  ){
-
-    showError(
-
-      "Could not load this 360 world. "
-
-      +
-
-      "If you opened the HTML outside ChatGPT, "
-
-      +
-
-      "use Load 360 Image in the hamburger menu. "
-
-      +
-
-      (
-
-        error?.message
-        ||
-        error
-
-      )
-
-    );
-
-  }
-
-
-  finally {
-
-    loading.classList.remove(
-      "visible"
-    );
-
-  }
-
-}
-
-
-async function loadWorld(
-  world
-){
-
-  activeWorld =
-    world;
-
-
-  await installPanorama(
-
-    world.src,
-
-    world
-
-  );
-
-}
-
-
-/* =====================================================
-   LOCAL PANORAMA IMPORT FALLBACK
-===================================================== */
-
-localWorldBtn.onclick =
-  () => {
-
-    localImagePicker.click();
-
-  };
-
-
-localImagePicker.onchange =
-  async event => {
-
-    const file =
-      event.target.files?.[0];
-
-
-    if(
-      !file
-    ){
-
-      return;
-
-    }
-
-
-    const customWorld = {
-
-      id:
-        "custom",
-
-      name:
-        file.name,
-
-      src:
-        "",
-
-      radius:
-        12,
-
-      centerY:
-        1.45
-
-    };
-
-
-    activeWorld =
-      customWorld;
-
-
-    await installPanorama(
-
-      file,
-
-      customWorld
-
-    );
-
-
-    event.target.value =
-      "";
-
-  };
-
-
-/* =====================================================
-   WORLD THUMBNAILS
-===================================================== */
-
-function renderWorldCards(){
-
-  worldList.innerHTML =
-    "";
-
-
-  worlds.forEach(
-
-    world => {
-
-      const button =
-        document.createElement(
-          "button"
-        );
-
-
-      button.className =
-
-        "worldCard"
-
-        +
-
-        (
-          world.id ===
-          activeWorld.id
-
-          ?
-
-          " active"
-
-          :
-
-          ""
-        );
-
-
-      const image =
-        document.createElement(
-          "img"
-        );
-
-
-      image.src =
-        world.src;
-
-
-      image.alt =
-        world.name;
-
-
-      image.referrerPolicy =
-        "no-referrer";
-
-
-      const label =
-        document.createElement(
-          "span"
-        );
-
-
-      label.textContent =
-        world.name;
-
-
-      button.append(
-
-        image,
-
-        label
-
-      );
-
-
-      button.onclick =
-        async () => {
-
-          await loadWorld(
-            world
-          );
-
-
-          cameraBase.set(
-
-            0,
-
-            1.6,
-
-            0
-
-          );
-
-
-          yaw =
-            0;
-
-
-          pitch =
-            0;
-
-
-          targetFov =
-            70;
-
-        };
-
-
-      worldList.appendChild(
-        button
-      );
-
-    }
-
-  );
-
-}
-
-
-/* =====================================================
-   CIRCULAR FLOOR GRID
-===================================================== */
-
-const GRID_RADIUS =
-  3;
-
-
-const gridGroup =
-  new THREE.Group();
-
-
-scene.add(
-  gridGroup
-);
-
-
-const gridMaterial =
-  new THREE.LineBasicMaterial({
-
-    color:
-      0xffffff,
-
-    transparent:
-      true,
-
-    opacity:
-      .32
-
-  });
-
-
-/* concentric circles */
-
-for(
-  let radius = .5;
-  radius <= GRID_RADIUS;
-  radius += .5
-){
-
-  const points =
-    [];
-
-
-  for(
-    let i = 0;
-    i <= 128;
-    i++
-  ){
-
-    const angle =
-
-      i /
-      128 *
-      Math.PI *
-      2;
-
-
-    points.push(
-
-      new THREE.Vector3(
-
-        Math.cos(
-          angle
-        )
-        *
-        radius,
-
-        .012,
-
-        Math.sin(
-          angle
-        )
-        *
-        radius
-
-      )
-
-    );
-
-  }
-
-
-  gridGroup.add(
-
-    new THREE.Line(
-
-      new THREE
-        .BufferGeometry()
-        .setFromPoints(
-          points
-        ),
-
-      gridMaterial
-
-    )
-
-  );
-
-}
-
-
-/* radial spokes */
-
-for(
-  let i = 0;
-  i < 24;
-  i++
-){
-
-  const angle =
-
-    i /
-    24 *
-    Math.PI *
-    2;
-
-
-  const geometry =
-    new THREE
-      .BufferGeometry()
-      .setFromPoints([
-
-        new THREE.Vector3(
-
-          0,
-
-          .012,
-
-          0
-
-        ),
-
-        new THREE.Vector3(
-
-          Math.cos(
-            angle
-          )
-          *
-          GRID_RADIUS,
-
-          .012,
-
-          Math.sin(
-            angle
-          )
-          *
-          GRID_RADIUS
-
-        )
-
-      ]);
-
-
-  gridGroup.add(
-
-    new THREE.Line(
-
-      geometry,
-
-      gridMaterial
-
-    )
-
-  );
-
-}
-
-
-/* invisible floor target */
-
-const floorHit =
-  new THREE.Mesh(
-
-    new THREE.CircleGeometry(
-
-      GRID_RADIUS,
-
-      128
-
-    ),
-
-    new THREE.MeshBasicMaterial({
-
-      transparent:
-        true,
-
-      opacity:
-        0,
-
-      side:
-        THREE.DoubleSide,
-
-      depthWrite:
-        false,
-
-      colorWrite:
-        false
-
-    })
-
-  );
-
-
-floorHit.rotation.x =
-  -Math.PI /
-  2;
-
-
-scene.add(
-  floorHit
-);
-
-
-/* =====================================================
-   LIGHTING FOR REAL 3D OBJECTS
-===================================================== */
-
-scene.add(
-
-  new THREE.HemisphereLight(
-
-    0xffffff,
-
-    0x4a4037,
-
-    2.1
-
-  )
-
-);
-
-
-const objectLight =
-  new THREE.DirectionalLight(
-
-    0xffffff,
-
-    2.4
-
-  );
-
-
-objectLight.position.set(
-
-  4,
-
-  6,
-
-  3
-
-);
-
-
-scene.add(
-  objectLight
-);
-
-
-/* =====================================================
-   MANNEQUIN MATERIALS
-===================================================== */
-
-const wood =
-  new THREE.MeshStandardMaterial({
-
-    color:
-      0xc89d67,
-
-    roughness:
-      .72
-
-  });
-
-
-const jointMaterial =
-  new THREE.MeshStandardMaterial({
-
-    color:
-      0xd9b27d,
-
-    roughness:
-      .67
-
-  });
-
-
-const dolls =
-  [];
-
-
-const dollMeshes =
-  [];
-
-
-let selectedDoll =
-  null;
-
-
-let dollMode =
-  "move";
-
-
-let dollCounter =
-  0;
-
-
-function joint(
-  radius = .085
-){
-
-  return new THREE.Mesh(
-
-    new THREE.SphereGeometry(
-
-      radius,
-
-      20,
-
-      14
-
-    ),
-
-    jointMaterial
-
-  );
-
-}
-
-
-function limb(
-  length,
-  radius = .075
-){
-
-  const mesh =
-    new THREE.Mesh(
-
-      new THREE.CylinderGeometry(
-
-        radius,
-
-        radius *
-        .92,
-
-        length,
-
-        18
-
-      ),
-
-      wood
-
-    );
-
-
-  mesh.position.y =
-    -length /
-    2;
-
-
-  return mesh;
-
-}
-
-
-/* =====================================================
-   WHITE SELECTION OUTLINE
-===================================================== */
-
-function addOutline(
-  mesh
-){
-
-  const outline =
-    new THREE.LineSegments(
-
-      new THREE.EdgesGeometry(
-
-        mesh.geometry,
-
-        24
-
-      ),
-
-      new THREE.LineBasicMaterial({
-
-        color:
-          0xffffff,
-
-        transparent:
-          true,
-
-        opacity:
-          .98,
-
-        depthTest:
-          false
-
-      })
-
-    );
-
-
-  outline.visible =
-    false;
-
-
-  outline.renderOrder =
-    30;
-
-
-  outline.scale.setScalar(
-    1.025
-  );
-
-
-  mesh.add(
-    outline
-  );
-
-
-  mesh.userData.outline =
-    outline;
-
-}
-
-
-/* =====================================================
-   SELECT DOLL
-===================================================== */
-
-function selectDoll(
-  doll
-){
-
-  selectedDoll =
-    doll;
-
-
-  dolls.forEach(
-
-    root => {
-
-      root.traverse(
-
-        object => {
-
-          if(
-
-            object.isMesh
-
-            &&
-
-            object.userData.outline
-
-          ){
-
-            object
-              .userData
-              .outline
-              .visible =
-
-              root ===
-              selectedDoll;
-
-          }
-
-        }
-
-      );
-
-    }
-
-  );
-
-}
-
-
-/* =====================================================
-   CREATE WOODEN MANNEQUIN
-===================================================== */
-
-function createDoll(
-  x = 0,
-  z = -2
-){
-
-  dollCounter++;
-
-
-  const root =
-    new THREE.Group();
-
-
-  root.position.set(
-
-    x,
-
-    0,
-
-    z
-
-  );
-
-
-  root.userData.name =
-    `Mannequin ${dollCounter}`;
-
-
-  scene.add(
-    root
-  );
-
-
-  const hips =
-    new THREE.Group();
-
-
-  hips.position.y =
-    .95;
-
-
-  root.add(
-    hips
-  );
-
-
-  const pelvis =
-    new THREE.Mesh(
-
-      new THREE.CylinderGeometry(
-
-        .20,
-
-        .24,
-
-        .30,
-
-        18
-
-      ),
-
-      wood
-
-    );
-
-
-  hips.add(
-    pelvis
-  );
-
-
-  const torsoPivot =
-    new THREE.Group();
-
-
-  torsoPivot.position.y =
-    .34;
-
-
-  hips.add(
-    torsoPivot
-  );
-
-
-  const torso =
-    new THREE.Mesh(
-
-      new THREE.CylinderGeometry(
-
-        .20,
-
-        .15,
-
-        .55,
-
-        18
-
-      ),
-
-      wood
-
-    );
-
-
-  torso.position.y =
-    .26;
-
-
-  torsoPivot.add(
-    torso
-  );
-
-
-  const neck =
-    joint(
-      .075
-    );
-
-
-  neck.position.y =
-    .60;
-
-
-  torsoPivot.add(
-    neck
-  );
-
-
-  const headPivot =
-    new THREE.Group();
-
-
-  headPivot.position.y =
-    .69;
-
-
-  torsoPivot.add(
-    headPivot
-  );
-
-
-  const head =
-    new THREE.Mesh(
-
-      new THREE.SphereGeometry(
-
-        .19,
-
-        24,
-
-        18
-
-      ),
-
-      wood
-
-    );
-
-
-  head.scale.set(
-
-    .85,
-
-    1.08,
-
-    .85
-
-  );
-
-
-  head.position.y =
-    .12;
-
-
-  headPivot.add(
-    head
-  );
-
-
-  function arm(
-    side
-  ){
-
-    const shoulder =
-      new THREE.Group();
-
-
-    shoulder.position.set(
-
-      side *
-      .24,
-
-      .47,
-
-      0
-
-    );
-
-
-    shoulder.rotation.z =
-
-      side >
-      0
-
-      ?
-
-      -.16
-
-      :
-
-      .16;
-
-
-    torsoPivot.add(
-      shoulder
-    );
-
-
-    const shoulderJoint =
-      joint(
-        .085
-      );
-
-
-    shoulder.add(
-      shoulderJoint
-    );
-
-
-    const upper =
-      limb(
-
-        .40,
-
-        .07
-
-      );
-
-
-    shoulder.add(
-      upper
-    );
-
-
-    const elbow =
-      new THREE.Group();
-
-
-    elbow.position.y =
-      -.40;
-
-
-    shoulder.add(
-      elbow
-    );
-
-
-    const elbowJoint =
-      joint(
-        .075
-      );
-
-
-    elbow.add(
-      elbowJoint
-    );
-
-
-    const lower =
-      limb(
-
-        .36,
-
-        .06
-
-      );
-
-
-    elbow.add(
-      lower
-    );
-
-
-    const hand =
-      new THREE.Mesh(
-
-        new THREE.SphereGeometry(
-
-          .085,
-
-          16,
-
-          12
-
-        ),
-
-        wood
-
-      );
-
-
-    hand.scale.set(
-
-      .72,
-
-      1.1,
-
-      .58
-
-    );
-
-
-    hand.position.y =
-      -.40;
-
-
-    lower.add(
-      hand
-    );
-
-
-    [
-      shoulderJoint,
-      upper
-    ]
-    .forEach(
-
-      object =>
-
-        object
-          .userData
-          .poseGroup =
-
-          shoulder
-
-    );
-
-
-    [
-      elbowJoint,
-      lower,
-      hand
-    ]
-    .forEach(
-
-      object =>
-
-        object
-          .userData
-          .poseGroup =
-
-          elbow
-
-    );
-
-  }
-
-
-  function leg(
-    side
-  ){
-
-    const hip =
-      new THREE.Group();
-
-
-    hip.position.set(
-
-      side *
-      .13,
-
-      -.16,
-
-      0
-
-    );
-
-
-    hips.add(
-      hip
-    );
-
-
-    const hipJoint =
-      joint(
-        .09
-      );
-
-
-    hip.add(
-      hipJoint
-    );
-
-
-    const upper =
-      limb(
-
-        .48,
-
-        .085
-
-      );
-
-
-    hip.add(
-      upper
-    );
-
-
-    const knee =
-      new THREE.Group();
-
-
-    knee.position.y =
-      -.48;
-
-
-    hip.add(
-      knee
-    );
-
-
-    const kneeJoint =
-      joint(
-        .08
-      );
-
-
-    knee.add(
-      kneeJoint
-    );
-
-
-    const lower =
-      limb(
-
-        .46,
-
-        .072
-
-      );
-
-
-    knee.add(
-      lower
-    );
-
-
-    const foot =
-      new THREE.Mesh(
-
-        new THREE.BoxGeometry(
-
-          .13,
-
-          .10,
-
-          .28
-
-        ),
-
-        wood
-
-      );
-
-
-    foot.position.set(
-
-      0,
-
-      -.49,
-
-      .07
-
-    );
-
-
-    lower.add(
-      foot
-    );
-
-
-    [
-      hipJoint,
-      upper
-    ]
-    .forEach(
-
-      object =>
-
-        object
-          .userData
-          .poseGroup =
-
-          hip
-
-    );
-
-
-    [
-      kneeJoint,
-      lower,
-      foot
-    ]
-    .forEach(
-
-      object =>
-
-        object
-          .userData
-          .poseGroup =
-
-          knee
-
-    );
-
-  }
-
-
-  arm(
-    -1
-  );
-
-
-  arm(
-    1
-  );
-
-
-  leg(
-    -1
-  );
-
-
-  leg(
-    1
-  );
-
-
-  root.traverse(
-
-    object => {
-
-      if(
-        object.isMesh
-      ){
-
-        object.userData.doll =
-          root;
-
-
-        if(
-          !object.userData.poseGroup
-        ){
-
-          object.userData.poseGroup =
-
-            object ===
-            head
-
-            ?
-
-            headPivot
-
-            :
-
-            torsoPivot;
-
-        }
-
-
-        dollMeshes.push(
-          object
-        );
-
-
-        addOutline(
-          object
-        );
-
-      }
-
-    }
-
-  );
-
-
-  dolls.push(
-    root
-  );
-
-
-  selectDoll(
-    root
-  );
-
-
-  return root;
-
-}
-
-
-/* =====================================================
-   REMOVE DOLL
-===================================================== */
-
-function removeSelectedDoll(){
-
-  if(
-    !selectedDoll
-  ){
-
-    return;
-
-  }
-
-
-  const doll =
-    selectedDoll;
-
-
-  const index =
-    dolls.indexOf(
-      doll
-    );
-
-
-  if(
-    index >= 0
-  ){
-
-    dolls.splice(
-
-      index,
-
-      1
-
-    );
-
-  }
-
-
-  for(
-    let i =
-      dollMeshes.length -
-      1;
-
-    i >= 0;
-
-    i--
-  ){
-
-    if(
-
-      dollMeshes[i]
-        .userData
-        .doll
-
-      ===
-
-      doll
-
-    ){
-
-      dollMeshes.splice(
-
-        i,
-
-        1
-
-      );
-
-    }
-
-  }
-
-
-  scene.remove(
-    doll
-  );
-
-
-  selectedDoll =
-
-    dolls.at(
-      -1
-    )
-
-    ||
-
-    null;
-
-
-  if(
-    selectedDoll
-  ){
-
-    selectDoll(
-      selectedDoll
-    );
-
-  }
-
-}
-
-
-/* start with one */
-
-createDoll(
-
-  0,
-
-  -2.1
-
-);
-
-
-/* =====================================================
-   EDITOR MENU
-===================================================== */
-
-menuBtn.onclick =
-  () => {
-
-    menu.classList.toggle(
-      "open"
-    );
-
-  };
-
-
-moveModeBtn.onclick =
-  () => {
-
-    dollMode =
-      "move";
-
-
-    moveModeBtn
-      .classList
-      .add(
-        "active"
-      );
-
-
-    poseModeBtn
-      .classList
-      .remove(
-        "active"
-      );
-
-  };
-
-
-poseModeBtn.onclick =
-  () => {
-
-    dollMode =
-      "pose";
-
-
-    poseModeBtn
-      .classList
-      .add(
-        "active"
-      );
-
-
-    moveModeBtn
-      .classList
-      .remove(
-        "active"
-      );
-
-  };
-
-
-addDollBtn.onclick =
-  () => {
-
-    createDoll(
-
-      Math.max(
-
-        -1.8,
-
-        Math.min(
-
-          1.8,
-
-          dolls.length *
-          .32 -
-          .5
-
-        )
-
-      ),
-
-      -2
-
-    );
-
-  };
-
-
-removeDollBtn.onclick =
-  removeSelectedDoll;
-
-
-resetPoseBtn.onclick =
-  () => {
-
-    if(
-      !selectedDoll
-    ){
-
-      return;
-
-    }
-
-
-    selectedDoll.traverse(
-
-      object => {
-
-        if(
-
-          object.isGroup
-
-          &&
-
-          object !==
-          selectedDoll
-
-        ){
-
-          object.rotation.set(
-
-            0,
-
-            0,
-
-            0
-
-          );
-
-        }
-
-      }
-
-    );
-
-  };
-
-
-gridBtn.onclick =
-  () => {
-
-    gridGroup.visible =
-      !gridGroup.visible;
-
-  };
-
-
-homeBtn.onclick =
-  () => {
-
-    cameraBase.set(
-
-      0,
-
-      1.6,
-
-      0
-
-    );
-
-
-    yaw =
-      0;
-
-
-    pitch =
-      0;
-
-
-    targetFov =
-      70;
-
-  };
-
-
-groundBtn.onclick =
-  () => {
-
-    cameraBase.y =
-      .23;
-
-
-    pitch =
-      -.02;
-
-  };
-
-
-highBtn.onclick =
-  () => {
-
-    cameraBase.y =
-      3;
-
-
-    pitch =
-      -.48;
-
-  };
-
-
-/* =====================================================
-   RAYCASTING
-===================================================== */
-
-const raycaster =
-  new THREE.Raycaster();
-
-
-const pointer =
-  new THREE.Vector2();
-
-
-function updateRay(
-  x,
-  y
-){
-
-  const rect =
-    renderer
-      .domElement
-      .getBoundingClientRect();
-
-
-  pointer.x =
-
-    (
-      (
-        x -
-        rect.left
-      )
-      /
-      rect.width
-    )
-    *
-    2
-    -
-    1;
-
-
-  pointer.y =
-
-    -
-    (
-      (
-        y -
-        rect.top
-      )
-      /
-      rect.height
-    )
-    *
-    2
-    +
-    1;
-
-
-  raycaster.setFromCamera(
-
-    pointer,
-
-    camera
-
-  );
-
-}
-
-
-function getDollHit(
-  x,
-  y
-){
-
-  updateRay(
-    x,
-    y
-  );
-
-
-  return raycaster
-    .intersectObjects(
-
-      dollMeshes,
-
-      false
-
-    )[0]
-
-    ||
-
-    null;
-
-}
-
-
-/* =====================================================
-   EDITOR POINTER / TOUCH
-===================================================== */
-
-let pointerAction =
-  "none";
-
-
-let poseGroup =
-  null;
+let dragging =
+  false;
 
 
 let lastX =
@@ -3397,26 +632,6 @@ let lastY =
   0;
 
 
-let startX =
-  0;
-
-
-let startY =
-  0;
-
-
-let pointerMoved =
-  false;
-
-
-const carryOffset =
-  new THREE.Vector3();
-
-
-const activePointers =
-  new Map();
-
-
 let pinchStartDistance =
   0;
 
@@ -3424,6 +639,10 @@ let pinchStartDistance =
 let pinchStartFov =
   70;
 
+
+/* =========================================================
+   POINTER DOWN
+========================================================= */
 
 renderer
   .domElement
@@ -3433,7 +652,7 @@ renderer
 
     event => {
 
-      activePointers.set(
+      pointers.set(
 
         event.pointerId,
 
@@ -3450,18 +669,23 @@ renderer
       );
 
 
+      /*
+      Two fingers = begin zoom.
+      */
+
       if(
-        activePointers.size ===
+        pointers.size ===
         2
       ){
 
         const points =
           [
-            ...activePointers.values()
+            ...pointers.values()
           ];
 
 
         pinchStartDistance =
+
           Math.hypot(
 
             points[0].x -
@@ -3477,8 +701,8 @@ renderer
           targetFov;
 
 
-        pointerAction =
-          "pinch";
+        dragging =
+          false;
 
 
         return;
@@ -3486,194 +710,42 @@ renderer
       }
 
 
+      dragging =
+        true;
+
+
       lastX =
-      startX =
         event.clientX;
 
 
       lastY =
-      startY =
         event.clientY;
 
 
-      pointerMoved =
-        false;
-
-
-      /*
-      DIRECTOR MODE:
-      dolls cannot be edited.
-      */
-
-      if(
-        directorMode
-      ){
-
-        pointerAction =
-          "camera";
-
+      try {
 
         renderer
           .domElement
           .setPointerCapture(
+
             event.pointerId
+
           );
-
-
-        return;
 
       }
 
-
-      const hit =
-        getDollHit(
-
-          event.clientX,
-
-          event.clientY
-
-        );
-
-
-      if(
-        hit
-      ){
-
-        const doll =
-          hit
-            .object
-            .userData
-            .doll;
-
-
-        /*
-        First tap selects.
-        */
-
-        if(
-          doll !==
-          selectedDoll
-        ){
-
-          selectDoll(
-            doll
-          );
-
-
-          pointerAction =
-            "none";
-
-
-          return;
-
-        }
-
-
-        /*
-        Second press picks up.
-        */
-
-        if(
-          dollMode ===
-          "move"
-        ){
-
-          pointerAction =
-            "moveDoll";
-
-
-          updateRay(
-
-            event.clientX,
-
-            event.clientY
-
-          );
-
-
-          const floor =
-            raycaster
-              .intersectObject(
-
-                floorHit,
-
-                false
-
-              )[0];
-
-
-          if(
-            floor
-          ){
-
-            carryOffset.set(
-
-              selectedDoll.position.x -
-              floor.point.x,
-
-              0,
-
-              selectedDoll.position.z -
-              floor.point.z
-
-            );
-
-          }
-
-
-          selectedDoll.position.y =
-            .20;
-
-
-          renderer
-            .domElement
-            .setPointerCapture(
-              event.pointerId
-            );
-
-
-          return;
-
-        }
-
-
-        pointerAction =
-          "pose";
-
-
-        poseGroup =
-          hit
-            .object
-            .userData
-            .poseGroup;
-
-
-        renderer
-          .domElement
-          .setPointerCapture(
-            event.pointerId
-          );
-
-
-        return;
-
-      }
-
-
-      pointerAction =
-        "camera";
-
-
-      renderer
-        .domElement
-        .setPointerCapture(
-          event.pointerId
-        );
+      catch(
+        error
+      ){}
 
     }
 
   );
 
+
+/* =========================================================
+   POINTER MOVE
+========================================================= */
 
 renderer
   .domElement
@@ -3683,13 +755,17 @@ renderer
 
     event => {
 
+      /*
+      Update stored finger position.
+      */
+
       if(
-        activePointers.has(
+        pointers.has(
           event.pointerId
         )
       ){
 
-        activePointers.set(
+        pointers.set(
 
           event.pointerId,
 
@@ -3708,11 +784,13 @@ renderer
       }
 
 
-      /* PINCH */
+      /* =====================================================
+         PINCH ZOOM
+      ===================================================== */
 
       if(
 
-        activePointers.size ===
+        pointers.size ===
         2
 
         &&
@@ -3724,11 +802,12 @@ renderer
 
         const points =
           [
-            ...activePointers.values()
+            ...pointers.values()
           ];
 
 
         const distance =
+
           Math.hypot(
 
             points[0].x -
@@ -3741,6 +820,7 @@ renderer
 
 
         targetFov =
+
           THREE.MathUtils.clamp(
 
             pinchStartFov
@@ -3753,15 +833,11 @@ renderer
               distance
             ),
 
-            20,
+            25,
 
-            105
+            100
 
           );
-
-
-        pointerAction =
-          "pinch";
 
 
         return;
@@ -3769,12 +845,27 @@ renderer
       }
 
 
+      /* =====================================================
+         ROTATE VIEW
+      ===================================================== */
+
+      if(
+        !dragging
+      ){
+
+        return;
+
+      }
+
+
       const dx =
+
         event.clientX -
         lastX;
 
 
       const dy =
+
         event.clientY -
         lastY;
 
@@ -3787,210 +878,77 @@ renderer
         event.clientY;
 
 
-      if(
+      yaw -=
 
-        Math.hypot(
-
-          event.clientX -
-          startX,
-
-          event.clientY -
-          startY
-
-        )
-
-        >
-
-        7
-
-      ){
-
-        pointerMoved =
-          true;
-
-      }
+        dx *
+        0.004;
 
 
-      if(
-        pointerAction ===
-        "camera"
-      ){
+      pitch -=
 
-        yaw -=
-          dx *
-          .004;
+        dy *
+        0.004;
 
 
-        pitch =
-          THREE.MathUtils.clamp(
+      pitch =
 
-            pitch
+        THREE.MathUtils.clamp(
 
-            -
+          pitch,
 
-            dy *
-            .004,
+          -Math.PI / 2 +
+          0.01,
 
-            -Math.PI / 2 +
-            .015,
-
-            Math.PI / 2 -
-            .015
-
-          );
-
-      }
-
-
-      else if(
-
-        pointerAction ===
-        "moveDoll"
-
-        &&
-
-        selectedDoll
-
-      ){
-
-        updateRay(
-
-          event.clientX,
-
-          event.clientY
+          Math.PI / 2 -
+          0.01
 
         );
-
-
-        const floor =
-          raycaster
-            .intersectObject(
-
-              floorHit,
-
-              false
-
-            )[0];
-
-
-        if(
-          floor
-        ){
-
-          const x =
-
-            floor.point.x
-
-            +
-
-            carryOffset.x;
-
-
-          const z =
-
-            floor.point.z
-
-            +
-
-            carryOffset.z;
-
-
-          if(
-
-            Math.hypot(
-              x,
-              z
-            )
-
-            <=
-
-            GRID_RADIUS -
-            .15
-
-          ){
-
-            selectedDoll.position.x =
-              x;
-
-
-            selectedDoll.position.z =
-              z;
-
-          }
-
-
-          selectedDoll.position.y =
-            .20;
-
-        }
-
-      }
-
-
-      else if(
-
-        pointerAction ===
-        "pose"
-
-        &&
-
-        poseGroup
-
-      ){
-
-        poseGroup.rotation.z =
-          THREE.MathUtils.clamp(
-
-            poseGroup.rotation.z
-
-            +
-
-            dx *
-            .012,
-
-            -2.7,
-
-            2.7
-
-          );
-
-
-        poseGroup.rotation.x =
-          THREE.MathUtils.clamp(
-
-            poseGroup.rotation.x
-
-            +
-
-            dy *
-            .012,
-
-            -2.5,
-
-            2.5
-
-          );
-
-      }
 
     }
 
   );
 
 
-function finishPointer(
+/* =========================================================
+   POINTER RELEASE
+========================================================= */
+
+function releasePointer(
   event
 ){
 
-  activePointers.delete(
+  pointers.delete(
     event.pointerId
   );
 
 
+  /*
+  If only one finger remains after pinch,
+  restart rotation using that finger.
+  */
+
   if(
-    activePointers.size <
-    2
+    pointers.size ===
+    1
   ){
+
+    const remaining =
+      [
+        ...pointers.values()
+      ][0];
+
+
+    lastX =
+      remaining.x;
+
+
+    lastY =
+      remaining.y;
+
+
+    dragging =
+      true;
+
 
     pinchStartDistance =
       0;
@@ -3998,88 +956,19 @@ function finishPointer(
   }
 
 
-  if(
-
-    pointerAction ===
-    "moveDoll"
-
-    &&
-
-    selectedDoll
-
+  else if(
+    pointers.size ===
+    0
   ){
 
-    selectedDoll.position.y =
+    dragging =
+      false;
+
+
+    pinchStartDistance =
       0;
 
   }
-
-
-  /*
-  Tap grid to move camera
-  in portrait editor mode.
-  */
-
-  else if(
-
-    pointerAction ===
-    "camera"
-
-    &&
-
-    !pointerMoved
-
-    &&
-
-    !directorMode
-
-  ){
-
-    updateRay(
-
-      event.clientX,
-
-      event.clientY
-
-    );
-
-
-    const floor =
-      raycaster
-        .intersectObject(
-
-          floorHit,
-
-          false
-
-        )[0];
-
-
-    if(
-      floor
-    ){
-
-      cameraBase.x =
-        floor.point.x;
-
-
-      cameraBase.z =
-        floor.point.z;
-
-
-      constrainCamera();
-
-    }
-
-  }
-
-
-  pointerAction =
-    "none";
-
-
-  poseGroup =
-    null;
 
 
   try {
@@ -4087,7 +976,9 @@ function finishPointer(
     renderer
       .domElement
       .releasePointerCapture(
+
         event.pointerId
+
       );
 
   }
@@ -4105,7 +996,7 @@ renderer
 
     "pointerup",
 
-    finishPointer
+    releasePointer
 
   );
 
@@ -4116,10 +1007,14 @@ renderer
 
     "pointercancel",
 
-    finishPointer
+    releasePointer
 
   );
 
+
+/* =========================================================
+   DESKTOP MOUSE WHEEL ZOOM
+========================================================= */
 
 renderer
   .domElement
@@ -4133,6 +1028,7 @@ renderer
 
 
       targetFov =
+
         THREE.MathUtils.clamp(
 
           targetFov
@@ -4140,11 +1036,11 @@ renderer
           +
 
           event.deltaY *
-          .03,
+          0.03,
 
-          20,
+          25,
 
-          105
+          100
 
         );
 
@@ -4158,2978 +1054,9 @@ renderer
   );
 
 
-/* =====================================================
-   CAMERA TRANSLATION
-===================================================== */
-
-function moveRelative(
-
-  forward,
-
-  right,
-
-  vertical = 0
-
-){
-
-  const forwardVector =
-    new THREE.Vector3(
-
-      -Math.sin(
-        yaw
-      ),
-
-      0,
-
-      -Math.cos(
-        yaw
-      )
-
-    );
-
-
-  const rightVector =
-    new THREE.Vector3(
-
-      Math.cos(
-        yaw
-      ),
-
-      0,
-
-      -Math.sin(
-        yaw
-      )
-
-    );
-
-
-  cameraBase.addScaledVector(
-
-    forwardVector,
-
-    forward
-
-  );
-
-
-  cameraBase.addScaledVector(
-
-    rightVector,
-
-    right
-
-  );
-
-
-  cameraBase.y +=
-    vertical;
-
-
-  constrainCamera();
-
-}
-
-
-/* =====================================================
-   THREE.JS 3D CONTROL PAD
-===================================================== */
-
-const controlScene =
-  new THREE.Scene();
-
-
-const controlCamera =
-  new THREE.PerspectiveCamera(
-
-    40,
-
-    220 /
-    190,
-
-    .1,
-
-    100
-
-  );
-
-
-controlCamera.position.set(
-
-  0,
-
-  4.7,
-
-  6.4
-
-);
-
-
-controlCamera.lookAt(
-
-  0,
-
-  0,
-
-  0
-
-);
-
-
-const controlRenderer =
-  new THREE.WebGLRenderer({
-
-    antialias:
-      true,
-
-    alpha:
-      true
-
-  });
-
-
-controlRenderer.setPixelRatio(
-
-  Math.min(
-    devicePixelRatio,
-    2
-  )
-
-);
-
-
-controlRenderer.setSize(
-
-  220,
-
-  190
-
-);
-
-
-controlRenderer.setClearColor(
-
-  0,
-
-  0
-
-);
-
-
-$("arrowOverlay")
-  .appendChild(
-    controlRenderer.domElement
-  );
-
-
-controlScene.add(
-
-  new THREE.HemisphereLight(
-
-    0xffffff,
-
-    0x181818,
-
-    2.6
-
-  )
-
-);
-
-
-const controlLight =
-  new THREE.DirectionalLight(
-
-    0xffffff,
-
-    2.5
-
-  );
-
-
-controlLight.position.set(
-
-  3,
-
-  5,
-
-  5
-
-);
-
-
-controlScene.add(
-  controlLight
-);
-
-
-const controlGroup =
-  new THREE.Group();
-
-
-controlGroup.rotation.x =
-  -.12;
-
-
-controlScene.add(
-  controlGroup
-);
-
-
-const controlMaterial =
-  new THREE.MeshStandardMaterial({
-
-    color:
-      0x242424,
-
-    roughness:
-      .40,
-
-    metalness:
-      .18
-
-  });
-
-
-const pressedMaterial =
-  new THREE.MeshStandardMaterial({
-
-    color:
-      0x696969,
-
-    roughness:
-      .35
-
-  });
-
-
-const whiteMaterial =
-  new THREE.MeshStandardMaterial({
-
-    color:
-      0xffffff,
-
-    roughness:
-      .25
-
-  });
-
-
-const controlHitMeshes =
-  [];
-
-
-/* =====================================================
-   CREATE 3D BUTTON
-===================================================== */
-
-function create3DControl(
-
-  action,
-
-  x,
-
-  z,
-
-  rotation,
-
-  scale = 1
-
-){
-
-  const group =
-    new THREE.Group();
-
-
-  group.position.set(
-
-    x,
-
-    0,
-
-    z
-
-  );
-
-
-  group.userData.action =
-    action;
-
-
-  const base =
-    new THREE.Mesh(
-
-      new THREE.CylinderGeometry(
-
-        .55 *
-        scale,
-
-        .58 *
-        scale,
-
-        .22 *
-        scale,
-
-        30
-
-      ),
-
-      controlMaterial
-
-    );
-
-
-  base.userData.control =
-    group;
-
-
-  group.add(
-    base
-  );
-
-
-  const cap =
-    new THREE.Mesh(
-
-      new THREE.CylinderGeometry(
-
-        .48 *
-        scale,
-
-        .50 *
-        scale,
-
-        .08 *
-        scale,
-
-        30
-
-      ),
-
-      controlMaterial
-
-    );
-
-
-  cap.position.y =
-    .15 *
-    scale;
-
-
-  cap.userData.control =
-    group;
-
-
-  group.add(
-    cap
-  );
-
-
-  const shape =
-    new THREE.Shape();
-
-
-  shape.moveTo(
-    0,
-    .48
-  );
-
-
-  shape.lineTo(
-    .34,
-    .05
-  );
-
-
-  shape.lineTo(
-    .14,
-    .05
-  );
-
-
-  shape.lineTo(
-    .14,
-    -.42
-  );
-
-
-  shape.lineTo(
-    -.14,
-    -.42
-  );
-
-
-  shape.lineTo(
-    -.14,
-    .05
-  );
-
-
-  shape.lineTo(
-    -.34,
-    .05
-  );
-
-
-  shape.closePath();
-
-
-  const arrow =
-    new THREE.Mesh(
-
-      new THREE.ExtrudeGeometry(
-
-        shape,
-
-        {
-
-          depth:
-            .075,
-
-          bevelEnabled:
-            true,
-
-          bevelThickness:
-            .025,
-
-          bevelSize:
-            .025,
-
-          bevelSegments:
-            2
-
-        }
-
-      ),
-
-      whiteMaterial
-
-    );
-
-
-  /*
-  Keep button and arrow face-up.
-
-  Only rotate the icon itself to indicate direction.
-  */
-
-  arrow.rotation.x =
-    -Math.PI /
-    2;
-
-
-  arrow.rotation.z =
-    rotation;
-
-
-  arrow.position.y =
-    .22 *
-    scale;
-
-
-  arrow.scale.setScalar(
-
-    .72 *
-    scale
-
-  );
-
-
-  group.add(
-    arrow
-  );
-
-
-  controlGroup.add(
-    group
-  );
-
-
-  controlHitMeshes.push(
-
-    base,
-
-    cap
-
-  );
-
-}
-
-
-/* movement cross */
-
-create3DControl(
-
-  "forward",
-
-  0,
-
-  -1,
-
-  0
-
-);
-
-
-create3DControl(
-
-  "back",
-
-  0,
-
-  1,
-
-  Math.PI
-
-);
-
-
-create3DControl(
-
-  "left",
-
-  -1,
-
-  0,
-
-  Math.PI /
-  2
-
-);
-
-
-create3DControl(
-
-  "right",
-
-  1,
-
-  0,
-
-  -Math.PI /
-  2
-
-);
-
-
-/* vertical camera pair */
-
-create3DControl(
-
-  "up",
-
-  1.75,
-
-  -.60,
-
-  0,
-
-  .82
-
-);
-
-
-create3DControl(
-
-  "down",
-
-  1.75,
-
-  .67,
-
-  Math.PI,
-
-  .82
-
-);
-
-
-const controlRaycaster =
-  new THREE.Raycaster();
-
-
-const controlPointer =
-  new THREE.Vector2();
-
-
-let heldControl =
-  null;
-
-
-let pressedControl =
-  null;
-
-
-function performControl(
-  action
-){
-
-  if(
-    action ===
-    "forward"
-  ){
-
-    moveRelative(
-
-      .07,
-
-      0
-
-    );
-
-  }
-
-
-  else if(
-    action ===
-    "back"
-  ){
-
-    moveRelative(
-
-      -.07,
-
-      0
-
-    );
-
-  }
-
-
-  else if(
-    action ===
-    "left"
-  ){
-
-    moveRelative(
-
-      0,
-
-      -.07
-
-    );
-
-  }
-
-
-  else if(
-    action ===
-    "right"
-  ){
-
-    moveRelative(
-
-      0,
-
-      .07
-
-    );
-
-  }
-
-
-  else if(
-    action ===
-    "up"
-  ){
-
-    moveRelative(
-
-      0,
-
-      0,
-
-      .05
-
-    );
-
-  }
-
-
-  else if(
-    action ===
-    "down"
-  ){
-
-    moveRelative(
-
-      0,
-
-      0,
-
-      -.05
-
-    );
-
-  }
-
-}
-
-
-function pickControl(
-  event
-){
-
-  const rect =
-    controlRenderer
-      .domElement
-      .getBoundingClientRect();
-
-
-  controlPointer.x =
-
-    (
-      (
-        event.clientX -
-        rect.left
-      )
-      /
-      rect.width
-    )
-    *
-    2
-    -
-    1;
-
-
-  controlPointer.y =
-
-    -
-    (
-      (
-        event.clientY -
-        rect.top
-      )
-      /
-      rect.height
-    )
-    *
-    2
-    +
-    1;
-
-
-  controlRaycaster
-    .setFromCamera(
-
-      controlPointer,
-
-      controlCamera
-
-    );
-
-
-  const hit =
-    controlRaycaster
-      .intersectObjects(
-
-        controlHitMeshes,
-
-        false
-
-      )[0];
-
-
-  return hit
-
-    ?
-
-    hit
-      .object
-      .userData
-      .control
-
-    :
-
-    null;
-
-}
-
-
-controlRenderer
-  .domElement
-  .addEventListener(
-
-    "pointerdown",
-
-    event => {
-
-      event.preventDefault();
-
-
-      const control =
-        pickControl(
-          event
-        );
-
-
-      if(
-        !control
-      ){
-
-        return;
-
-      }
-
-
-      heldControl =
-        control
-          .userData
-          .action;
-
-
-      pressedControl =
-        control;
-
-
-      control.position.y =
-        -.07;
-
-
-      control.children.forEach(
-
-        child => {
-
-          if(
-            child.material ===
-            controlMaterial
-          ){
-
-            child.material =
-              pressedMaterial;
-
-          }
-
-        }
-
-      );
-
-
-      controlRenderer
-        .domElement
-        .setPointerCapture(
-          event.pointerId
-        );
-
-    }
-
-  );
-
-
-function releaseControl(
-  event
-){
-
-  if(
-    pressedControl
-  ){
-
-    pressedControl.position.y =
-      0;
-
-
-    pressedControl.children.forEach(
-
-      child => {
-
-        if(
-          child.material ===
-          pressedMaterial
-        ){
-
-          child.material =
-            controlMaterial;
-
-        }
-
-      }
-
-    );
-
-  }
-
-
-  heldControl =
-    null;
-
-
-  pressedControl =
-    null;
-
-
-  try {
-
-    controlRenderer
-      .domElement
-      .releasePointerCapture(
-        event.pointerId
-      );
-
-  }
-
-  catch(
-    error
-  ){}
-
-}
-
-
-controlRenderer
-  .domElement
-  .addEventListener(
-
-    "pointerup",
-
-    releaseControl
-
-  );
-
-
-controlRenderer
-  .domElement
-  .addEventListener(
-
-    "pointercancel",
-
-    releaseControl
-
-  );
-
-
-/* =====================================================
-   LANDSCAPE DIRECTOR MODE
-===================================================== */
-
-const PHONE_LIKE =
-
-  matchMedia(
-    "(pointer: coarse)"
-  ).matches
-
-  ||
-
-  navigator.maxTouchPoints >
-  0;
-
-
-let directorMode =
-  false;
-
-
-function updateInterfaceMode(){
-
-  directorMode =
-
-    PHONE_LIKE
-
-    &&
-
-    innerWidth >
-    innerHeight;
-
-
-  document
-    .body
-    .classList
-    .toggle(
-
-      "director",
-
-      directorMode
-
-    );
-
-
-  if(
-    directorMode
-  ){
-
-    menu.classList.remove(
-      "open"
-    );
-
-  }
-
-}
-
-
-updateInterfaceMode();
-
-
-/* =====================================================
-   DEVICE ORIENTATION
-
-   Uses a quaternion so landscape phone rotation works
-   more naturally than simply subtracting alpha/beta.
-===================================================== */
-
-const deviceQuaternion =
-  new THREE.Quaternion();
-
-
-const zeroDeviceQuaternion =
-  new THREE.Quaternion();
-
-
-const inverseZeroQuaternion =
-  new THREE.Quaternion();
-
-
-const relativeDeviceQuaternion =
-  new THREE.Quaternion();
-
-
-const deviceEuler =
-  new THREE.Euler();
-
-
-const zee =
-  new THREE.Vector3(
-    0,
-    0,
-    1
-  );
-
-
-const qScreen =
-  new THREE.Quaternion();
-
-
-const qDeviceCorrection =
-  new THREE.Quaternion(
-
-    -Math.sqrt(.5),
-
-    0,
-
-    0,
-
-    Math.sqrt(.5)
-
-  );
-
-
-let haveDeviceZero =
-  false;
-
-
-function screenOrientationRadians(){
-
-  if(
-    screen.orientation
-    &&
-    typeof screen.orientation.angle ===
-    "number"
-  ){
-
-    return THREE.MathUtils.degToRad(
-      screen.orientation.angle
-    );
-
-  }
-
-
-  return THREE.MathUtils.degToRad(
-
-    window.orientation
-    ||
-    0
-
-  );
-
-}
-
-
-function calculateDeviceQuaternion(
-  event
-){
-
-  const alpha =
-    THREE.MathUtils.degToRad(
-
-      event.alpha
-      ||
-      0
-
-    );
-
-
-  const beta =
-    THREE.MathUtils.degToRad(
-
-      event.beta
-      ||
-      0
-
-    );
-
-
-  const gamma =
-    THREE.MathUtils.degToRad(
-
-      event.gamma
-      ||
-      0
-
-    );
-
-
-  const orient =
-    screenOrientationRadians();
-
-
-  deviceEuler.set(
-
-    beta,
-
-    alpha,
-
-    -gamma,
-
-    "YXZ"
-
-  );
-
-
-  deviceQuaternion
-    .setFromEuler(
-      deviceEuler
-    );
-
-
-  deviceQuaternion
-    .multiply(
-      qDeviceCorrection
-    );
-
-
-  qScreen
-    .setFromAxisAngle(
-
-      zee,
-
-      -orient
-
-    );
-
-
-  deviceQuaternion
-    .multiply(
-      qScreen
-    );
-
-
-  return deviceQuaternion;
-
-}
-
-
-window.addEventListener(
-
-  "deviceorientation",
-
-  event => {
-
-    if(
-      !directorMode
-    ){
-
-      return;
-
-    }
-
-
-    const quaternion =
-      calculateDeviceQuaternion(
-        event
-      );
-
-
-    if(
-      !haveDeviceZero
-    ){
-
-      zeroDeviceQuaternion.copy(
-        quaternion
-      );
-
-
-      inverseZeroQuaternion
-        .copy(
-          zeroDeviceQuaternion
-        )
-        .invert();
-
-
-      haveDeviceZero =
-        true;
-
-    }
-
-
-    relativeDeviceQuaternion
-
-      .copy(
-        inverseZeroQuaternion
-      )
-
-      .multiply(
-        quaternion
-      );
-
-  },
-
-  true
-
-);
-
-
-/* =====================================================
-   ACCELEROMETER HANDHELD MOTION
-===================================================== */
-
-const physicalOffset =
-  new THREE.Vector3();
-
-
-const physicalVelocity =
-  new THREE.Vector3();
-
-
-const physicalRotation =
-  new THREE.Vector3();
-
-
-let lastMotionTime =
-  performance.now();
-
-
-let stepEnergy =
-  0;
-
-
-window.addEventListener(
-
-  "devicemotion",
-
-  event => {
-
-    if(
-      !directorMode
-    ){
-
-      return;
-
-    }
-
-
-    const now =
-      performance.now();
-
-
-    const dt =
-      Math.min(
-
-        .05,
-
-        Math.max(
-
-          .004,
-
-          (
-            now -
-            lastMotionTime
-          )
-          /
-          1000
-
-        )
-
-      );
-
-
-    lastMotionTime =
-      now;
-
-
-    const acceleration =
-
-      event.acceleration
-
-      ||
-
-      null;
-
-
-    if(
-      !acceleration
-    ){
-
-      return;
-
-    }
-
-
-    const ax =
-      acceleration.x
-      ||
-      0;
-
-
-    const ay =
-      acceleration.y
-      ||
-      0;
-
-
-    const az =
-      acceleration.z
-      ||
-      0;
-
-
-    /*
-    Micro rotation.
-    */
-
-    physicalRotation.x +=
-
-      ay *
-      .00040;
-
-
-    physicalRotation.y +=
-
-      ax *
-      .00035;
-
-
-    physicalRotation.z +=
-
-      ax *
-      .00022;
-
-
-    /*
-    Very restrained physical translation.
-
-    It decays quickly because raw phone accelerometers
-    cannot provide stable world position indefinitely.
-    */
-
-    physicalVelocity.x +=
-
-      ax *
-      dt *
-      .009;
-
-
-    physicalVelocity.y +=
-
-      -ay *
-      dt *
-      .006;
-
-
-    physicalVelocity.z +=
-
-      -az *
-      dt *
-      .009;
-
-
-    const magnitude =
-      Math.hypot(
-
-        ax,
-
-        ay,
-
-        az
-
-      );
-
-
-    if(
-      magnitude >
-      1.25
-    ){
-
-      stepEnergy =
-        Math.min(
-
-          1,
-
-          stepEnergy
-
-          +
-
-          magnitude *
-          .03
-
-        );
-
-    }
-
-  },
-
-  true
-
-);
-
-
-/* =====================================================
-   SENSOR PERMISSION
-===================================================== */
-
-async function requestSensors(){
-
-  try {
-
-    if(
-
-      typeof DeviceMotionEvent !==
-      "undefined"
-
-      &&
-
-      typeof DeviceMotionEvent
-        .requestPermission ===
-      "function"
-
-    ){
-
-      await DeviceMotionEvent
-        .requestPermission();
-
-    }
-
-
-    if(
-
-      typeof DeviceOrientationEvent !==
-      "undefined"
-
-      &&
-
-      typeof DeviceOrientationEvent
-        .requestPermission ===
-      "function"
-
-    ){
-
-      await DeviceOrientationEvent
-        .requestPermission();
-
-    }
-
-  }
-
-
-  catch(
-    error
-  ){
-
-    console.warn(
-
-      "Sensor permission unavailable.",
-
-      error
-
-    );
-
-  }
-
-}
-
-
-/* =====================================================
-   PHONE CAMERA AS HIDDEN MOVEMENT REFERENCE
-===================================================== */
-
-const cameraReference =
-  $("cameraReference");
-
-
-const cameraFlowCanvas =
-  $("cameraFlowCanvas");
-
-
-const flowContext =
-  cameraFlowCanvas
-    .getContext(
-
-      "2d",
-
-      {
-        willReadFrequently:
-          true
-      }
-
-    );
-
-
-let cameraReferenceStream =
-  null;
-
-
-let cameraReferenceActive =
-  false;
-
-
-let previousFlowFrame =
-  null;
-
-
-let opticalX =
-  0;
-
-
-let opticalY =
-  0;
-
-
-let flowCounter =
-  0;
-
-
-async function startCameraReference(){
-
-  if(
-    cameraReferenceActive
-  ){
-
-    return true;
-
-  }
-
-
-  if(
-    !navigator.mediaDevices
-    ?.getUserMedia
-  ){
-
-    return false;
-
-  }
-
-
-  try {
-
-    cameraReferenceStream =
-      await navigator
-        .mediaDevices
-        .getUserMedia({
-
-          video: {
-
-            facingMode: {
-              ideal:
-                "environment"
-            },
-
-            width: {
-              ideal:
-                320
-            },
-
-            height: {
-              ideal:
-                180
-            },
-
-            frameRate: {
-
-              ideal:
-                30,
-
-              max:
-                30
-
-            }
-
-          },
-
-          audio:
-            false
-
-        });
-
-
-    cameraReference.srcObject =
-      cameraReferenceStream;
-
-
-    await cameraReference.play();
-
-
-    cameraReferenceActive =
-      true;
-
-
-    return true;
-
-  }
-
-
-  catch(
-    error
-  ){
-
-    console.warn(
-
-      "Camera reference unavailable. "
-
-      +
-
-      "Recording continues without it.",
-
-      error
-
-    );
-
-
-    return false;
-
-  }
-
-}
-
-
-/* =====================================================
-   LIGHTWEIGHT OPTICAL MOTION ESTIMATION
-===================================================== */
-
-function sampleOpticalMotion(){
-
-  if(
-
-    !cameraReferenceActive
-
-    ||
-
-    cameraReference.readyState <
-    2
-
-  ){
-
-    return;
-
-  }
-
-
-  flowCounter++;
-
-
-  if(
-    flowCounter %
-    3 !==
-    0
-  ){
-
-    return;
-
-  }
-
-
-  const width =
-    cameraFlowCanvas.width;
-
-
-  const height =
-    cameraFlowCanvas.height;
-
-
-  flowContext.drawImage(
-
-    cameraReference,
-
-    0,
-
-    0,
-
-    width,
-
-    height
-
-  );
-
-
-  const pixels =
-    flowContext
-      .getImageData(
-
-        0,
-
-        0,
-
-        width,
-
-        height
-
-      )
-      .data;
-
-
-  const frame =
-    new Uint8Array(
-
-      width *
-      height
-
-    );
-
-
-  for(
-
-    let i = 0,
-        j = 0;
-
-    i < pixels.length;
-
-    i += 4,
-    j++
-
-  ){
-
-    frame[j] =
-
-      (
-        pixels[i] *
-        3
-
-        +
-
-        pixels[i + 1] *
-        6
-
-        +
-
-        pixels[i + 2]
-
-      )
-
-      /
-
-      10;
-
-  }
-
-
-  if(
-    previousFlowFrame
-  ){
-
-    let bestScore =
-      Infinity;
-
-
-    let bestX =
-      0;
-
-
-    let bestY =
-      0;
-
-
-    for(
-      let offsetY = -3;
-      offsetY <= 3;
-      offsetY++
-    ){
-
-      for(
-        let offsetX = -4;
-        offsetX <= 4;
-        offsetX++
-      ){
-
-        let score =
-          0;
-
-
-        let samples =
-          0;
-
-
-        for(
-          let y = 8;
-          y < height - 8;
-          y += 5
-        ){
-
-          for(
-            let x = 8;
-            x < width - 8;
-            x += 5
-          ){
-
-            const a =
-
-              frame[
-                y *
-                width +
-                x
-              ];
-
-
-            const b =
-
-              previousFlowFrame[
-
-                (
-                  y +
-                  offsetY
-                )
-                *
-                width
-
-                +
-
-                (
-                  x +
-                  offsetX
-                )
-
-              ];
-
-
-            score +=
-
-              Math.abs(
-                a - b
-              );
-
-
-            samples++;
-
-          }
-
-        }
-
-
-        score /=
-
-          Math.max(
-            1,
-            samples
-          );
-
-
-        if(
-          score <
-          bestScore
-        ){
-
-          bestScore =
-            score;
-
-
-          bestX =
-            offsetX;
-
-
-          bestY =
-            offsetY;
-
-        }
-
-      }
-
-    }
-
-
-    opticalX =
-      THREE.MathUtils.lerp(
-
-        opticalX,
-
-        bestX,
-
-        .15
-
-      );
-
-
-    opticalY =
-      THREE.MathUtils.lerp(
-
-        opticalY,
-
-        bestY,
-
-        .15
-
-      );
-
-  }
-
-
-  previousFlowFrame =
-    frame;
-
-}
-
-
-/* =====================================================
-   VIDEO RECORDING
-===================================================== */
-
-const recordBtn =
-  $("recordBtn");
-
-
-const recordStatus =
-  $("recordStatus");
-
-
-const previewPanel =
-  $("previewPanel");
-
-
-const previewVideo =
-  $("previewVideo");
-
-
-let recording =
-  false;
-
-
-let mediaRecorder =
-  null;
-
-
-let recordedParts =
-  [];
-
-
-let recordedVideo =
-  null;
-
-
-let recordingURL =
-  null;
-
-
-function recorderSupported(){
-
-  return !!(
-
-    window.MediaRecorder
-
-    &&
-
-    renderer
-      .domElement
-      .captureStream
-
-  );
-
-}
-
-
-function bestRecordingMime(){
-
-  const types = [
-
-    "video/webm;codecs=vp9",
-
-    "video/webm;codecs=vp8",
-
-    "video/webm",
-
-    "video/mp4"
-
-  ];
-
-
-  for(
-    const type
-    of
-    types
-  ){
-
-    try {
-
-      if(
-        MediaRecorder
-          .isTypeSupported(
-            type
-          )
-      ){
-
-        return type;
-
-      }
-
-    }
-
-
-    catch(
-      error
-    ){}
-
-  }
-
-
-  return "";
-
-}
-
-
-/* =====================================================
-   START RECORDING
-===================================================== */
-
-async function startRecording(){
-
-  if(
-    recording
-  ){
-
-    return;
-
-  }
-
-
-  clearError();
-
-
-  if(
-    !recorderSupported()
-  ){
-
-    showError(
-
-      "This browser does not support WebGL canvas recording. "
-
-      +
-
-      "Use a current Chrome/Chromium browser on Android."
-
-    );
-
-
-    return;
-
-  }
-
-
-  await requestSensors();
-
-
-  /*
-  Camera-reference access is optional.
-  Never let it prevent video recording.
-  */
-
-  startCameraReference()
-    .catch(
-      () => {}
-    );
-
-
-  haveDeviceZero =
-    false;
-
-
-  physicalOffset.set(
-
-    0,
-
-    0,
-
-    0
-
-  );
-
-
-  physicalVelocity.set(
-
-    0,
-
-    0,
-
-    0
-
-  );
-
-
-  physicalRotation.set(
-
-    0,
-
-    0,
-
-    0
-
-  );
-
-
-  opticalX =
-    0;
-
-
-  opticalY =
-    0;
-
-
-  previousFlowFrame =
-    null;
-
-
-  let stream;
-
-
-  try {
-
-    stream =
-      renderer
-        .domElement
-        .captureStream(
-          60
-        );
-
-  }
-
-
-  catch(
-    error
-  ){
-
-    try {
-
-      stream =
-        renderer
-          .domElement
-          .captureStream(
-            30
-          );
-
-    }
-
-
-    catch(
-      secondError
-    ){
-
-      showError(
-
-        "The browser could not capture the Three.js canvas."
-
-      );
-
-
-      return;
-
-    }
-
-  }
-
-
-  const mime =
-    bestRecordingMime();
-
-
-  try {
-
-    const options = {
-
-      videoBitsPerSecond:
-        16000000
-
-    };
-
-
-    if(
-      mime
-    ){
-
-      options.mimeType =
-        mime;
-
-    }
-
-
-    mediaRecorder =
-      new MediaRecorder(
-
-        stream,
-
-        options
-
-      );
-
-  }
-
-
-  catch(
-    error
-  ){
-
-    try {
-
-      mediaRecorder =
-        new MediaRecorder(
-          stream
-        );
-
-    }
-
-
-    catch(
-      secondError
-    ){
-
-      showError(
-
-        "MediaRecorder could not start: "
-
-        +
-
-        (
-          secondError?.message
-          ||
-          secondError
-        )
-
-      );
-
-
-      return;
-
-    }
-
-  }
-
-
-  recordedParts =
-    [];
-
-
-  mediaRecorder
-    .ondataavailable =
-    event => {
-
-      if(
-
-        event.data
-
-        &&
-
-        event.data.size >
-        0
-
-      ){
-
-        recordedParts.push(
-          event.data
-        );
-
-      }
-
-    };
-
-
-  mediaRecorder
-    .onerror =
-    event => {
-
-      showError(
-
-        "Recording error: "
-
-        +
-
-        (
-          event.error?.message
-          ||
-          "unknown MediaRecorder error"
-        )
-
-      );
-
-    };
-
-
-  mediaRecorder
-    .onstop =
-    () => {
-
-      if(
-        !recordedParts.length
-      ){
-
-        showError(
-
-          "Recording stopped, but the browser returned no video data."
-
-        );
-
-
-        return;
-
-      }
-
-
-      recordedVideo =
-        new Blob(
-
-          recordedParts,
-
-          {
-
-            type:
-
-              mediaRecorder.mimeType
-
-              ||
-
-              mime
-
-              ||
-
-              "video/webm"
-
-          }
-
-        );
-
-
-      if(
-        recordingURL
-      ){
-
-        URL.revokeObjectURL(
-          recordingURL
-        );
-
-      }
-
-
-      recordingURL =
-        URL.createObjectURL(
-          recordedVideo
-        );
-
-
-      previewVideo.src =
-        recordingURL;
-
-
-      previewVideo.load();
-
-
-      previewPanel
-        .classList
-        .add(
-          "open"
-        );
-
-    };
-
-
-  try {
-
-    /*
-    Emit chunks every 200 ms so a long take does not
-    exist as one enormous in-memory MediaRecorder chunk.
-    */
-
-    mediaRecorder.start(
-      200
-    );
-
-  }
-
-
-  catch(
-    error
-  ){
-
-    showError(
-
-      "Recording failed to start: "
-
-      +
-
-      (
-        error?.message
-        ||
-        error
-      )
-
-    );
-
-
-    return;
-
-  }
-
-
-  recording =
-    true;
-
-
-  recordBtn
-    .classList
-    .add(
-      "recording"
-    );
-
-
-  recordStatus.textContent =
-    "STOP";
-
-}
-
-
-/* =====================================================
-   STOP RECORDING
-===================================================== */
-
-function stopRecording(){
-
-  if(
-    !recording
-  ){
-
-    return;
-
-  }
-
-
-  recording =
-    false;
-
-
-  recordBtn
-    .classList
-    .remove(
-      "recording"
-    );
-
-
-  recordStatus.textContent =
-    "REC";
-
-
-  if(
-
-    mediaRecorder
-
-    &&
-
-    mediaRecorder.state !==
-    "inactive"
-
-  ){
-
-    try {
-
-      mediaRecorder.requestData();
-
-    }
-
-    catch(
-      error
-    ){}
-
-
-    setTimeout(
-
-      () => {
-
-        try {
-
-          if(
-            mediaRecorder.state !==
-            "inactive"
-          ){
-
-            mediaRecorder.stop();
-
-          }
-
-        }
-
-        catch(
-          error
-        ){}
-
-      },
-
-      80
-
-    );
-
-  }
-
-}
-
-
-recordBtn.onclick =
-  () => {
-
-    if(
-      recording
-    ){
-
-      stopRecording();
-
-    }
-
-
-    else {
-
-      startRecording();
-
-    }
-
-  };
-
-
-/* =====================================================
-   PREVIEW CONTROLS
-===================================================== */
-
-$("closePreview")
-  .onclick =
-  () => {
-
-    previewVideo.pause();
-
-
-    previewPanel
-      .classList
-      .remove(
-        "open"
-      );
-
-  };
-
-
-$("replayBtn")
-  .onclick =
-  async () => {
-
-    try {
-
-      previewVideo.currentTime =
-        0;
-
-
-      await previewVideo.play();
-
-    }
-
-    catch(
-      error
-    ){}
-
-  };
-
-
-$("startOverBtn")
-  .onclick =
-  () => {
-
-    previewVideo.pause();
-
-
-    previewPanel
-      .classList
-      .remove(
-        "open"
-      );
-
-
-    if(
-      recordingURL
-    ){
-
-      URL.revokeObjectURL(
-        recordingURL
-      );
-
-
-      recordingURL =
-        null;
-
-    }
-
-
-    recordedVideo =
-      null;
-
-
-    recordedParts =
-      [];
-
-  };
-
-
-$("downloadBtn")
-  .onclick =
-  () => {
-
-    if(
-      !recordedVideo
-    ){
-
-      return;
-
-    }
-
-
-    const extension =
-
-      (
-        recordedVideo.type
-        ||
-        ""
-      )
-      .includes(
-        "mp4"
-      )
-
-      ?
-
-      "mp4"
-
-      :
-
-      "webm";
-
-
-    const anchor =
-      document.createElement(
-        "a"
-      );
-
-
-    anchor.href =
-
-      recordingURL
-
-      ||
-
-      URL.createObjectURL(
-        recordedVideo
-      );
-
-
-    anchor.download =
-
-      `virtual-camera-${Date.now()}.${extension}`;
-
-
-    document.body.appendChild(
-      anchor
-    );
-
-
-    anchor.click();
-
-
-    anchor.remove();
-
-  };
-
-
-/* =====================================================
-   DIRECTOR CAMERA MOTION
-===================================================== */
-
-const baseRotation =
-  new THREE.Quaternion();
-
-
-const finalRotation =
-  new THREE.Quaternion();
-
-
-const baseEuler =
-  new THREE.Euler();
-
-
-function updateDirectorCamera(
-  dt
-){
-
-  sampleOpticalMotion();
-
-
-  /*
-  Decay translational velocity rapidly.
-
-  This lets real hand/step motion influence the shot
-  without allowing raw accelerometer drift to run away.
-  */
-
-  physicalVelocity
-    .multiplyScalar(
-
-      Math.pow(
-        .08,
-        dt
-      )
-
-    );
-
-
-  physicalOffset
-    .addScaledVector(
-
-      physicalVelocity,
-
-      dt *
-      1.5
-
-    );
-
-
-  physicalOffset
-    .multiplyScalar(
-
-      Math.pow(
-        .08,
-        dt
-      )
-
-    );
-
-
-  physicalRotation
-    .multiplyScalar(
-
-      Math.pow(
-        .03,
-        dt
-      )
-
-    );
-
-
-  /*
-  Hidden phone-camera movement provides a second,
-  tiny movement reference.
-  */
-
-  physicalOffset.x +=
-
-    opticalX *
-    .0001;
-
-
-  physicalOffset.y +=
-
-    opticalY *
-    .00007;
-
-
-  /*
-  Footstep energy produces restrained body bob.
-  */
-
-  stepEnergy *=
-
-    Math.pow(
-      .15,
-      dt
-    );
-
-
-  const bob =
-
-    Math.sin(
-
-      performance.now() *
-      .012
-
-    )
-
-    *
-
-    stepEnergy
-
-    *
-
-    .022;
-
-
-  camera.position.copy(
-    cameraBase
-  );
-
-
-  camera.position.add(
-    physicalOffset
-  );
-
-
-  camera.position.y +=
-    bob;
-
-
-  /*
-  User's editor framing becomes the base orientation.
-  */
-
-  baseEuler.set(
-
-    pitch +
-    physicalRotation.x,
-
-    yaw +
-    physicalRotation.y,
-
-    physicalRotation.z,
-
-    "YXZ"
-
-  );
-
-
-  baseRotation
-    .setFromEuler(
-      baseEuler
-    );
-
-
-  /*
-  Apply real phone rotation relative to the orientation
-  present when recording began.
-  */
-
-  finalRotation
-    .copy(
-      baseRotation
-    );
-
-
-  if(
-    haveDeviceZero
-  ){
-
-    finalRotation.multiply(
-      relativeDeviceQuaternion
-    );
-
-  }
-
-
-  /*
-  Tiny optical-flow roll correction.
-  */
-
-  const opticalRoll =
-    THREE.MathUtils.clamp(
-
-      -opticalX *
-      .00035,
-
-      -.03,
-
-      .03
-
-    );
-
-
-  if(
-    opticalRoll !==
-    0
-  ){
-
-    finalRotation.multiply(
-
-      new THREE.Quaternion()
-        .setFromAxisAngle(
-
-          new THREE.Vector3(
-            0,
-            0,
-            1
-          ),
-
-          opticalRoll
-
-        )
-
-    );
-
-  }
-
-
-  camera.quaternion.copy(
-    finalRotation
-  );
-
-}
-
-
-/* =====================================================
-   STATUS
-===================================================== */
-
-function updateStatus(){
-
-  coords.innerHTML =
-
-    `World: ${activeWorld.name}<br>`
-
-    +
-
-    `Texture: 4096 × 2048<br>`
-
-    +
-
-    `Camera: `
-
-    +
-
-    `${cameraBase.x.toFixed(2)}, `
-
-    +
-
-    `${cameraBase.y.toFixed(2)}, `
-
-    +
-
-    `${cameraBase.z.toFixed(2)}<br>`
-
-    +
-
-    `FOV: ${Math.round(camera.fov)}°<br>`
-
-    +
-
-    `Dolls: ${dolls.length}<br>`
-
-    +
-
-    `Selected: `
-
-    +
-
-    `${
-      selectedDoll
-      ?
-      selectedDoll.userData.name
-      :
-      "none"
-    }`;
-
-}
-
-
-/* =====================================================
+/* =========================================================
    RENDER LOOP
-===================================================== */
-
-let previousFrame =
-  performance.now();
-
+========================================================= */
 
 function animate(){
 
@@ -7138,45 +1065,9 @@ function animate(){
   );
 
 
-  const now =
-    performance.now();
-
-
-  const dt =
-    Math.min(
-
-      .05,
-
-      Math.max(
-
-        .001,
-
-        (
-          now -
-          previousFrame
-        )
-        /
-        1000
-
-      )
-
-    );
-
-
-  previousFrame =
-    now;
-
-
-  if(
-    heldControl
-  ){
-
-    performControl(
-      heldControl
-    );
-
-  }
-
+  /*
+  Smooth zoom.
+  */
 
   camera.fov +=
 
@@ -7187,49 +1078,18 @@ function animate(){
 
     *
 
-    .13;
+    0.14;
 
 
   camera.updateProjectionMatrix();
 
 
-  if(
-    directorMode
-  ){
-
-    updateDirectorCamera(
-      dt
-    );
-
-  }
+  camera.rotation.y =
+    yaw;
 
 
-  else {
-
-    camera.position.copy(
-      cameraBase
-    );
-
-
-    camera.rotation.order =
-      "YXZ";
-
-
-    camera.rotation.y =
-      yaw;
-
-
-    camera.rotation.x =
-      pitch;
-
-
-    camera.rotation.z =
-      0;
-
-  }
-
-
-  updateStatus();
+  camera.rotation.x =
+    pitch;
 
 
   renderer.render(
@@ -7240,31 +1100,22 @@ function animate(){
 
   );
 
-
-  controlRenderer.render(
-
-    controlScene,
-
-    controlCamera
-
-  );
-
 }
 
 
 animate();
 
 
-/* =====================================================
+/* =========================================================
    RESIZE / PHONE ROTATION
-===================================================== */
+========================================================= */
 
 function resize(){
 
   camera.aspect =
 
-    innerWidth /
-    innerHeight;
+    window.innerWidth /
+    window.innerHeight;
 
 
   camera.updateProjectionMatrix();
@@ -7272,9 +1123,9 @@ function resize(){
 
   renderer.setSize(
 
-    innerWidth,
+    window.innerWidth,
 
-    innerHeight
+    window.innerHeight
 
   );
 
@@ -7283,62 +1134,13 @@ function resize(){
 
     Math.min(
 
-      devicePixelRatio,
+      window.devicePixelRatio,
 
       2
 
     )
 
   );
-
-
-  const wasDirector =
-    directorMode;
-
-
-  updateInterfaceMode();
-
-
-  /*
-  Re-zero real phone orientation whenever landscape
-  Director mode begins.
-  */
-
-  if(
-
-    directorMode
-
-    &&
-
-    !wasDirector
-
-  ){
-
-    haveDeviceZero =
-      false;
-
-  }
-
-
-  /*
-  Returning to portrait immediately restores Editor mode.
-
-  If recording is active, finish the take first.
-  */
-
-  if(
-
-    !directorMode
-
-    &&
-
-    recording
-
-  ){
-
-    stopRecording();
-
-  }
 
 }
 
@@ -7358,19 +1160,8 @@ screen.orientation
     "change",
 
     resize
+
   );
-
-
-/* =====================================================
-   BOOT
-===================================================== */
-
-renderWorldCards();
-
-
-await loadWorld(
-  worlds[0]
-);
 
 </script>
 
