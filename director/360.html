@@ -100,7 +100,7 @@ body.director #arrowOverlay{z-index:80}
 <script type="module">
 import * as THREE from "three";
 
-const IMG_ARCTIC="./arctic_lab_panorama_4096x2048.png";
+const IMG_ARCTIC="/antarticbase_interior.png";
 
 const $=id=>document.getElementById(id);
 const app=$("app"),menuBtn=$("menuBtn"),menu=$("menu"),coords=$("coords"),worldList=$("worldList"),errorBox=$("errorBox");
@@ -204,7 +204,7 @@ async function loadWorld(world){
     environment.add(sphere);
     errorBox.style.display="none";
   }catch(err){
-    showError("Could not load ./arctic_lab_panorama_4096x2048.png. Put the PNG in the same folder as this HTML. "+(err?.message||String(err)));
+    showError("Could not load /antarticbase_interior.png. Put the PNG in the same folder as this HTML. "+(err?.message||String(err)));
   }
 }
 function renderWorldCards(){
