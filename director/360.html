@@ -2,1723 +2,1807 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta
-  name="viewport"
-  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
->
-<title>360 Position Tracking Test</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Arctic Base 360 Editor</title>
 <style>
-html,body{
-  margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:#000;
-  color:#fff;
-  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif
-}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+#app{position:fixed;inset:0}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+button{font:inherit;-webkit-tap-highlight-color:transparent}
+#menuBtn{position:fixed;top:max(14px,env(safe-area-inset-top));right:14px;z-index:60;width:48px;height:48px;border:1px solid rgba(255,255,255,.18);border-radius:14px;background:rgba(10,10,10,.62);color:#fff;font-size:25px;display:grid;place-items:center;backdrop-filter:blur(12px)}
+#menu{position:fixed;top:70px;right:14px;z-index:55;width:min(350px,calc(100vw - 28px));max-height:calc(100vh - 90px);overflow:auto;display:none;padding:12px;background:rgba(10,10,10,.80);border:1px solid rgba(255,255,255,.16);border-radius:15px;color:#fff;backdrop-filter:blur(14px)}
+#menu.open{display:block}
+.sectionTitle{margin:4px 0 8px;font-size:12px;opacity:.68;text-transform:uppercase;letter-spacing:.08em}
+.menuGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.menuAction{min-height:42px;border:1px solid rgba(255,255,255,.15);border-radius:10px;background:rgba(255,255,255,.07);color:#fff}
+.menuAction.active{outline:2px solid #fff;background:rgba(255,255,255,.15)}
+.worldList{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.worldCard{position:relative;overflow:hidden;padding:0;aspect-ratio:1.25;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:#111}
+.worldCard img{width:100%;height:100%;object-fit:cover;display:block}
+.worldCard span{position:absolute;left:0;right:0;bottom:0;padding:5px;font-size:10px;text-align:center;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.86))}
+.worldCard.active{outline:2px solid #fff}
+#coords{margin-top:10px;padding-top:9px;border-top:1px solid rgba(255,255,255,.12);font-size:11px;line-height:1.5;opacity:.78}
+#arrowOverlay{position:fixed;right:10px;bottom:max(10px,env(safe-area-inset-bottom));z-index:50;width:220px;height:190px}
+#arrowOverlay canvas{width:100%;height:100%;touch-action:none}
+#directorUI{position:fixed;inset:0;z-index:70;display:none;pointer-events:none}
+body.director #directorUI{display:block}
+body.director #menu,body.director #menuBtn{display:none!important}
+body.director #arrowOverlay{z-index:80}
+body.recording #arrowOverlay{display:none!important}
+#directorLabel{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;padding:7px 10px;border-radius:9px;color:#fff;background:rgba(0,0,0,.45);font-size:12px;backdrop-filter:blur(8px)}
+#recordBtn{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:66px;height:66px;padding:0;border:4px solid #fff;border-radius:50%;background:rgba(0,0,0,.28);display:grid;place-items:center;pointer-events:auto}
+#recordBtn:after{content:"";width:38px;height:38px;border-radius:50%;background:#ef3d43}
+#recordBtn.recording:after{width:27px;height:27px;border-radius:5px}
+#recordStatus{position:absolute;left:96px;bottom:max(41px,calc(env(safe-area-inset-bottom) + 22px));color:#fff;font-size:12px;text-shadow:0 1px 5px #000}
+#previewPanel{position:fixed;inset:0;z-index:100;display:none;background:#000}
+#previewPanel.open{display:block}
+#previewVideo{width:100%;height:100%;object-fit:contain}
+#closePreview{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:45px;height:45px;border-radius:50%;border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(0,0,0,.58);font-size:25px}
+#previewControls{position:absolute;left:0;right:0;bottom:max(16px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:9px}
+.previewButton{padding:10px 14px;border:1px solid rgba(255,255,255,.25);border-radius:10px;color:#fff;background:rgba(0,0,0,.68)}
+#cameraReference{display:none}
+#cameraFlowCanvas{display:none}
+body.director #cameraReference.active{display:block;position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:86;width:min(34vw,180px);aspect-ratio:16/9;object-fit:cover;border:2px solid rgba(255,255,255,.88);border-radius:10px;background:#050505;box-shadow:0 4px 18px rgba(0,0,0,.45);pointer-events:none}
+#cameraPreviewLabel{display:none;position:fixed;right:18px;bottom:max(116px,calc(env(safe-area-inset-bottom) + 116px));z-index:87;color:#fff;font-size:10px;letter-spacing:.08em;text-shadow:0 1px 4px #000;pointer-events:none}
+body.director #cameraPreviewLabel{display:block}
+#sensorStatus{position:absolute;top:max(50px,calc(env(safe-area-inset-top) + 50px));left:14px;padding:6px 9px;border-radius:8px;color:#fff;background:rgba(0,0,0,.42);font-size:11px;backdrop-filter:blur(8px)}
+#errorBox{display:none;position:fixed;left:12px;right:12px;top:74px;z-index:200;padding:10px 12px;border-radius:10px;background:rgba(110,0,0,.92);color:#fff;font-size:12px}
 
-button,select{
-  font:inherit
-}
+/* DIRECTOR TRACKING LAB — separate from the normal editor menu */
+#directorMenuBtn{display:none;position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;z-index:93;width:46px;height:46px;border:1px solid rgba(255,255,255,.22);border-radius:13px;background:rgba(8,8,8,.65);color:#fff;font-size:24px;place-items:center;pointer-events:auto;backdrop-filter:blur(10px)}
+body.director:not(.recording) #directorMenuBtn{display:grid}
+body.recording #directorMenuBtn,body.recording #directorMenu{display:none!important}
+#directorMenu{display:none;position:absolute;top:max(68px,calc(env(safe-area-inset-top) + 58px));right:14px;z-index:92;width:min(370px,calc(100vw - 28px));max-height:calc(100vh - 105px);overflow:auto;padding:12px;border:1px solid rgba(255,255,255,.16);border-radius:15px;background:rgba(8,8,8,.88);color:#fff;pointer-events:auto;backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.38)}
+#directorMenu.open{display:block}
+#directorMenu label{display:block;margin:9px 0 4px;font-size:11px;opacity:.72;text-transform:uppercase;letter-spacing:.06em}
+#directorMenu select,#directorMenu input{box-sizing:border-box;width:100%;min-height:39px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:#171717;color:#fff;padding:7px 9px;font:inherit}
+#directorMenu input[type=range]{padding:0;min-height:30px}
+.directorButtons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
+.directorAction{min-height:40px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:rgba(255,255,255,.08);color:#fff}
+.directorAction.primary{background:rgba(255,255,255,.17);font-weight:650}
+.trackerPanel{display:none;margin-top:9px;padding:9px;border:1px solid rgba(255,255,255,.10);border-radius:10px;background:rgba(255,255,255,.035)}
+.trackerPanel.active{display:block}
+.trackerHelp{margin-top:6px;font-size:10px;line-height:1.42;opacity:.64}
+.trackerHelp a{color:#fff}
+#translationStatus{position:absolute;top:max(82px,calc(env(safe-area-inset-top) + 82px));left:14px;max-width:min(72vw,520px);padding:6px 9px;border-radius:8px;color:#fff;background:rgba(0,0,0,.42);font-size:11px;backdrop-filter:blur(8px)}
+#translationStatus.good{background:rgba(0,72,38,.66)}
+#translationStatus.warn{background:rgba(116,75,0,.72)}
+#translationStatus.bad{background:rgba(110,0,0,.76)}
+#trackingEngineHost{display:none;position:absolute;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:86;width:min(34vw,190px);aspect-ratio:16/9;overflow:hidden;border:2px solid rgba(255,255,255,.88);border-radius:10px;background:#050505;box-shadow:0 4px 18px rgba(0,0,0,.45);pointer-events:none}
+body.director #trackingEngineHost.show{display:block}
+#trackingEngineHost video,#trackingEngineHost>video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;transform:none!important;margin:0!important}
+#trackingEngineHost canvas{display:none!important}
+#trackerPreviewMessage{position:absolute;inset:0;display:grid;place-items:center;padding:8px;text-align:center;color:#fff;font-size:10px;line-height:1.35;background:#070707}
+#trackerPreviewLabel{display:none;position:absolute;right:18px;bottom:max(116px,calc(env(safe-area-inset-bottom) + 116px));z-index:87;color:#fff;font-size:10px;letter-spacing:.06em;text-shadow:0 1px 4px #000;pointer-events:none}
+body.director #trackerPreviewLabel.show{display:block}
+#trackingDiagnostics{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.11);font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.82;white-space:pre-line}
+.scaleLine{display:flex;align-items:center;gap:8px}.scaleLine input{flex:1}.scaleLine output{width:42px;text-align:right;font-size:11px}
+#gyroSmoothingOut{width:96px}
+.gyroSmoothingLabels{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:1px 0 4px;font-size:8px;line-height:1.15;text-align:center;opacity:.52}
+.gyroSmoothingLabels span:first-child{text-align:left}.gyroSmoothingLabels span:last-child{text-align:right}
+#gyroSmoothingHelp{min-height:28px}
+#mindFile{padding:7px 4px!important}
+#calibrateAprilBtn{width:100%;margin-top:8px}
 
-#app{
-  position:fixed;
-  inset:0
-}
-
-canvas{
-  display:block
-}
-
-#menuButton{
-  position:fixed;
-  top:14px;
-  right:14px;
-  z-index:20;
-  width:48px;
-  height:48px;
-  border:1px solid #ffffff33;
-  border-radius:13px;
-  background:#111d;
-  color:#fff;
-  font-size:24px
-}
-
-#panel{
-  position:fixed;
-  top:72px;
-  right:14px;
-  z-index:19;
-  display:none;
-  box-sizing:border-box;
-  width:min(360px,calc(100vw - 28px));
-  max-height:calc(100vh - 90px);
-  overflow:auto;
-  padding:13px;
-  border:1px solid #ffffff29;
-  border-radius:14px;
-  background:#111e;
-  backdrop-filter:blur(12px)
-}
-
-#panel.open{
-  display:block
-}
-
-label{
-  display:block;
-  margin:10px 0 5px;
-  color:#bbb;
-  font-size:11px;
-  letter-spacing:.06em;
-  text-transform:uppercase
-}
-
-select{
-  box-sizing:border-box;
-  width:100%;
-  min-height:42px;
-  padding:8px;
-  border:1px solid #ffffff29;
-  border-radius:9px;
-  background:#222;
-  color:#fff
-}
-
-.buttons{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:8px;
-  margin-top:10px
-}
-
-button.action{
-  min-height:42px;
-  padding:7px;
-  border:1px solid #ffffff29;
-  border-radius:9px;
-  background:#ffffff12;
-  color:#fff
-}
-
-button.primary{
-  background:#ffffff26;
-  font-weight:650
-}
-
-button:disabled{
-  opacity:.45
-}
-
-.trackerPanel{
-  display:none;
-  margin-top:10px;
-  padding:10px;
-  border:1px solid #ffffff1d;
-  border-radius:10px;
-  background:#ffffff0a
-}
-
-.trackerPanel.active{
-  display:block
-}
-
-.help{
-  margin-top:7px;
-  color:#aaa;
-  font-size:11px;
-  line-height:1.45
-}
-
-#status{
-  position:fixed;
-  top:14px;
-  left:14px;
-  z-index:15;
-  max-width:calc(100vw - 90px);
-  padding:8px 11px;
-  border-radius:9px;
-  background:#000a;
-  font-size:12px
-}
-
-#status.good{
-  background:#075e3ddd
-}
-
-#status.warn{
-  background:#805500dd
-}
-
-#status.bad{
-  background:#850000dd
-}
-
-#diagnostics{
-  margin-top:10px;
-  padding-top:9px;
-  border-top:1px solid #ffffff20;
-  color:#bbb;
-  white-space:pre-line;
-  font:11px/1.45 ui-monospace,SFMono-Regular,Consolas,monospace
-}
-
-#preview{
-  position:fixed;
-  right:14px;
-  bottom:14px;
-  z-index:12;
-  display:none;
-  width:min(34vw,190px);
-  aspect-ratio:4/3;
-  overflow:hidden;
-  border:2px solid #fff;
-  border-radius:10px;
-  background:#050505
-}
-
-#preview.show{
-  display:block
-}
-
-#preview video{
-  width:100%!important;
-  height:100%!important;
-  object-fit:cover!important
-}
-
-#preview canvas{
-  display:none!important
-}
-
-#previewMessage{
-  position:absolute;
-  inset:0;
-  display:grid;
-  place-items:center;
-  padding:8px;
-  color:#ddd;
-  text-align:center;
-  font-size:10px
-}
-
-#error{
-  position:fixed;
-  top:72px;
-  left:12px;
-  right:12px;
-  z-index:40;
-  display:none;
-  padding:10px;
-  border-radius:10px;
-  background:#850000ee;
-  color:#fff;
-  font-size:12px
-}
-
-a{
-  color:#fff
-}
 </style>
-
-<!-- AprilTag detector: full pinned CDN path -->
-<script src="https://cdn.jsdelivr.net/gh/arenaxr/apriltag-js-standalone@f0fe55676265a1251ad36f18bac9939206a59e19/html/apriltag_wasm.js"></script>
-
-<!-- MindAR needs both `three` and the `three/addons/` prefix. -->
-<script type="importmap">
-{
-  "imports":{
-    "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
-    "mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js",
-    "threex":"https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/build/ar-threex.mjs"
-  }
-}
-</script>
 </head>
-
 <body>
 <div id="app"></div>
-<div id="error"></div>
+<div id="errorBox"></div>
 
-<div id="status" class="warn">GYRO · press Activate</div>
+<button id="menuBtn" aria-label="Menu">☰</button>
 
-<button id="menuButton" aria-label="Tracking menu">☰</button>
-
-<div id="panel" class="open">
-  <label for="method">Position tracking method</label>
-
-  <select id="method">
-    <option value="none">Gyro only</option>
-    <option value="mindar">MindAR natural image</option>
-    <option value="arjs">AR.js NFT image</option>
-    <option value="apriltag" selected>AprilTag 36h11 ID 0</option>
-  </select>
-
-  <div id="panel-none" class="trackerPanel">
-    <b>Gyro only</b>
-    <div class="help">
-      Rotation works, but physical forward/backward movement is disabled.
-    </div>
+<div id="menu">
+  <div class="sectionTitle">Mannequins</div>
+  <div class="menuGrid">
+    <button class="menuAction active" id="moveModeBtn">Move Doll</button>
+    <button class="menuAction" id="poseModeBtn">Pose Doll</button>
+    <button class="menuAction" id="addDollBtn">+ Add Doll</button>
+    <button class="menuAction" id="removeDollBtn">− Remove Doll</button>
+    <button class="menuAction" id="resetPoseBtn">Reset Pose</button>
+    <button class="menuAction" id="gridBtn">Toggle Grid</button>
   </div>
 
-  <div id="panel-mindar" class="trackerPanel">
-    <b>MindAR</b>
-
-    <div class="buttons">
-      <button id="openMindTarget" class="action primary">
-        Open target
-      </button>
-    </div>
-
-    <div class="help">
-      Uses MindAR’s fixed online card target and compiled target file. The
-      target window displays the image 619 pixels wide, approximately 10cm
-      on the measured laptop screen.
-    </div>
+  <div class="sectionTitle" style="margin-top:16px">Camera</div>
+  <div class="menuGrid">
+    <button class="menuAction" id="homeBtn">Home</button>
+    <button class="menuAction" id="groundBtn">Ground Shot</button>
+    <button class="menuAction" id="highBtn">High Shot</button>
   </div>
 
-  <div id="panel-arjs" class="trackerPanel">
-    <b>AR.js NFT</b>
-
-    <div class="buttons">
-      <button id="openArjsTarget" class="action primary">
-        Open target
-      </button>
-    </div>
-
-    <div class="help">
-      Uses AR.js’s pinball image. The NFT descriptor path includes the
-      previously missing <code>/examples/</code> directory.
-    </div>
-  </div>
-
-  <div id="panel-apriltag" class="trackerPanel">
-    <b>AprilTag 36h11 · ID 0</b>
-
-    <div class="help">
-      Display the image you supplied fullscreen on the laptop. Its black outer
-      tag edge is exactly 10.0cm. Activate tracking, keep the entire tag visible,
-      then press Calibrate and move the phone closer and farther for five seconds.
-    </div>
-
-    <div class="buttons">
-      <button id="calibrate" class="action primary">
-        Calibrate 5 sec
-      </button>
-    </div>
-  </div>
-
-  <div class="buttons">
-    <button id="activate" class="action primary">Activate</button>
-    <button id="recenter" class="action">Recenter</button>
-    <button id="stop" class="action">Stop</button>
-  </div>
-
-  <div id="diagnostics">method: inactive
-position: 0.000, 0.000, 0.000 m</div>
+  <div class="sectionTitle" style="margin-top:16px">Worlds</div>
+  <div class="worldList" id="worldList"></div>
+  <div id="coords"></div>
 </div>
 
-<div id="preview">
-  <div id="previewMessage">CAMERA PREVIEW</div>
+<div id="arrowOverlay"></div>
+
+<div id="directorUI">
+  <div id="directorLabel">DIRECTOR</div>
+  <div id="sensorStatus">GYRO · waiting for orientation</div>
+  <div id="translationStatus">POSITION · off</div>
+
+  <button id="directorMenuBtn" aria-label="Director tracking settings">☰</button>
+  <div id="directorMenu">
+    <div class="sectionTitle">Gyro camera</div>
+
+    <label for="gyroSmoothing">Motion smoothing</label>
+    <div class="scaleLine">
+      <input id="gyroSmoothing" type="range" min="1" max="5" step="1" value="1">
+      <output id="gyroSmoothingOut">1 · Raw</output>
+    </div>
+    <div class="gyroSmoothingLabels" aria-hidden="true">
+      <span>Raw</span><span>Light</span><span>Handheld</span><span>Stable</span><span>Gimbal</span>
+    </div>
+    <div class="trackerHelp" id="gyroSmoothingHelp">Exact current gyro response. Maximum immediacy; every tiny phone movement is visible.</div>
+
+    <div class="sectionTitle" style="margin-top:16px">Director position tracking</div>
+
+    <label for="trackingMethodSelect">Method</label>
+    <select id="trackingMethodSelect">
+      <option value="none">None · Gyro only</option>
+      <option value="flow" selected>1 · Camera visual motion · no target</option>
+      <option value="webxr">2 · WebXR / ARCore</option>
+      <option value="mindar">3 · MindAR · requires image target</option>
+      <option value="arjs">4 · AR.js NFT · requires image target</option>
+      <option value="apriltag">5 · AprilTag calibrated position</option>
+      <option value="hybrid">6 · Hybrid XR + step fallback</option>
+    </select>
+
+    <div id="panel-none" class="trackerPanel active">
+      <b>None · Gyro only</b>
+      <div class="trackerHelp">Maximum-performance recording mode. Only the proven quaternion gyro drives the Director camera. No WebXR session, no rear-camera tracker, no MindAR/AR.js processing, no translation filter, and no position-preview rendering.</div>
+    </div>
+
+    <div id="panel-flow" class="trackerPanel">
+      <b>Camera visual motion · no target</b>
+      <div class="trackerHelp">Uses only the rear-camera frames. It measures whole-image motion and expansion to move the 360 camera. No marker, target file, AR session, or upload is required. Monocular camera motion is relative rather than true metric distance.</div>
+    </div>
+
+    <div id="panel-webxr" class="trackerPanel">
+      <b>WebXR / ARCore</b>
+      <div class="trackerHelp">Uses a room-scale <code>local</code> XR reference space for position only. Emulated poses are rejected. Tracking-loss recovery rebases at your current virtual position instead of accepting a teleport.</div>
+    </div>
+
+    <div id="panel-mindar" class="trackerPanel">
+      <b>MindAR image target</b>
+      <label for="mindFile">Compiled .mind target (optional)</label>
+      <input id="mindFile" type="file" accept=".mind,application/octet-stream">
+      <label for="mindUrl">Or .mind target URL</label>
+      <input id="mindUrl" value="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind">
+      <label for="mindWidthCm">Physical width of target image (cm)</label>
+      <input id="mindWidthCm" type="number" min="1" max="300" step="0.1" value="20">
+      <div class="trackerHelp">Mount the target upright on a wall/monitor. The default target is MindAR's card demo. <a href="https://hiukim.github.io/mind-ar-js-doc/tools/compile/" target="_blank" rel="noopener">MindAR target compiler</a> · <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">demo image</a></div>
+    </div>
+
+    <div id="panel-arjs" class="trackerPanel">
+      <b>AR.js NFT image target</b>
+      <label for="arjsBaseUrl">Descriptor base URL (no extension)</label>
+      <input id="arjsBaseUrl" value="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/examples/data/dataNFT/pinball">
+      <label for="arjsWidthCm">Physical width of printed/displayed target (cm)</label>
+      <input id="arjsWidthCm" type="number" min="1" max="300" step="0.1" value="20">
+      <div class="trackerHelp">AR.js NFT needs the matching <code>.iset</code>, <code>.fset</code> and <code>.fset3</code> files at that base URL. <a href="https://carnaux.github.io/NFT-Marker-Creator/" target="_blank" rel="noopener">NFT descriptor creator</a> · <a href="https://ar-js-org.github.io/AR.js/aframe/examples/image-tracking/nft-video/pinball.jpg" target="_blank" rel="noopener">demo pinball image</a></div>
+    </div>
+
+    <div id="panel-apriltag" class="trackerPanel">
+      <b>AprilTag 36h11 · ID 0</b>
+      <button id="calibrateAprilBtn" class="directorAction primary">Calibrate 5 seconds</button>
+      <div class="trackerHelp">Show the supplied 1920×1080 tag image fullscreen on the laptop. Its black outer tag edge is 10.0cm. Activate this method, press Calibrate, and move the phone closer and farther while keeping the entire tag visible.</div>
+    </div>
+
+    <div id="panel-hybrid" class="trackerPanel">
+      <b>Hybrid XR + step dead reckoning</b>
+      <label for="strideCm">Estimated stride length (cm)</label>
+      <input id="strideCm" type="number" min="20" max="150" step="1" value="62">
+      <label for="stepThreshold">Step sensitivity threshold</label>
+      <input id="stepThreshold" type="number" min="0.3" max="5" step="0.05" value="1.25">
+      <div class="trackerHelp">XR supplies absolute translation while healthy. If XR position becomes emulated/lost, camera Y freezes and detected walking steps continue horizontal movement. When XR returns it rebases to the current virtual location, avoiding snap-back.</div>
+    </div>
+
+    <label for="translationScale">Translation scale</label>
+    <div class="scaleLine"><input id="translationScale" type="range" min="0.1" max="4" step="0.05" value="1"><output id="translationScaleOut">1.00×</output></div>
+
+    <div class="directorButtons">
+      <button id="activateTrackerBtn" class="directorAction primary">Activate</button>
+      <button id="recenterTrackerBtn" class="directorAction">Recenter</button>
+      <button id="stopTrackerBtn" class="directorAction">Stop</button>
+    </div>
+    <div id="trackingDiagnostics">method: none
+position: gyro only</div>
+  </div>
+
+  <button id="recordBtn" aria-label="Record"></button>
+  <div id="recordStatus">REC</div>
+
+  <div id="trackingEngineHost"><div id="trackerPreviewMessage">POSITION TRACKER PREVIEW</div></div>
+  <div id="trackerPreviewLabel">POSITION CAMERA</div>
 </div>
 
-<canvas id="processCanvas" width="320" height="240" hidden></canvas>
+<div id="previewPanel">
+  <video id="previewVideo" controls playsinline></video>
+  <button id="closePreview">×</button>
+  <div id="previewControls">
+    <button class="previewButton" id="replayBtn">Replay</button>
+    <button class="previewButton" id="startOverBtn">Start Over</button>
+    <button class="previewButton" id="downloadBtn">Download</button>
+  </div>
+</div>
+
+<canvas id="cameraFlowCanvas" width="96" height="54"></canvas>
+
+<script src="https://cdn.jsdelivr.net/gh/arenaxr/apriltag-js-standalone@f0fe55676265a1251ad36f18bac9939206a59e19/html/apriltag_wasm.js"></script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/","mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js","threex":"https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/build/ar-threex.mjs"}}
+</script>
 
 <script type="module">
-import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import * as THREE from "three";
+
+const IMG_ARCTIC="antarticbase_interior.png";
 
 const $=id=>document.getElementById(id);
-
-const app=$("app");
-const panel=$("panel");
-const methodSelect=$("method");
-const statusElement=$("status");
-const diagnostics=$("diagnostics");
-const preview=$("preview");
-const previewMessage=$("previewMessage");
-const processCanvas=$("processCanvas");
-const processContext=processCanvas.getContext("2d",{willReadFrequently:true});
-
-const TARGET_WIDTH_METERS=0.10;
-
-const MIND_TARGET_DATA=
-  "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind";
-
-const MIND_TARGET_IMAGE=
-  "https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png";
-
-const ARJS_DESCRIPTOR_URL=
-  "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/examples/data/dataNFT/pinball";
-
-const ARJS_TARGET_IMAGE=
-  "https://raw.githubusercontent.com/artoolkit/artoolkit5/master/doc/Marker%20images/pinball.jpg";
+const app=$("app"),menuBtn=$("menuBtn"),menu=$("menu"),coords=$("coords"),worldList=$("worldList"),errorBox=$("errorBox");
+const moveModeBtn=$("moveModeBtn"),poseModeBtn=$("poseModeBtn"),addDollBtn=$("addDollBtn"),removeDollBtn=$("removeDollBtn"),resetPoseBtn=$("resetPoseBtn"),gridBtn=$("gridBtn");
+const homeBtn=$("homeBtn"),groundBtn=$("groundBtn"),highBtn=$("highBtn");
 
 function showError(message){
   console.error(message);
-  $("error").style.display="block";
-  $("error").textContent=String(message);
+  errorBox.style.display="block";
+  errorBox.textContent=String(message);
 }
+addEventListener("error",e=>{if(e.message)showError(e.message)});
+addEventListener("unhandledrejection",e=>showError("Unhandled error: "+(e.reason?.message||e.reason||"unknown")));
 
-addEventListener("error",event=>{
-  if(event.message)showError(event.message);
-});
-
-addEventListener("unhandledrejection",event=>{
-  showError(event.reason?.message||event.reason||"Unknown error");
-});
-
-function setStatus(message,quality="warn"){
-  statusElement.textContent=message;
-  statusElement.className=quality;
-}
-
-function openTarget(url){
-  const targetWindow=open("","_blank");
-
-  if(!targetWindow){
-    showError("Allow pop-ups to open the tracking target.");
-    return;
-  }
-
-  targetWindow.document.write(`
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width">
-      <title>Tracking Target</title>
-      <style>
-        html,body{
-          margin:0;
-          min-width:619px;
-          background:#fff;
-          overflow:auto
-        }
-
-        img{
-          display:block;
-          width:619px;
-          height:auto;
-          margin:0 auto
-        }
-      </style>
-    </head>
-    <body>
-      <img src="${url}" alt="Tracking target">
-    </body>
-    </html>
-  `);
-
-  targetWindow.document.close();
-}
-
-$("openMindTarget").onclick=()=>openTarget(MIND_TARGET_IMAGE);
-$("openArjsTarget").onclick=()=>openTarget(ARJS_TARGET_IMAGE);
-$("menuButton").onclick=()=>panel.classList.toggle("open");
-
-/* THREE.JS SCENE */
-
+/* MAIN THREE SCENE */
 const scene=new THREE.Scene();
-scene.background=new THREE.Color(0x121923);
-
-const camera=new THREE.PerspectiveCamera(
-  70,
-  innerWidth/innerHeight,
-  0.02,
-  200
-);
-
+const camera=new THREE.PerspectiveCamera(70,innerWidth/innerHeight,.02,200);
 const renderer=new THREE.WebGLRenderer({
   antialias:true,
-  powerPreference:"high-performance"
+  powerPreference:"high-performance",
+  preserveDrawingBuffer:true
 });
-
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 renderer.setSize(innerWidth,innerHeight);
 renderer.outputColorSpace=THREE.SRGBColorSpace;
 app.appendChild(renderer.domElement);
 
+/* CAMERA */
 const cameraBase=new THREE.Vector3(0,1.6,0);
-const translationRaw=new THREE.Vector3();
-const translationFiltered=new THREE.Vector3();
+let yaw=0,pitch=0,targetFov=70;
+function constrainCamera(){
+  const d=Math.hypot(cameraBase.x,cameraBase.z),max=2.75;
+  if(d>max){cameraBase.x*=max/d;cameraBase.z*=max/d}
+  cameraBase.y=THREE.MathUtils.clamp(cameraBase.y,.16,3.4);
+}
 
-const environmentMaterial=new THREE.MeshBasicMaterial({
-  color:0x34506b,
-  side:THREE.BackSide
-});
-
-const environment=new THREE.Mesh(
-  new THREE.SphereGeometry(20,96,48),
-  environmentMaterial
-);
-
+/* WORLDS: one full inward-facing equirectangular sphere */
+const worlds=[
+  {
+    id:"arctic",
+    name:"Arctic Base",
+    src:IMG_ARCTIC,
+    radius:12,
+    centerY:1.45
+  }
+];
+let activeWorld=worlds[0],worldToken=0;
+const environment=new THREE.Group();
 scene.add(environment);
 
-new THREE.TextureLoader().load(
-  "antarticbase_interior.png",
-  texture=>{
-    texture.colorSpace=THREE.SRGBColorSpace;
+function loadTexture(src){
+  return new Promise((resolve,reject)=>{
+    new THREE.TextureLoader().load(
+      src,
+      tex=>{tex.colorSpace=THREE.SRGBColorSpace;resolve(tex)},
+      undefined,
+      err=>reject(err||new Error("Texture load failed"))
+    );
+  });
+}
+function disposeObject(o){
+  o.geometry?.dispose();
+  const mats=o.material?(Array.isArray(o.material)?o.material:[o.material]):[];
+  mats.forEach(m=>{m.map?.dispose();m.dispose()});
+}
+async function loadWorld(world){
+  const token=++worldToken;
+  activeWorld=world;
+  renderWorldCards();
+
+  try{
+    const texture=await loadTexture(world.src);
+    if(token!==worldToken){texture.dispose();return}
+
+    while(environment.children.length){
+      const o=environment.children[0];
+      environment.remove(o);
+      disposeObject(o);
+    }
+
     texture.wrapS=THREE.RepeatWrapping;
-    texture.repeat.x=-1;
-    texture.offset.x=1;
-    environmentMaterial.map=texture;
-    environmentMaterial.color.set(0xffffff);
-    environmentMaterial.needsUpdate=true;
-  },
-  undefined,
-  ()=>{
-    console.warn("antarticbase_interior.png was not found; using fallback scene.");
+    texture.wrapT=THREE.ClampToEdgeWrapping;
+    texture.repeat.set(-1,1);
+    texture.offset.set(1,0);
+    texture.minFilter=THREE.LinearMipmapLinearFilter;
+    texture.magFilter=THREE.LinearFilter;
+    texture.generateMipmaps=true;
+    texture.anisotropy=Math.min(8,renderer.capabilities.getMaxAnisotropy());
+    texture.needsUpdate=true;
+
+    const sphere=new THREE.Mesh(
+      new THREE.SphereGeometry(world.radius,256,128),
+      new THREE.MeshBasicMaterial({
+        map:texture,
+        side:THREE.BackSide,
+        depthWrite:true
+      })
+    );
+    sphere.position.set(0,world.centerY,0);
+    sphere.name="equirectangularWorld";
+    environment.add(sphere);
+    errorBox.style.display="none";
+  }catch(err){
+    showError("Could not load antarticbase_interior.png. Put the PNG in the same folder as this HTML. "+(err?.message||String(err)));
   }
+}
+function renderWorldCards(){
+  worldList.innerHTML="";
+  worlds.forEach(world=>{
+    const button=document.createElement("button");
+    button.className="worldCard"+(world===activeWorld?" active":"");
+    const img=document.createElement("img");
+    img.src=world.src;
+    img.alt=world.name;
+    const label=document.createElement("span");
+    label.textContent=world.name;
+    button.append(img,label);
+    button.onclick=async()=>{
+      await loadWorld(world);
+      cameraBase.set(0,1.6,0);yaw=0;pitch=0;targetFov=70;
+    };
+    worldList.appendChild(button);
+  });
+}
+
+/* CIRCULAR GRID */
+const GRID_RADIUS=3;
+const gridGroup=new THREE.Group();
+scene.add(gridGroup);
+const gridMaterial=new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.32});
+for(let r=.5;r<=GRID_RADIUS;r+=.5){
+  const pts=[];
+  for(let i=0;i<=128;i++){
+    const a=i/128*Math.PI*2;
+    pts.push(new THREE.Vector3(Math.cos(a)*r,.012,Math.sin(a)*r));
+  }
+  gridGroup.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),gridMaterial));
+}
+for(let i=0;i<24;i++){
+  const a=i/24*Math.PI*2;
+  gridGroup.add(new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(0,.012,0),
+      new THREE.Vector3(Math.cos(a)*GRID_RADIUS,.012,Math.sin(a)*GRID_RADIUS)
+    ]),
+    gridMaterial
+  ));
+}
+const floorHit=new THREE.Mesh(
+  new THREE.CircleGeometry(GRID_RADIUS,128),
+  new THREE.MeshBasicMaterial({transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false,colorWrite:false})
 );
+floorHit.rotation.x=-Math.PI/2;
+scene.add(floorHit);
 
-const grid=new THREE.GridHelper(12,24,0xffffff,0x506070);
-grid.position.y=0;
-scene.add(grid);
+/* MANNEQUIN LIGHTS */
+scene.add(new THREE.HemisphereLight(0xffffff,0x4a4037,2.1));
+const dollLight=new THREE.DirectionalLight(0xffffff,2.4);
+dollLight.position.set(4,6,3);
+scene.add(dollLight);
 
-const testMaterial=new THREE.MeshStandardMaterial({
-  color:0xff7b32,
-  roughness:.75
-});
+/* MANNEQUINS */
+const wood=new THREE.MeshStandardMaterial({color:0xc89d67,roughness:.72});
+const jointMaterial=new THREE.MeshStandardMaterial({color:0xd9b27d,roughness:.67});
+const dolls=[],dollMeshes=[];
+let selectedDoll=null,dollMode="move",dollCounter=0;
 
-[
-  [-1.5,.5,-2.5],
-  [1.5,.5,-3.5],
-  [0,.5,-5],
-  [-2,.5,-6]
-].forEach(position=>{
-  const box=new THREE.Mesh(
-    new THREE.BoxGeometry(1,1,1),
-    testMaterial
+const joint=(r=.085)=>new THREE.Mesh(new THREE.SphereGeometry(r,20,14),jointMaterial);
+function limb(length,r=.075){
+  const m=new THREE.Mesh(new THREE.CylinderGeometry(r,r*.92,length,18),wood);
+  m.position.y=-length/2;
+  return m;
+}
+function addOutline(mesh){
+  const o=new THREE.LineSegments(
+    new THREE.EdgesGeometry(mesh.geometry,24),
+    new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.98,depthTest:false})
   );
+  o.visible=false;o.renderOrder=30;o.scale.setScalar(1.025);
+  mesh.add(o);mesh.userData.outline=o;
+}
+function selectDoll(d){
+  selectedDoll=d;
+  dolls.forEach(root=>root.traverse(o=>{
+    if(o.isMesh&&o.userData.outline)o.userData.outline.visible=(root===d);
+  }));
+}
+function createDoll(x=0,z=-2){
+  dollCounter++;
+  const root=new THREE.Group();
+  root.position.set(x,0,z);
+  root.userData.name=`Mannequin ${dollCounter}`;
+  scene.add(root);
 
-  box.position.set(...position);
-  scene.add(box);
-});
+  const hips=new THREE.Group();hips.position.y=.95;root.add(hips);
+  hips.add(new THREE.Mesh(new THREE.CylinderGeometry(.20,.24,.30,18),wood));
 
-scene.add(new THREE.HemisphereLight(0xffffff,0x223344,2));
+  const torsoPivot=new THREE.Group();torsoPivot.position.y=.34;hips.add(torsoPivot);
+  const torso=new THREE.Mesh(new THREE.CylinderGeometry(.20,.15,.55,18),wood);torso.position.y=.26;torsoPivot.add(torso);
+  const neck=joint(.075);neck.position.y=.60;torsoPivot.add(neck);
+  const headPivot=new THREE.Group();headPivot.position.y=.69;torsoPivot.add(headPivot);
+  const head=new THREE.Mesh(new THREE.SphereGeometry(.19,24,18),wood);head.scale.set(.85,1.08,.85);head.position.y=.12;headPivot.add(head);
 
-/* MANUAL LOOK */
+  function arm(side){
+    const shoulder=new THREE.Group();shoulder.position.set(side*.24,.47,0);shoulder.rotation.z=side>0?-.16:.16;torsoPivot.add(shoulder);
+    const sj=joint(.085);shoulder.add(sj);
+    const upper=limb(.40,.07);shoulder.add(upper);
+    const elbow=new THREE.Group();elbow.position.y=-.40;shoulder.add(elbow);
+    const ej=joint(.075);elbow.add(ej);
+    const lower=limb(.36,.06);elbow.add(lower);
+    const hand=new THREE.Mesh(new THREE.SphereGeometry(.085,16,12),wood);hand.scale.set(.72,1.1,.58);hand.position.y=-.40;lower.add(hand);
+    [sj,upper].forEach(o=>o.userData.poseGroup=shoulder);
+    [ej,lower,hand].forEach(o=>o.userData.poseGroup=elbow);
+  }
+  function leg(side){
+    const hip=new THREE.Group();hip.position.set(side*.13,-.16,0);hips.add(hip);
+    const hj=joint(.09);hip.add(hj);
+    const upper=limb(.48,.085);hip.add(upper);
+    const knee=new THREE.Group();knee.position.y=-.48;hip.add(knee);
+    const kj=joint(.08);knee.add(kj);
+    const lower=limb(.46,.072);knee.add(lower);
+    const foot=new THREE.Mesh(new THREE.BoxGeometry(.13,.10,.28),wood);foot.position.set(0,-.49,.07);lower.add(foot);
+    [hj,upper].forEach(o=>o.userData.poseGroup=hip);
+    [kj,lower,foot].forEach(o=>o.userData.poseGroup=knee);
+  }
+  arm(-1);arm(1);leg(-1);leg(1);
 
-let yaw=0;
-let pitch=0;
-let dragging=false;
-let lastPointerX=0;
-let lastPointerY=0;
+  root.traverse(o=>{
+    if(o.isMesh){
+      o.userData.doll=root;
+      if(!o.userData.poseGroup)o.userData.poseGroup=(o===head)?headPivot:torsoPivot;
+      dollMeshes.push(o);addOutline(o);
+    }
+  });
 
-renderer.domElement.onpointerdown=event=>{
-  dragging=true;
-  lastPointerX=event.clientX;
-  lastPointerY=event.clientY;
-  renderer.domElement.setPointerCapture(event.pointerId);
+  dolls.push(root);
+  selectDoll(root);
+  return root;
+}
+function removeSelectedDoll(){
+  if(!selectedDoll)return;
+  const d=selectedDoll;
+  const i=dolls.indexOf(d);if(i>=0)dolls.splice(i,1);
+  for(let j=dollMeshes.length-1;j>=0;j--)if(dollMeshes[j].userData.doll===d)dollMeshes.splice(j,1);
+  scene.remove(d);
+  selectedDoll=dolls.at(-1)||null;
+  if(selectedDoll)selectDoll(selectedDoll);
+}
+createDoll(0,-2.1);
+
+/* MENU */
+menuBtn.onclick=()=>menu.classList.toggle("open");
+moveModeBtn.onclick=()=>{dollMode="move";moveModeBtn.classList.add("active");poseModeBtn.classList.remove("active")};
+poseModeBtn.onclick=()=>{dollMode="pose";poseModeBtn.classList.add("active");moveModeBtn.classList.remove("active")};
+addDollBtn.onclick=()=>createDoll(Math.max(-1.8,Math.min(1.8,dolls.length*.32-.5)),-2);
+removeDollBtn.onclick=removeSelectedDoll;
+resetPoseBtn.onclick=()=>{if(!selectedDoll)return;selectedDoll.traverse(o=>{if(o.isGroup&&o!==selectedDoll)o.rotation.set(0,0,0)})};
+gridBtn.onclick=()=>gridGroup.visible=!gridGroup.visible;
+homeBtn.onclick=()=>{cameraBase.set(0,1.6,0);yaw=0;pitch=0;targetFov=70};
+groundBtn.onclick=()=>{cameraBase.y=.23;pitch=-.02};
+highBtn.onclick=()=>{cameraBase.y=3;pitch=-.48};
+
+/* SCENE POINTER INPUT */
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+function updateRay(x,y){
+  const r=renderer.domElement.getBoundingClientRect();
+  pointer.x=((x-r.left)/r.width)*2-1;
+  pointer.y=-((y-r.top)/r.height)*2+1;
+  raycaster.setFromCamera(pointer,camera);
+}
+function getDollHit(x,y){updateRay(x,y);return raycaster.intersectObjects(dollMeshes,false)[0]||null}
+
+let pointerAction="none",poseGroup=null,lastX=0,lastY=0,startX=0,startY=0,pointerMoved=false;
+const carryOffset=new THREE.Vector3(),activePointers=new Map();
+let pinchStartDistance=0,pinchStartFov=70;
+
+renderer.domElement.onpointerdown=e=>{
+  activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(activePointers.size===2){
+    const p=[...activePointers.values()];
+    pinchStartDistance=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+    pinchStartFov=targetFov;pointerAction="pinch";return;
+  }
+  lastX=startX=e.clientX;lastY=startY=e.clientY;pointerMoved=false;
+
+  if(directorMode){
+    requestSensors().catch(()=>{});
+    pointerAction="camera";
+    renderer.domElement.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  const hit=getDollHit(e.clientX,e.clientY);
+  if(hit){
+    const doll=hit.object.userData.doll;
+    if(doll!==selectedDoll){selectDoll(doll);pointerAction="none";return}
+    if(dollMode==="move"){
+      pointerAction="moveDoll";
+      updateRay(e.clientX,e.clientY);
+      const floor=raycaster.intersectObject(floorHit,false)[0];
+      if(floor)carryOffset.set(selectedDoll.position.x-floor.point.x,0,selectedDoll.position.z-floor.point.z);
+      selectedDoll.position.y=.20;
+      renderer.domElement.setPointerCapture(e.pointerId);
+      return;
+    }
+    pointerAction="pose";
+    poseGroup=hit.object.userData.poseGroup;
+    renderer.domElement.setPointerCapture(e.pointerId);
+    return;
+  }
+
+  pointerAction="camera";
+  renderer.domElement.setPointerCapture(e.pointerId);
 };
 
-renderer.domElement.onpointermove=event=>{
-  if(!dragging)return;
+renderer.domElement.onpointermove=e=>{
+  if(activePointers.has(e.pointerId))activePointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
 
-  yaw-=(event.clientX-lastPointerX)*0.004;
-  pitch-=(event.clientY-lastPointerY)*0.004;
-  pitch=THREE.MathUtils.clamp(pitch,-Math.PI/2,Math.PI/2);
+  if(activePointers.size===2&&pinchStartDistance){
+    const p=[...activePointers.values()];
+    const d=Math.hypot(p[0].x-p[1].x,p[0].y-p[1].y);
+    targetFov=THREE.MathUtils.clamp(pinchStartFov*(pinchStartDistance/d),20,105);
+    pointerAction="pinch";return;
+  }
 
-  lastPointerX=event.clientX;
-  lastPointerY=event.clientY;
+  const dx=e.clientX-lastX,dy=e.clientY-lastY;
+  lastX=e.clientX;lastY=e.clientY;
+  if(Math.hypot(e.clientX-startX,e.clientY-startY)>7)pointerMoved=true;
+
+  if(pointerAction==="camera"){
+    yaw-=dx*.004;
+    pitch=THREE.MathUtils.clamp(pitch-dy*.004,-Math.PI/2+.015,Math.PI/2-.015);
+    if(directorMode)recenterDirectorGyro();
+  }else if(pointerAction==="moveDoll"&&selectedDoll){
+    updateRay(e.clientX,e.clientY);
+    const floor=raycaster.intersectObject(floorHit,false)[0];
+    if(floor){
+      const x=floor.point.x+carryOffset.x,z=floor.point.z+carryOffset.z;
+      if(Math.hypot(x,z)<=GRID_RADIUS-.15){selectedDoll.position.x=x;selectedDoll.position.z=z}
+      selectedDoll.position.y=.20;
+    }
+  }else if(pointerAction==="pose"&&poseGroup){
+    poseGroup.rotation.z=THREE.MathUtils.clamp(poseGroup.rotation.z+dx*.012,-2.7,2.7);
+    poseGroup.rotation.x=THREE.MathUtils.clamp(poseGroup.rotation.x+dy*.012,-2.5,2.5);
+  }
 };
 
-renderer.domElement.onpointerup=()=>{
-  dragging=false;
+function finishPointer(e){
+  activePointers.delete(e.pointerId);
+  if(activePointers.size<2)pinchStartDistance=0;
+  if(pointerAction==="moveDoll"&&selectedDoll){
+    selectedDoll.position.y=0;
+  }else if(pointerAction==="camera"&&!pointerMoved&&!directorMode){
+    updateRay(e.clientX,e.clientY);
+    const floor=raycaster.intersectObject(floorHit,false)[0];
+    if(floor){cameraBase.x=floor.point.x;cameraBase.z=floor.point.z;constrainCamera()}
+  }
+  pointerAction="none";poseGroup=null;
+  try{renderer.domElement.releasePointerCapture(e.pointerId)}catch{}
+}
+renderer.domElement.onpointerup=finishPointer;
+renderer.domElement.onpointercancel=finishPointer;
+
+renderer.domElement.addEventListener("wheel",e=>{
+  e.preventDefault();
+  targetFov=THREE.MathUtils.clamp(targetFov+e.deltaY*.03,20,105);
+},{passive:false});
+
+/* CAMERA MOVEMENT */
+function moveRelative(forward,right,vertical=0){
+  const f=new THREE.Vector3(-Math.sin(yaw),0,-Math.cos(yaw));
+  const r=new THREE.Vector3(Math.cos(yaw),0,-Math.sin(yaw));
+  cameraBase.addScaledVector(f,forward);
+  cameraBase.addScaledVector(r,right);
+  cameraBase.y+=vertical;
+  constrainCamera();
+}
+
+/* 3D BUTTON CLUSTER */
+const controlScene=new THREE.Scene();
+const controlCamera=new THREE.PerspectiveCamera(40,220/190,.1,100);
+controlCamera.position.set(0,4.7,6.4);controlCamera.lookAt(0,0,0);
+
+const controlRenderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+controlRenderer.setPixelRatio(Math.min(devicePixelRatio,2));
+controlRenderer.setSize(220,190);
+controlRenderer.setClearColor(0,0);
+$("arrowOverlay").appendChild(controlRenderer.domElement);
+
+controlScene.add(new THREE.HemisphereLight(0xffffff,0x181818,2.6));
+const controlLight=new THREE.DirectionalLight(0xffffff,2.5);controlLight.position.set(3,5,5);controlScene.add(controlLight);
+const controlGroup=new THREE.Group();controlGroup.rotation.x=-.12;controlScene.add(controlGroup);
+const controlMaterial=new THREE.MeshStandardMaterial({color:0x242424,roughness:.40,metalness:.18});
+const pressedMaterial=new THREE.MeshStandardMaterial({color:0x696969,roughness:.35});
+const whiteMaterial=new THREE.MeshStandardMaterial({color:0xffffff,roughness:.25});
+const controlHitMeshes=[];
+
+function create3DControl(action,x,z,rotation,scale=1){
+  const group=new THREE.Group();group.position.set(x,0,z);group.userData.action=action;
+
+  const base=new THREE.Mesh(new THREE.CylinderGeometry(.55*scale,.58*scale,.22*scale,30),controlMaterial);
+  base.userData.control=group;group.add(base);
+
+  const cap=new THREE.Mesh(new THREE.CylinderGeometry(.48*scale,.50*scale,.08*scale,30),controlMaterial);
+  cap.position.y=.15*scale;cap.userData.control=group;group.add(cap);
+
+  const shape=new THREE.Shape();
+  shape.moveTo(0,.48);shape.lineTo(.34,.05);shape.lineTo(.14,.05);shape.lineTo(.14,-.42);
+  shape.lineTo(-.14,-.42);shape.lineTo(-.14,.05);shape.lineTo(-.34,.05);shape.closePath();
+
+  const arrow=new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shape,{depth:.075,bevelEnabled:true,bevelThickness:.025,bevelSize:.025,bevelSegments:2}),
+    whiteMaterial
+  );
+  arrow.rotation.x=-Math.PI/2;
+  arrow.rotation.z=rotation;
+  arrow.position.y=.22*scale;
+  arrow.scale.setScalar(.72*scale);
+  group.add(arrow);
+
+  controlGroup.add(group);
+  controlHitMeshes.push(base,cap);
+}
+
+create3DControl("forward",0,-1,0);
+create3DControl("back",0,1,Math.PI);
+create3DControl("left",-1,0,Math.PI/2);
+create3DControl("right",1,0,-Math.PI/2);
+create3DControl("up",1.75,-.60,0,.82);
+create3DControl("down",1.75,.67,Math.PI,.82);
+
+const controlRaycaster=new THREE.Raycaster(),controlPointer=new THREE.Vector2();
+let heldControl=null,pressedControl=null;
+
+function performControl(action){
+  if(action==="forward")moveRelative(.07,0);
+  else if(action==="back")moveRelative(-.07,0);
+  else if(action==="left")moveRelative(0,-.07);
+  else if(action==="right")moveRelative(0,.07);
+  else if(action==="up")moveRelative(0,0,.05);
+  else if(action==="down")moveRelative(0,0,-.05);
+}
+function pickControl(e){
+  const r=controlRenderer.domElement.getBoundingClientRect();
+  controlPointer.x=((e.clientX-r.left)/r.width)*2-1;
+  controlPointer.y=-((e.clientY-r.top)/r.height)*2+1;
+  controlRaycaster.setFromCamera(controlPointer,controlCamera);
+  const hit=controlRaycaster.intersectObjects(controlHitMeshes,false)[0];
+  return hit?hit.object.userData.control:null;
+}
+controlRenderer.domElement.onpointerdown=e=>{
+  e.preventDefault();
+  const c=pickControl(e);
+  if(!c)return;
+  heldControl=c.userData.action;
+  pressedControl=c;
+  c.position.y=-.07;
+  c.children.forEach(ch=>{if(ch.material===controlMaterial)ch.material=pressedMaterial});
+  controlRenderer.domElement.setPointerCapture(e.pointerId);
 };
+function releaseControl(e){
+  if(pressedControl){
+    pressedControl.position.y=0;
+    pressedControl.children.forEach(ch=>{if(ch.material===pressedMaterial)ch.material=controlMaterial});
+  }
+  heldControl=pressedControl=null;
+  try{controlRenderer.domElement.releasePointerCapture(e.pointerId)}catch{}
+}
+controlRenderer.domElement.onpointerup=releaseControl;
+controlRenderer.domElement.onpointercancel=releaseControl;
 
-renderer.domElement.onpointercancel=()=>{
-  dragging=false;
-};
+/* DIRECTOR MODE */
+const PHONE_LIKE=matchMedia("(pointer: coarse)").matches||navigator.maxTouchPoints>0;
+let directorMode=false;
 
-/* PHONE GYRO */
+/*
+  PHONE-LOOK / 360 VIEWER ORIENTATION
 
+  This intentionally does NOT try to infer position from acceleration and it
+  does NOT use WebXR. It follows the same basic pattern used by established
+  phone-driven 360 viewers:
+
+  1. Read DeviceOrientation alpha / beta / gamma.
+  2. Convert the intrinsic phone Euler angles into a quaternion.
+  3. Apply the camera-axis correction used by Three.js DeviceOrientationControls.
+  4. Apply the current screen rotation (portrait / landscape-left / landscape-right).
+  5. Calibrate the current physical phone direction to the current virtual view.
+  6. From then on apply quaternion changes directly to the virtual camera.
+
+  Because the final camera orientation stays a quaternion, there is no
+  pitch clamp and no Euler singularity when looking high or low.
+*/
+const sensorStatus=$("sensorStatus");
 const gyroEuler=new THREE.Euler();
+const gyroManualEuler=new THREE.Euler();
 const gyroZAxis=new THREE.Vector3(0,0,1);
-const gyroScreenQuaternion=new THREE.Quaternion();
-const gyroCorrectionQuaternion=new THREE.Quaternion(
+const gyroScreenQ=new THREE.Quaternion();
+const gyroCameraCorrectionQ=new THREE.Quaternion(
   -Math.sqrt(.5),0,0,Math.sqrt(.5)
-);
+); // -90 degrees around X: phone frame -> Three.js camera frame
 
-const gyroRawQuaternion=new THREE.Quaternion();
-const gyroCalibrationQuaternion=new THREE.Quaternion();
-const gyroTargetQuaternion=new THREE.Quaternion();
-const manualQuaternion=new THREE.Quaternion();
-const inverseQuaternion=new THREE.Quaternion();
+const gyroRawQ=new THREE.Quaternion();
+const gyroRawInverseQ=new THREE.Quaternion();
+const gyroCalibrationQ=new THREE.Quaternion();
+const gyroTargetQ=new THREE.Quaternion();
+const gyroManualQ=new THREE.Quaternion();
 
-let gyroAvailable=false;
+let gyroHasReading=false;
 let gyroNeedsCalibration=true;
 let sensorPermissionRequested=false;
+let sensorPermissionGranted=true;
+let lastSensorReading=0;
 
 function screenOrientationRadians(){
-  const angle=Number.isFinite(screen.orientation?.angle)
+  const angle=(screen.orientation&&Number.isFinite(screen.orientation.angle))
     ?screen.orientation.angle
     :(Number(window.orientation)||0);
-
   return THREE.MathUtils.degToRad(angle);
 }
 
-function deviceOrientationQuaternion(alpha,beta,gamma){
+function deviceEventToQuaternion(out,alpha,beta,gamma,screenAngle){
+  /*
+    DeviceOrientation angles are intrinsic Z-X'-Y'' rotations.
+    Three.js cameras are easiest to drive using a quaternion produced from
+    YXZ, with gamma negated. This is the long-established
+    DeviceOrientationControls conversion.
+  */
   gyroEuler.set(beta,alpha,-gamma,"YXZ");
-  gyroRawQuaternion.setFromEuler(gyroEuler);
-  gyroRawQuaternion.multiply(gyroCorrectionQuaternion);
+  out.setFromEuler(gyroEuler);
 
-  gyroScreenQuaternion.setFromAxisAngle(
-    gyroZAxis,
-    -screenOrientationRadians()
-  );
+  /* Phone sensors describe the device differently from a Three.js camera.
+     This rotates the sensor frame so that holding the phone upright points
+     the virtual camera toward the horizon instead of toward the ceiling. */
+  out.multiply(gyroCameraCorrectionQ);
 
-  gyroRawQuaternion.multiply(gyroScreenQuaternion).normalize();
+  /* Correct for the fact that Android/iOS rotate the screen when the phone
+     is landscape while the physical sensor coordinate frame does not. */
+  gyroScreenQ.setFromAxisAngle(gyroZAxis,-screenAngle);
+  out.multiply(gyroScreenQ);
+
+  return out.normalize();
 }
 
-function calibrateGyro(){
-  if(!gyroAvailable)return;
+function currentManualViewQuaternion(out){
+  gyroManualEuler.set(pitch,yaw,0,"YXZ");
+  return out.setFromEuler(gyroManualEuler).normalize();
+}
 
-  gyroEuler.set(pitch,yaw,0,"YXZ");
-  manualQuaternion.setFromEuler(gyroEuler);
+function calibrateGyroToCurrentView(){
+  if(!gyroHasReading)return false;
 
-  inverseQuaternion.copy(gyroRawQuaternion).invert();
+  /*
+    correction = current virtual view * inverse(current phone orientation)
 
-  gyroCalibrationQuaternion
-    .copy(manualQuaternion)
-    .multiply(inverseQuaternion)
-    .normalize();
+    Therefore on the calibration frame:
+      correction * current phone orientation = current virtual view
 
+    No jump is possible when sensor control takes over.
+  */
+  currentManualViewQuaternion(gyroManualQ);
+  gyroRawInverseQ.copy(gyroRawQ).invert();
+  gyroCalibrationQ.copy(gyroManualQ).multiply(gyroRawInverseQ).normalize();
   gyroNeedsCalibration=false;
+
+  gyroTargetQ.copy(gyroCalibrationQ).multiply(gyroRawQ).normalize();
+  camera.quaternion.copy(gyroTargetQ);
+  return true;
 }
 
-addEventListener("deviceorientation",event=>{
-  if(
-    event.alpha==null||
-    event.beta==null||
-    event.gamma==null
-  )return;
+function recenterDirectorGyro(){
+  gyroNeedsCalibration=true;
+}
 
-  deviceOrientationQuaternion(
-    THREE.MathUtils.degToRad(event.alpha),
-    THREE.MathUtils.degToRad(event.beta),
-    THREE.MathUtils.degToRad(event.gamma)
+function updateInterfaceMode(){
+  const wasDirector=directorMode;
+  directorMode=PHONE_LIKE&&innerWidth>innerHeight;
+  document.body.classList.toggle("director",directorMode);
+  if(directorMode)menu.classList.remove("open");
+
+  if(directorMode&&!wasDirector){
+    recenterDirectorGyro();
+    sensorStatus.textContent=gyroHasReading
+      ?"GYRO · move phone to look around"
+      :"GYRO · tap screen or REC to enable";
+  }
+}
+updateInterfaceMode();
+
+addEventListener("deviceorientation",e=>{
+  if(!directorMode)return;
+  if(e.alpha==null||e.beta==null||e.gamma==null)return;
+
+  const alpha=THREE.MathUtils.degToRad(e.alpha);
+  const beta=THREE.MathUtils.degToRad(e.beta);
+  const gamma=THREE.MathUtils.degToRad(e.gamma);
+
+  deviceEventToQuaternion(
+    gyroRawQ,
+    alpha,
+    beta,
+    gamma,
+    screenOrientationRadians()
   );
 
-  gyroAvailable=true;
+  gyroHasReading=true;
+  lastSensorReading=performance.now();
 
-  if(gyroNeedsCalibration)calibrateGyro();
+  if(gyroNeedsCalibration)calibrateGyroToCurrentView();
+  sensorStatus.textContent="GYRO · 360° orientation active";
 },true);
 
 async function requestSensors(){
-  if(sensorPermissionRequested)return;
-
+  if(sensorPermissionRequested)return sensorPermissionGranted;
   sensorPermissionRequested=true;
 
-  if(
-    typeof DeviceOrientationEvent!=="undefined"&&
-    typeof DeviceOrientationEvent.requestPermission==="function"
-  ){
-    const result=await DeviceOrientationEvent.requestPermission();
-
-    if(result!=="granted"){
-      setStatus("GYRO · permission denied","bad");
-      return;
+  try{
+    if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
+      const result=await DeviceOrientationEvent.requestPermission();
+      sensorPermissionGranted=result==="granted";
+      if(!sensorPermissionGranted){
+        sensorStatus.textContent="GYRO · permission denied";
+        return false;
+      }
     }
+
+    sensorPermissionGranted=true;
+    sensorStatus.textContent=gyroHasReading
+      ?"GYRO · 360° orientation active"
+      :"GYRO · waiting for first reading";
+    return true;
+  }catch(err){
+    sensorPermissionGranted=false;
+    sensorStatus.textContent="GYRO · unavailable";
+    console.warn("Orientation permission unavailable",err);
+    return false;
   }
-
-  setStatus("GYRO · waiting for sensor","warn");
 }
 
-/* COMMON TRACKING */
+/* Recalibrate after Android/iOS changes the screen coordinate system. */
+screen.orientation?.addEventListener?.("change",()=>{
+  recenterDirectorGyro();
+});
 
-let activeMethod="none";
-let trackerActive=false;
 
-function yawFromQuaternion(quaternion){
-  const forward=new THREE.Vector3(0,0,-1)
-    .applyQuaternion(quaternion);
+/* =========================================================
+   POSITION TRACKING LAB
 
-  forward.y=0;
+   IMPORTANT ARCHITECTURE:
+   - The proven quaternion gyro above is the ONLY source of rotation.
+   - Every tracker below produces translation only.
+   - All methods feed the same translationRaw -> translationFiltered pipeline.
+   ========================================================= */
+const directorMenuBtn=$("directorMenuBtn"),directorMenu=$("directorMenu"),trackingMethodSelect=$("trackingMethodSelect");
+const translationStatus=$("translationStatus"),trackingDiagnostics=$("trackingDiagnostics");
+const activateTrackerBtn=$("activateTrackerBtn"),recenterTrackerBtn=$("recenterTrackerBtn"),stopTrackerBtn=$("stopTrackerBtn");
+const translationScale=$("translationScale"),translationScaleOut=$("translationScaleOut");
+const trackingEngineHost=$("trackingEngineHost"),trackerPreviewMessage=$("trackerPreviewMessage"),trackerPreviewLabel=$("trackerPreviewLabel");
+const cameraFlowCanvas=$("cameraFlowCanvas");
 
-  if(forward.lengthSq()<1e-8)return 0;
+/* Five-stop gyro response control.
+   Stop 1 intentionally preserves the exact previous Director behavior:
+     follow = 1 - exp(-24 * dt)
 
-  forward.normalize();
-  return Math.atan2(-forward.x,-forward.z);
+   Stops 2-5 use adaptive quaternion smoothing. When the phone is nearly
+   still, the lower base rate suppresses sensor micro-jitter. During a
+   deliberate turn/tilt, angular error increases the response rate so the
+   camera catches up without feeling as disconnected as a fixed heavy filter. */
+const gyroSmoothing=$("gyroSmoothing");
+const gyroSmoothingOut=$("gyroSmoothingOut");
+const gyroSmoothingHelp=$("gyroSmoothingHelp");
+
+const GYRO_SMOOTHING_PROFILES=[
+  null,
+  {name:"Raw",baseRate:24,boostRate:0,motionAngle:1,help:"Exact current gyro response. Maximum immediacy; every tiny phone movement is visible."},
+  {name:"Light",baseRate:13,boostRate:10,motionAngle:THREE.MathUtils.degToRad(7),help:"Light cleanup. Small shakes are softened while intentional moves stay almost as immediate as Raw."},
+  {name:"Handheld",baseRate:7,boostRate:14,motionAngle:THREE.MathUtils.degToRad(10),help:"Clean handheld sweet spot. Crisp and near-real-time during deliberate moves, with much less fine gyro jitter."},
+  {name:"Stable",baseRate:4.5,boostRate:7.5,motionAngle:THREE.MathUtils.degToRad(12),help:"Strong stabilization. Camera motion eases into turns and settles cleanly, with a small intentional delay."},
+  {name:"Gimbal",baseRate:2.2,boostRate:2.8,motionAngle:THREE.MathUtils.degToRad(16),help:"Floaty gimbal feel. Heavy smoothing and visible follow delay turn abrupt phone movement into slow, clean camera motion."}
+];
+
+function currentGyroSmoothingProfile(){
+  const index=THREE.MathUtils.clamp(Math.round(Number(gyroSmoothing.value)||1),1,5);
+  return GYRO_SMOOTHING_PROFILES[index];
 }
 
-function makeYawMap(fromQuaternion,toQuaternion,target){
-  const difference=
-    yawFromQuaternion(toQuaternion)-
-    yawFromQuaternion(fromQuaternion);
-
-  return target.setFromAxisAngle(
-    new THREE.Vector3(0,1,0),
-    difference
-  );
+function updateGyroSmoothingUI(){
+  const index=THREE.MathUtils.clamp(Math.round(Number(gyroSmoothing.value)||1),1,5);
+  const profile=GYRO_SMOOTHING_PROFILES[index];
+  gyroSmoothingOut.textContent=`${index} · ${profile.name}`;
+  gyroSmoothingHelp.textContent=profile.help;
 }
 
-function clearTranslation(){
+gyroSmoothing.oninput=updateGyroSmoothingUI;
+updateGyroSmoothingUI();
+
+let trackingMethod=trackingMethodSelect.value;
+let translationActive=false;
+const translationRaw=new THREE.Vector3();
+const translationFiltered=new THREE.Vector3();
+const translationDesired=new THREE.Vector3();
+let trackerStatusText="inactive",trackerQuality="off";
+let trackerStartTime=0;
+
+function setTranslationStatus(text,quality="off"){
+  trackerStatusText=text;trackerQuality=quality;
+  translationStatus.textContent=`POSITION · ${text}`;
+  translationStatus.classList.remove("good","warn","bad");
+  if(quality==="good")translationStatus.classList.add("good");
+  else if(quality==="warn")translationStatus.classList.add("warn");
+  else if(quality==="bad")translationStatus.classList.add("bad");
+}
+
+function setPreviewMode(mode,message=""){
+  trackingEngineHost.classList.add("show");
+  trackerPreviewLabel.classList.add("show");
+  trackerPreviewLabel.textContent=mode;
+  trackerPreviewMessage.style.display=message?"grid":"none";
+  trackerPreviewMessage.textContent=message;
+}
+
+function clearTrackingHost(){
+  [...trackingEngineHost.children].forEach(el=>{if(el!==trackerPreviewMessage)el.remove()});
+  trackerPreviewMessage.style.display="grid";
+}
+
+function updateTrackerPanels(){
+  trackingMethod=trackingMethodSelect.value;
+  document.querySelectorAll(".trackerPanel").forEach(p=>p.classList.remove("active"));
+  $("panel-"+trackingMethod)?.classList.add("active");
+
+  if(trackingMethod==="none"){
+    recenterTranslationCommon();
+    clearTrackingHost();
+    trackingEngineHost.classList.remove("show");
+    trackerPreviewLabel.classList.remove("show");
+    setTranslationStatus("gyro only","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro only";
+  }else{
+    trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: ${translationActive?trackerStatusText:"inactive"}`;
+  }
+}
+trackingMethodSelect.onchange=async()=>{
+  if(translationActive)await stopTranslationTracker();
+  updateTrackerPanels();
+};
+directorMenuBtn.onclick=()=>directorMenu.classList.toggle("open");
+translationScale.oninput=()=>translationScaleOut.textContent=Number(translationScale.value).toFixed(2)+"×";
+translationScale.oninput();
+updateTrackerPanels();
+
+function yawFromQuaternion(q){
+  const f=new THREE.Vector3(0,0,-1).applyQuaternion(q);
+  f.y=0;
+  if(f.lengthSq()<1e-8)return 0;
+  f.normalize();
+  return Math.atan2(-f.x,-f.z);
+}
+function yawMapQuaternion(fromQ,toQ,out=new THREE.Quaternion()){
+  return out.setFromAxisAngle(new THREE.Vector3(0,1,0),yawFromQuaternion(toQ)-yawFromQuaternion(fromQ));
+}
+
+function recenterTranslationCommon(){
   translationRaw.set(0,0,0);
   translationFiltered.set(0,0,0);
+  translationDesired.set(0,0,0);
 }
 
-function showPreview(label){
-  preview.classList.add("show");
-  previewMessage.style.display="grid";
-  previewMessage.textContent=label;
-}
+/* ---------- Rear-camera visual motion provider (no target) ---------- */
+let flowStream=null,flowVideo=null,flowPrevious=null,flowLastFrame=0;
+const flowContext=cameraFlowCanvas.getContext("2d",{willReadFrequently:true});
+const flowForward=new THREE.Vector3(),flowRight=new THREE.Vector3(),flowUp=new THREE.Vector3();
 
-function clearPreview(){
-  [...preview.children].forEach(element=>{
-    if(element!==previewMessage)element.remove();
-  });
-
-  previewMessage.style.display="grid";
-  preview.classList.remove("show");
-}
-
-function updateDiagnostics(){
-  diagnostics.textContent=
-    `method: ${activeMethod}\n`+
-    `position: ${translationFiltered.x.toFixed(3)}, `+
-    `${translationFiltered.y.toFixed(3)}, `+
-    `${translationFiltered.z.toFixed(3)} m`;
-}
-
-/* MINDAR */
-
-let mindar=null;
-let mindAnchor=null;
-let mindReady=false;
-
-const mindCameraMatrix=new THREE.Matrix4();
-const mindCameraPosition=new THREE.Vector3();
-const mindCameraQuaternion=new THREE.Quaternion();
-const mindScale=new THREE.Vector3();
-const mindStartPosition=new THREE.Vector3();
-const mindMapQuaternion=new THREE.Quaternion();
-const mindDelta=new THREE.Vector3();
-
-async function startMindAR(){
+async function startFlowProvider(){
   try{
-    clearPreview();
-    showPreview("MINDAR · STARTING");
-
-    const {MindARThree}=await import("mindar-image-three");
-
-    mindar=new MindARThree({
-      container:preview,
-      imageTargetSrc:MIND_TARGET_DATA
+    clearTrackingHost();
+    flowVideo=document.createElement("video");
+    flowVideo.autoplay=true;flowVideo.muted=true;flowVideo.playsInline=true;
+    flowStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:640},height:{ideal:360}}});
+    flowVideo.srcObject=flowStream;
+    trackingEngineHost.appendChild(flowVideo);
+    await new Promise((resolve,reject)=>{
+      const timer=setTimeout(()=>reject(new Error("camera startup timeout")),12000);
+      flowVideo.onloadedmetadata=()=>{clearTimeout(timer);resolve()};
     });
-
-    mindAnchor=mindar.addAnchor(0);
-
-    await mindar.start();
-
-    mindar.renderer.setAnimationLoop(()=>{
-      mindar.renderer.render(
-        mindar.scene,
-        mindar.camera
-      );
-    });
-
-    mindReady=false;
-
-    setStatus(
-      "MINDAR · point camera at the card target",
-      "warn"
-    );
-
+    await flowVideo.play();
+    cameraFlowCanvas.width=96;cameraFlowCanvas.height=54;
+    flowPrevious=null;flowLastFrame=0;
+    setPreviewMode("CAMERA VISUAL MOTION");
+    setTranslationStatus("camera motion · learning scene","warn");
     return true;
-  }catch(error){
-    console.error(error);
-    setStatus(
-      "MINDAR FAILED · "+(error.message||error),
-      "bad"
-    );
-
+  }catch(err){
+    try{flowStream?.getTracks?.().forEach(t=>t.stop())}catch{}
+    flowStream=null;flowVideo=null;flowPrevious=null;
+    clearTrackingHost();
+    setTranslationStatus("camera motion failed: "+(err?.message||err),"bad");
     return false;
   }
 }
 
-function updateMindAR(){
-  if(!mindar||!mindAnchor)return;
-
-  mindAnchor.group.updateMatrixWorld(true);
-
-  if(!mindAnchor.group.visible){
-    setStatus(
-      "MINDAR · target not visible",
-      "warn"
-    );
-
-    return;
-  }
-
-  mindCameraMatrix
-    .copy(mindAnchor.group.matrixWorld)
-    .invert();
-
-  mindCameraMatrix.decompose(
-    mindCameraPosition,
-    mindCameraQuaternion,
-    mindScale
-  );
-
-  if(!mindReady){
-    mindStartPosition.copy(mindCameraPosition);
-
-    makeYawMap(
-      mindCameraQuaternion,
-      camera.quaternion,
-      mindMapQuaternion
-    );
-
-    mindReady=true;
-
-    setStatus(
-      "MINDAR · target locked",
-      "good"
-    );
-
-    return;
-  }
-
-  mindDelta
-    .copy(mindCameraPosition)
-    .sub(mindStartPosition)
-    .applyQuaternion(mindMapQuaternion)
-    .multiplyScalar(TARGET_WIDTH_METERS);
-
-  translationRaw.copy(mindDelta);
-  setStatus("MINDAR · tracking","good");
+async function stopFlowProvider(){
+  try{flowStream?.getTracks?.().forEach(t=>t.stop())}catch{}
+  flowStream=null;flowVideo=null;flowPrevious=null;flowLastFrame=0;
+  clearTrackingHost();
 }
 
-async function stopMindAR(){
-  if(!mindar)return;
+function updateFlowProvider(){
+  if(!flowVideo||flowVideo.readyState<2)return;
+  const now=performance.now();
+  if(now-flowLastFrame<80)return;
+  flowLastFrame=now;
 
-  try{
-    mindar.renderer.setAnimationLoop(null);
-    await mindar.stop();
-    mindar.renderer.dispose();
-  }catch{}
+  const w=cameraFlowCanvas.width,h=cameraFlowCanvas.height,cx=(w-1)/2,cy=(h-1)/2;
+  flowContext.drawImage(flowVideo,0,0,w,h);
+  const rgba=flowContext.getImageData(0,0,w,h).data;
+  const current=new Uint8Array(w*h);
+  for(let i=0,j=0;i<rgba.length;i+=4,j++)current[j]=(rgba[i]*77+rgba[i+1]*150+rgba[i+2]*29)>>8;
+  if(!flowPrevious){flowPrevious=current;return}
 
-  mindar=null;
-  mindAnchor=null;
-  mindReady=false;
-}
-
-/* AR.JS */
-
-let arjsSource=null;
-let arjsContext=null;
-let arjsCamera=null;
-let arjsControls=null;
-let arjsReady=false;
-let arjsMetersPerUnit=.001;
-let arjsDataListener=null;
-
-const arjsPosition=new THREE.Vector3();
-const arjsQuaternion=new THREE.Quaternion();
-const arjsScale=new THREE.Vector3();
-const arjsStartPosition=new THREE.Vector3();
-const arjsMapQuaternion=new THREE.Quaternion();
-const arjsDelta=new THREE.Vector3();
-
-async function startARJS(){
-  try{
-    clearPreview();
-    showPreview("AR.JS · STARTING");
-
-    const {
-      ArToolkitSource,
-      ArToolkitContext,
-      ArMarkerControls
-    }=await import("threex");
-
-    ArToolkitContext.baseURL=
-      "https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/";
-
-    arjsMetersPerUnit=.001;
-
-    arjsDataListener=event=>{
-      const data=event.detail||{};
-
-      const descriptorWidthMeters=
-        Number(data.width)>0&&Number(data.dpi)>0
-          ?Number(data.width)/Number(data.dpi)*0.0254
-          :0;
-
-      if(descriptorWidthMeters>0){
-        arjsMetersPerUnit=
-          .001*TARGET_WIDTH_METERS/descriptorWidthMeters;
+  let bestScore=Infinity,bestScale=1,bestX=0,bestY=0;
+  for(const scale of [.96,.98,1,1.02,1.04]){
+    for(let oy=-2;oy<=2;oy+=2){
+      for(let ox=-2;ox<=2;ox+=2){
+        let score=0,count=0;
+        for(let y=5;y<h-5;y+=2){
+          for(let x=5;x<w-5;x+=2){
+            const sx=Math.round(cx+(x-cx)*scale+ox),sy=Math.round(cy+(y-cy)*scale+oy);
+            if(sx<0||sx>=w||sy<0||sy>=h)continue;
+            score+=Math.abs(flowPrevious[y*w+x]-current[sy*w+sx]);count++;
+          }
+        }
+        score/=Math.max(1,count);
+        if(score<bestScore){bestScore=score;bestScale=scale;bestX=ox;bestY=oy}
       }
-    };
-
-    addEventListener(
-      "arjs-nft-init-data",
-      arjsDataListener
-    );
-
-    arjsSource=new ArToolkitSource({
-      sourceType:"webcam",
-      sourceWidth:640,
-      sourceHeight:480
-    });
-
-    await new Promise((resolve,reject)=>{
-      const timeout=setTimeout(()=>{
-        reject(new Error("Camera startup timed out"));
-      },12000);
-
-      arjsSource.init(()=>{
-        clearTimeout(timeout);
-        resolve();
-      });
-    });
-
-    if(arjsSource.domElement){
-      preview.appendChild(arjsSource.domElement);
     }
+  }
+  flowPrevious=current;
 
-    arjsContext=new ArToolkitContext(
-      {
-        detectionMode:"mono",
-        canvasWidth:640,
-        canvasHeight:480
-      },
-      {
-        sourceWidth:640,
-        sourceHeight:480
-      }
-    );
+  if(bestScore>42){setTranslationStatus("camera motion · low detail","warn");return}
+  flowForward.set(0,0,-1).applyQuaternion(camera.quaternion).normalize();
+  flowRight.set(1,0,0).applyQuaternion(camera.quaternion).normalize();
+  flowUp.set(0,1,0).applyQuaternion(camera.quaternion).normalize();
+  const forward=Math.abs(bestScale-1)<.015?0:(bestScale-1)*.38;
+  const sideways=Math.abs(bestX)<1.5?0:-bestX/w*.10;
+  const vertical=Math.abs(bestY)<1.5?0:bestY/h*.08;
+  translationRaw.addScaledVector(flowForward,forward).addScaledVector(flowRight,sideways).addScaledVector(flowUp,vertical);
+  if(translationRaw.length()>4.5)translationRaw.setLength(4.5);
+  setTranslationStatus("camera visual motion","good");
+}
 
-    await new Promise(resolve=>{
-      arjsContext.init(resolve);
+/* ---------- WebXR position provider ---------- */
+let xrSession=null,xrReferenceSpace=null,xrGL=null,xrLayer=null;
+let xrGood=false,xrWasGood=false,xrNeedsRebase=false,xrHaveBaseline=false;
+let xrStableFrames=0,xrLastGoodTime=0,xrLastFrameTime=0;
+const xrStartPos=new THREE.Vector3(),xrPrevPos=new THREE.Vector3(),xrCurrentPos=new THREE.Vector3();
+const xrCurrentQ=new THREE.Quaternion(),xrMapQ=new THREE.Quaternion(),xrBaseOffset=new THREE.Vector3(),xrDelta=new THREE.Vector3();
+let normalRAF=0;
+
+function resetXRState(preserve=false){
+  const keep=preserve?translationRaw.clone():new THREE.Vector3();
+  xrGood=xrWasGood=false;xrNeedsRebase=false;xrHaveBaseline=false;xrStableFrames=0;
+  xrLastGoodTime=0;xrLastFrameTime=0;
+  xrBaseOffset.copy(keep);
+}
+
+function rebaseXR(p,q,preserve){
+  xrStartPos.copy(p);xrPrevPos.copy(p);
+  yawMapQuaternion(q,camera.quaternion,xrMapQ);
+  xrBaseOffset.copy(preserve);
+  xrHaveBaseline=true;xrNeedsRebase=false;xrGood=true;xrWasGood=true;
+  xrLastGoodTime=performance.now();
+}
+
+function processXRFrame(frame){
+  if(!xrSession||!xrReferenceSpace)return;
+  const pose=frame.getViewerPose(xrReferenceSpace);
+  const now=performance.now();
+  xrLastFrameTime=now;
+
+  if(!pose||pose.emulatedPosition){
+    xrGood=false;
+    if(xrWasGood){xrWasGood=false;xrNeedsRebase=true}
+    setTranslationStatus(pose?.emulatedPosition?"XR position emulated · frozen":"XR tracking lost · frozen","warn");
+    return;
+  }
+
+  const t=pose.transform;
+  xrCurrentPos.set(t.position.x,t.position.y,t.position.z);
+  xrCurrentQ.set(t.orientation.x,t.orientation.y,t.orientation.z,t.orientation.w).normalize();
+
+  if(!xrHaveBaseline){
+    if(xrStableFrames===0)xrPrevPos.copy(xrCurrentPos);
+    const jump=xrCurrentPos.distanceTo(xrPrevPos);
+    xrPrevPos.copy(xrCurrentPos);
+    xrStableFrames=jump<0.08?xrStableFrames+1:0;
+    setTranslationStatus(`XR stabilizing ${Math.min(xrStableFrames,8)}/8`,"warn");
+    if(xrStableFrames>=8)rebaseXR(xrCurrentPos,xrCurrentQ,translationRaw);
+    return;
+  }
+
+  const oneFrameJump=xrCurrentPos.distanceTo(xrPrevPos);
+  const recovered=!xrWasGood||(xrLastGoodTime&&now-xrLastGoodTime>350);
+  if(oneFrameJump>.45||xrNeedsRebase||recovered){
+    rebaseXR(xrCurrentPos,xrCurrentQ,translationRaw);
+    setTranslationStatus("XR recovered · rebased","warn");
+    return;
+  }
+
+  xrPrevPos.copy(xrCurrentPos);
+  xrLastGoodTime=now;xrGood=xrWasGood=true;
+
+  xrDelta.copy(xrCurrentPos).sub(xrStartPos).applyQuaternion(xrMapQ);
+  translationRaw.copy(xrBaseOffset).add(xrDelta);
+  setTranslationStatus("WebXR 6DoF","good");
+}
+
+function clearXRLayer(){
+  if(!xrGL||!xrLayer)return;
+  xrGL.bindFramebuffer(xrGL.FRAMEBUFFER,xrLayer.framebuffer);
+  xrGL.viewport(0,0,xrLayer.framebufferWidth,xrLayer.framebufferHeight);
+  xrGL.clearColor(0,0,0,0);xrGL.clearDepth(1);
+  xrGL.clear(xrGL.COLOR_BUFFER_BIT|xrGL.DEPTH_BUFFER_BIT);
+}
+
+async function startWebXRProvider(){
+  if(xrSession)return true;
+  if(!window.isSecureContext||!navigator.xr||typeof XRWebGLLayer==="undefined"){
+    setTranslationStatus("WebXR unavailable — use HTTPS + compatible Android Chrome","bad");
+    return false;
+  }
+  let pendingSession=null;
+  try{
+    const supported=await navigator.xr.isSessionSupported("immersive-ar");
+    if(!supported){setTranslationStatus("immersive-ar unsupported","bad");return false}
+    const session=await navigator.xr.requestSession("immersive-ar",{
+      requiredFeatures:["local","dom-overlay"],
+      domOverlay:{root:document.body}
     });
+    pendingSession=session;
+    const c=document.createElement("canvas");
+    xrGL=c.getContext("webgl2",{xrCompatible:true,alpha:true,antialias:false})||c.getContext("webgl",{xrCompatible:true,alpha:true,antialias:false});
+    if(!xrGL)throw new Error("No XR-compatible WebGL context");
+    await xrGL.makeXRCompatible?.();
+    xrLayer=new XRWebGLLayer(session,xrGL,{alpha:true,antialias:false,depth:true});
+    session.updateRenderState({baseLayer:xrLayer});
+    xrReferenceSpace=await session.requestReferenceSpace("local");
+    xrSession=session;
+    pendingSession=null;
+    resetXRState(false);
+    xrReferenceSpace.addEventListener("reset",()=>{xrNeedsRebase=true;xrWasGood=false});
+    session.addEventListener("end",()=>{
+      xrSession=null;xrReferenceSpace=null;xrGL=null;xrLayer=null;xrGood=xrWasGood=false;
+      if(!normalRAF)normalRAF=requestAnimationFrame(animate);
+    },{once:true});
+    if(normalRAF){cancelAnimationFrame(normalRAF);normalRAF=0}
+    setPreviewMode("WEBXR / ARCORE","ARCore owns the rear camera. Preview is disabled here to avoid competing camera sessions.");
+    session.requestAnimationFrame(xrAnimationFrame);
+    setTranslationStatus("XR starting…","warn");
+    return true;
+  }catch(err){
+    console.warn("WebXR start failed",err);
+    if(pendingSession){try{await pendingSession.end()}catch{}}
+    xrSession=null;xrReferenceSpace=null;xrGL=null;xrLayer=null;
+    resetXRState(false);
+    setTranslationStatus("WebXR start failed: "+(err?.message||err),"bad");
+    return false;
+  }
+}
 
+async function stopWebXRProvider(){
+  const s=xrSession;
+  if(s){try{await s.end()}catch{}}
+  xrSession=null;xrReferenceSpace=null;xrGL=null;xrLayer=null;
+  resetXRState(false);
+}
+
+/* ---------- MindAR natural-image position provider ---------- */
+let mindarThree=null,mindAnchor=null,mindObjectURL=null,mindReady=false,mindHadTarget=false;
+const mindCamMatrix=new THREE.Matrix4(),mindCamPos=new THREE.Vector3(),mindCamQ=new THREE.Quaternion(),mindScaleScratch=new THREE.Vector3();
+const mindStartPos=new THREE.Vector3(),mindMapQ=new THREE.Quaternion(),mindDelta=new THREE.Vector3();
+
+async function startMindARProvider(){
+  try{
+    clearTrackingHost();
+    const {MindARThree}=await import("mindar-image-three");
+    const file=$("mindFile").files?.[0];
+    if(mindObjectURL){URL.revokeObjectURL(mindObjectURL);mindObjectURL=null}
+    const src=file?(mindObjectURL=URL.createObjectURL(file)):$("mindUrl").value.trim();
+    if(!src)throw new Error("Choose a .mind target or enter a URL");
+    mindarThree=new MindARThree({
+      container:trackingEngineHost,
+      imageTargetSrc:src,
+      filterMinCF:0.0005,
+      filterBeta:0.012,
+      warmupTolerance:4,
+      missTolerance:8
+    });
+    mindAnchor=mindarThree.addAnchor(0);
+    await mindarThree.start();
+    if(mindarThree.video&&!mindarThree.video.isConnected)trackingEngineHost.appendChild(mindarThree.video);
+    mindarThree.renderer.setAnimationLoop(()=>mindarThree.renderer.render(mindarThree.scene,mindarThree.camera));
+    mindReady=false;mindHadTarget=false;
+    setPreviewMode("MINDAR TARGET");
+    setTranslationStatus("MindAR · find target image","warn");
+    return true;
+  }catch(err){
+    console.warn("MindAR start failed",err);
+    if(mindarThree){
+      try{mindarThree.renderer?.setAnimationLoop?.(null)}catch{}
+      try{await mindarThree.stop?.()}catch{}
+      try{mindarThree.renderer?.dispose?.()}catch{}
+    }
+    mindarThree=null;mindAnchor=null;mindReady=false;mindHadTarget=false;
+    clearTrackingHost();
+    setTranslationStatus("MindAR failed: "+(err?.message||err),"bad");
+    return false;
+  }
+}
+
+async function stopMindARProvider(){
+  if(mindarThree){
+    try{mindarThree.renderer.setAnimationLoop(null)}catch{}
+    try{await mindarThree.stop()}catch{}
+    try{mindarThree.renderer.dispose()}catch{}
+  }
+  mindarThree=null;mindAnchor=null;mindReady=false;mindHadTarget=false;
+  if(mindObjectURL){URL.revokeObjectURL(mindObjectURL);mindObjectURL=null}
+  clearTrackingHost();
+}
+
+function updateMindARProvider(){
+  if(!mindarThree||!mindAnchor)return;
+  mindAnchor.group.updateMatrixWorld(true);
+  if(!mindAnchor.group.visible){
+    if(mindHadTarget)setTranslationStatus("MindAR target lost · frozen","warn");
+    else setTranslationStatus("MindAR · point camera at target","warn");
+    return;
+  }
+  mindHadTarget=true;
+  mindCamMatrix.copy(mindAnchor.group.matrixWorld).invert();
+  mindCamMatrix.decompose(mindCamPos,mindCamQ,mindScaleScratch);
+  const widthM=Math.max(.01,Number($("mindWidthCm").value)||20)/100;
+  if(!mindReady){
+    mindStartPos.copy(mindCamPos);
+    yawMapQuaternion(mindCamQ,camera.quaternion,mindMapQ);
+    mindReady=true;
+    setTranslationStatus("MindAR target locked · zeroed","good");
+    return;
+  }
+  mindDelta.copy(mindCamPos).sub(mindStartPos).applyQuaternion(mindMapQ).multiplyScalar(widthM);
+  translationRaw.copy(mindDelta);
+  setTranslationStatus("MindAR image tracking","good");
+}
+
+/* ---------- AR.js NFT natural-image position provider ---------- */
+let arjsSource=null,arjsContext=null,arjsCamera=null,arjsControls=null,arjsReady=false,arjsHadTarget=false;
+let arjsMetersPerUnit=.001,arjsInitListener=null;
+const arjsPos=new THREE.Vector3(),arjsQ=new THREE.Quaternion(),arjsScaleScratch=new THREE.Vector3(),arjsStartPos=new THREE.Vector3(),arjsMapQ=new THREE.Quaternion(),arjsDelta=new THREE.Vector3();
+
+async function startARJSProvider(){
+  try{
+    clearTrackingHost();
+    const {ArToolkitSource,ArToolkitContext,ArMarkerControls}=await import("threex");
+    ArToolkitContext.baseURL="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/";
+    const descriptorsUrl=$("arjsBaseUrl").value.trim();
+    if(!descriptorsUrl)throw new Error("Enter the NFT descriptor base URL");
+    arjsSource=new ArToolkitSource({sourceType:"webcam",sourceWidth:640,sourceHeight:480});
+    await new Promise((resolve,reject)=>{
+      let done=false;
+      const timer=setTimeout(()=>{if(!done)reject(new Error("camera startup timeout"))},12000);
+      arjsSource.init(()=>{done=true;clearTimeout(timer);resolve()});
+    });
+    if(arjsSource.domElement)trackingEngineHost.appendChild(arjsSource.domElement);
+    arjsContext=new ArToolkitContext({detectionMode:"mono",canvasWidth:640,canvasHeight:480},{sourceWidth:640,sourceHeight:480});
+    await new Promise(resolve=>arjsContext.init(resolve));
     arjsCamera=new THREE.Camera();
     arjsCamera.matrixAutoUpdate=false;
-    arjsCamera.visible=false;
-
-    arjsControls=new ArMarkerControls(
-      arjsContext,
-      arjsCamera,
-      {
-        type:"nft",
-        descriptorsUrl:ARJS_DESCRIPTOR_URL,
-        changeMatrixMode:"cameraTransformMatrix",
-        smooth:true,
-        smoothCount:7,
-        smoothTolerance:.01,
-        smoothThreshold:2
-      }
-    );
-
-    arjsReady=false;
-    previewMessage.style.display="none";
-
-    setStatus(
-      "AR.JS · loading target descriptors",
-      "warn"
-    );
-
+    arjsControls=new ArMarkerControls(arjsContext,arjsCamera,{
+      type:"nft",
+      descriptorsUrl,
+      changeMatrixMode:"cameraTransformMatrix",
+      smooth:true,
+      smoothCount:7,
+      smoothTolerance:.01,
+      smoothThreshold:2
+    });
+    arjsReady=false;arjsHadTarget=false;arjsMetersPerUnit=.001;
+    arjsInitListener=e=>{
+      const d=e.detail||{};
+      const descriptorWidthM=(Number(d.width)>0&&Number(d.dpi)>0)?(Number(d.width)/Number(d.dpi))*0.0254:0;
+      const actualWidthM=Math.max(.01,Number($("arjsWidthCm").value)||20)/100;
+      // AR.js' own NFT Three example positions content using mm-like values.
+      // Correct that nominal scale by the actual physical display/print width.
+      if(descriptorWidthM>0)arjsMetersPerUnit=.001*(actualWidthM/descriptorWidthM);
+    };
+    addEventListener("arjs-nft-init-data",arjsInitListener);
+    setPreviewMode("AR.JS NFT TARGET");
+    setTranslationStatus("AR.js · loading NFT descriptors","warn");
     return true;
-  }catch(error){
-    console.error(error);
-
-    setStatus(
-      "AR.JS FAILED · "+(error.message||error),
-      "bad"
-    );
-
+  }catch(err){
+    console.warn("AR.js start failed",err);
+    try{arjsSource?.domElement?.srcObject?.getTracks?.().forEach(t=>t.stop())}catch{}
+    arjsSource=null;arjsContext=null;arjsCamera=null;arjsControls=null;
+    arjsReady=false;arjsHadTarget=false;
+    clearTrackingHost();
+    setTranslationStatus("AR.js failed: "+(err?.message||err),"bad");
     return false;
   }
 }
 
-function updateARJS(){
-  if(
-    !arjsSource||
-    !arjsContext||
-    !arjsCamera||
-    !arjsSource.ready
-  )return;
+async function stopARJSProvider(){
+  if(arjsInitListener)removeEventListener("arjs-nft-init-data",arjsInitListener);
+  arjsInitListener=null;
+  try{arjsSource?.domElement?.srcObject?.getTracks?.().forEach(t=>t.stop())}catch{}
+  arjsSource=null;arjsContext=null;arjsCamera=null;arjsControls=null;arjsReady=false;arjsHadTarget=false;
+  clearTrackingHost();
+}
 
-  arjsContext.update(arjsSource.domElement);
-
+function updateARJSProvider(){
+  if(!arjsSource||!arjsContext||!arjsCamera||!arjsSource.ready)return;
+  try{arjsContext.update(arjsSource.domElement)}catch(err){console.warn("AR.js update",err);return}
   if(!arjsCamera.visible){
-    setStatus(
-      "AR.JS · point camera at pinball target",
-      "warn"
-    );
-
+    if(arjsHadTarget)setTranslationStatus("AR.js target lost · frozen","warn");
+    else setTranslationStatus("AR.js · point camera at NFT target","warn");
     return;
   }
-
+  arjsHadTarget=true;
   arjsCamera.updateMatrixWorld(true);
-
-  arjsCamera.matrixWorld.decompose(
-    arjsPosition,
-    arjsQuaternion,
-    arjsScale
-  );
-
+  arjsCamera.matrixWorld.decompose(arjsPos,arjsQ,arjsScaleScratch);
   if(!arjsReady){
-    arjsStartPosition.copy(arjsPosition);
-
-    makeYawMap(
-      arjsQuaternion,
-      camera.quaternion,
-      arjsMapQuaternion
-    );
-
+    arjsStartPos.copy(arjsPos);
+    yawMapQuaternion(arjsQ,camera.quaternion,arjsMapQ);
     arjsReady=true;
-
-    setStatus(
-      "AR.JS · target locked",
-      "good"
-    );
-
+    setTranslationStatus("AR.js target locked · zeroed","good");
     return;
   }
-
-  arjsDelta
-    .copy(arjsPosition)
-    .sub(arjsStartPosition)
-    .applyQuaternion(arjsMapQuaternion)
-    .multiplyScalar(arjsMetersPerUnit);
-
+  arjsDelta.copy(arjsPos).sub(arjsStartPos).applyQuaternion(arjsMapQ).multiplyScalar(arjsMetersPerUnit);
   translationRaw.copy(arjsDelta);
-  setStatus("AR.JS · tracking","good");
+  setTranslationStatus("AR.js NFT tracking","good");
 }
 
-async function stopARJS(){
-  if(arjsDataListener){
-    removeEventListener(
-      "arjs-nft-init-data",
-      arjsDataListener
-    );
-  }
-
-  arjsDataListener=null;
-
-  try{
-    arjsSource?.domElement?.srcObject
-      ?.getTracks()
-      ?.forEach(track=>track.stop());
-  }catch{}
-
-  arjsSource=null;
-  arjsContext=null;
-  arjsCamera=null;
-  arjsControls=null;
-  arjsReady=false;
-}
-
-/* APRILTAG */
-
-let aprilModule=null;
-let aprilVideo=null;
-let aprilStream=null;
-
-let aprilSetOptions=null;
-let aprilSetCamera=null;
-let aprilSetTagSize=null;
-let aprilSetImageBuffer=null;
-let aprilDetect=null;
-let aprilDestroy=null;
-
-let aprilLastDetectionTime=0;
-let aprilTagVisible=false;
-let aprilCalibrated=false;
-let aprilCalibrationEnd=0;
+/* ---------- AprilTag 36h11 ID 0 calibrated provider ---------- */
+let aprilModule=null,aprilVideo=null,aprilStream=null,aprilDestroy=null,aprilSetImage=null,aprilDetect=null;
+let aprilReady=false,aprilCalibrationEnd=0,aprilLastFrame=0;
 let aprilSamples=[];
+const aprilContext=cameraFlowCanvas.getContext("2d",{willReadFrequently:true});
+const aprilTagMatrix=new THREE.Matrix4(),aprilCameraMatrix=new THREE.Matrix4();
+const aprilPosition=new THREE.Vector3(),aprilQuaternion=new THREE.Quaternion(),aprilScale=new THREE.Vector3();
+const aprilStartPosition=new THREE.Vector3(),aprilMapQuaternion=new THREE.Quaternion(),aprilDelta=new THREE.Vector3();
+const aprilAxis=new THREE.Vector3(),aprilVirtualForward=new THREE.Vector3();
+const aprilDecoder=new TextDecoder();
 
-const aprilTagMatrix=new THREE.Matrix4();
-const aprilCameraMatrix=new THREE.Matrix4();
-const aprilCameraPosition=new THREE.Vector3();
-const aprilCameraQuaternion=new THREE.Quaternion();
-const aprilCameraScale=new THREE.Vector3();
-const aprilStartPosition=new THREE.Vector3();
-const aprilMapQuaternion=new THREE.Quaternion();
-const aprilDelta=new THREE.Vector3();
-const aprilForwardAxis=new THREE.Vector3();
-const virtualForward=new THREE.Vector3();
-
-const textDecoder=new TextDecoder();
-
-async function startAprilTag(){
+async function startAprilTagProvider(){
   try{
-    clearPreview();
-    showPreview("APRILTAG · LOADING DETECTOR");
-
-    if(typeof window.AprilTagWasm!=="function"){
-      throw new Error("AprilTag WASM library did not load");
-    }
-
+    clearTrackingHost();
+    if(typeof window.AprilTagWasm!=="function")throw new Error("AprilTag library did not load");
+    setTranslationStatus("AprilTag · loading detector","warn");
     aprilModule=await window.AprilTagWasm();
-
-    const initialize=
-      aprilModule.cwrap(
-        "atagjs_init",
-        "number",
-        []
-      );
-
-    aprilDestroy=
-      aprilModule.cwrap(
-        "atagjs_destroy",
-        "number",
-        []
-      );
-
-    aprilSetOptions=
-      aprilModule.cwrap(
-        "atagjs_set_detector_options",
-        "number",
-        [
-          "number",
-          "number",
-          "number",
-          "number",
-          "number",
-          "number",
-          "number"
-        ]
-      );
-
-    aprilSetCamera=
-      aprilModule.cwrap(
-        "atagjs_set_pose_info",
-        "number",
-        [
-          "number",
-          "number",
-          "number",
-          "number"
-        ]
-      );
-
-    aprilSetImageBuffer=
-      aprilModule.cwrap(
-        "atagjs_set_img_buffer",
-        "number",
-        [
-          "number",
-          "number",
-          "number"
-        ]
-      );
-
-    aprilSetTagSize=
-      aprilModule.cwrap(
-        "atagjs_set_tag_size",
-        "number",
-        [
-          "number",
-          "number"
-        ]
-      );
-
-    aprilDetect=
-      aprilModule.cwrap(
-        "atagjs_detect",
-        "number",
-        []
-      );
-
-    if(initialize()<0){
-      throw new Error("Could not initialize AprilTag detector");
-    }
-
-    aprilSetOptions(
-      2,
-      0,
-      1,
-      1,
-      1,
-      1,
-      0
-    );
-
-    aprilSetTagSize(
-      0,
-      TARGET_WIDTH_METERS
-    );
+    const init=aprilModule.cwrap("atagjs_init","number",[]);
+    aprilDestroy=aprilModule.cwrap("atagjs_destroy","number",[]);
+    const setOptions=aprilModule.cwrap("atagjs_set_detector_options","number",["number","number","number","number","number","number","number"]);
+    const setCamera=aprilModule.cwrap("atagjs_set_pose_info","number",["number","number","number","number"]);
+    const setTagSize=aprilModule.cwrap("atagjs_set_tag_size","number",["number","number"]);
+    aprilSetImage=aprilModule.cwrap("atagjs_set_img_buffer","number",["number","number","number"]);
+    aprilDetect=aprilModule.cwrap("atagjs_detect","number",[]);
+    if(init()<0)throw new Error("detector initialization failed");
+    setOptions(2,0,1,1,1,1,0);
+    setTagSize(0,.10);
 
     aprilVideo=document.createElement("video");
-    aprilVideo.autoplay=true;
-    aprilVideo.muted=true;
-    aprilVideo.playsInline=true;
-
-    aprilStream=await navigator.mediaDevices.getUserMedia({
-      audio:false,
-      video:{
-        facingMode:{ideal:"environment"},
-        width:{ideal:640},
-        height:{ideal:480}
-      }
-    });
-
+    aprilVideo.autoplay=true;aprilVideo.muted=true;aprilVideo.playsInline=true;
+    aprilStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"environment"},width:{ideal:640},height:{ideal:480}}});
     aprilVideo.srcObject=aprilStream;
-    preview.appendChild(aprilVideo);
-
+    trackingEngineHost.appendChild(aprilVideo);
     await new Promise((resolve,reject)=>{
-      const timeout=setTimeout(()=>{
-        reject(new Error("Camera startup timed out"));
-      },12000);
-
-      aprilVideo.onloadedmetadata=()=>{
-        clearTimeout(timeout);
-        resolve();
-      };
+      const timer=setTimeout(()=>reject(new Error("camera startup timeout")),12000);
+      aprilVideo.onloadedmetadata=()=>{clearTimeout(timer);resolve()};
     });
-
     await aprilVideo.play();
-
-    processCanvas.width=320;
-    processCanvas.height=Math.max(
-      180,
-      Math.round(
-        320*
-        aprilVideo.videoHeight/
-        aprilVideo.videoWidth
-      )
-    );
-
-    /*
-      Most rear phone cameras are close to a 64-degree horizontal FOV.
-      This is a starting focal-length estimate. The five-second movement
-      pass establishes the actual forward direction and tracking zero.
-    */
-    const focalLength=processCanvas.width*.8;
-
-    aprilSetCamera(
-      focalLength,
-      focalLength,
-      processCanvas.width/2,
-      processCanvas.height/2
-    );
-
-    aprilLastDetectionTime=0;
-    aprilTagVisible=false;
-    aprilCalibrated=false;
-    aprilCalibrationEnd=0;
-    aprilSamples=[];
-
-    previewMessage.style.display="none";
-
-    setStatus(
-      "APRILTAG · point camera at ID 0, then calibrate",
-      "warn"
-    );
-
+    cameraFlowCanvas.width=320;
+    cameraFlowCanvas.height=Math.max(180,Math.round(320*aprilVideo.videoHeight/aprilVideo.videoWidth));
+    const focal=cameraFlowCanvas.width*.8;
+    setCamera(focal,focal,cameraFlowCanvas.width/2,cameraFlowCanvas.height/2);
+    aprilReady=false;aprilCalibrationEnd=0;aprilLastFrame=0;aprilSamples=[];
+    $("calibrateAprilBtn").disabled=false;$("calibrateAprilBtn").textContent="Calibrate 5 seconds";
+    setPreviewMode("APRILTAG ID 0");
+    setTranslationStatus("AprilTag · find ID 0 target","warn");
     return true;
-  }catch(error){
-    console.error(error);
-
-    setStatus(
-      "APRILTAG FAILED · "+(error.message||error),
-      "bad"
-    );
-
+  }catch(err){
+    try{aprilStream?.getTracks?.().forEach(t=>t.stop())}catch{}
+    try{aprilDestroy?.()}catch{}
+    aprilModule=null;aprilVideo=null;aprilStream=null;aprilReady=false;
+    clearTrackingHost();
+    setTranslationStatus("AprilTag failed: "+(err?.message||err),"bad");
     return false;
   }
+}
+
+async function stopAprilTagProvider(){
+  try{aprilStream?.getTracks?.().forEach(t=>t.stop())}catch{}
+  try{aprilDestroy?.()}catch{}
+  aprilModule=null;aprilVideo=null;aprilStream=null;aprilDestroy=null;aprilSetImage=null;aprilDetect=null;
+  aprilReady=false;aprilCalibrationEnd=0;aprilLastFrame=0;aprilSamples=[];
+  $("calibrateAprilBtn").disabled=false;$("calibrateAprilBtn").textContent="Calibrate 5 seconds";
+  clearTrackingHost();
 }
 
 function readAprilDetections(){
-  processContext.drawImage(
-    aprilVideo,
-    0,
-    0,
-    processCanvas.width,
-    processCanvas.height
-  );
-
-  const imageData=processContext.getImageData(
-    0,
-    0,
-    processCanvas.width,
-    processCanvas.height
-  );
-
-  const rgba=imageData.data;
-  const grayscale=new Uint8Array(
-    processCanvas.width*
-    processCanvas.height
-  );
-
-  for(let source=0,target=0;source<rgba.length;source+=4,target++){
-    grayscale[target]=Math.round(
-      rgba[source]*.299+
-      rgba[source+1]*.587+
-      rgba[source+2]*.114
-    );
-  }
-
-  const imagePointer=aprilSetImageBuffer(
-    processCanvas.width,
-    processCanvas.height,
-    processCanvas.width
-  );
-
-  aprilModule.HEAPU8.set(
-    grayscale,
-    imagePointer
-  );
-
-  const resultPointer=aprilDetect();
-  const resultLength=aprilModule.getValue(
-    resultPointer,
-    "i32"
-  );
-
-  if(!resultLength)return [];
-
-  const stringPointer=aprilModule.getValue(
-    resultPointer+4,
-    "i32"
-  );
-
-  const json=textDecoder.decode(
-    new Uint8Array(
-      aprilModule.HEAPU8.buffer,
-      stringPointer,
-      resultLength
-    )
-  );
-
-  return JSON.parse(json);
+  const w=cameraFlowCanvas.width,h=cameraFlowCanvas.height;
+  aprilContext.drawImage(aprilVideo,0,0,w,h);
+  const rgba=aprilContext.getImageData(0,0,w,h).data,gray=new Uint8Array(w*h);
+  for(let i=0,j=0;i<rgba.length;i+=4,j++)gray[j]=(rgba[i]*77+rgba[i+1]*150+rgba[i+2]*29)>>8;
+  const imagePointer=aprilSetImage(w,h,w);
+  aprilModule.HEAPU8.set(gray,imagePointer);
+  const resultPointer=aprilDetect(),length=aprilModule.getValue(resultPointer,"i32");
+  if(!length)return [];
+  const stringPointer=aprilModule.getValue(resultPointer+4,"i32");
+  return JSON.parse(aprilDecoder.decode(new Uint8Array(aprilModule.HEAPU8.buffer,stringPointer,length)));
 }
 
 function finishAprilCalibration(){
   aprilCalibrationEnd=0;
-  $("calibrate").disabled=false;
-  $("calibrate").textContent="Calibrate 5 sec";
-
-  if(aprilSamples.length<8){
-    aprilCalibrated=false;
-
-    setStatus(
-      "APRILTAG · calibration failed: keep the tag visible",
-      "bad"
-    );
-
-    return;
-  }
-
-  let nearest=aprilSamples[0];
-  let farthest=aprilSamples[0];
-
-  for(const sample of aprilSamples){
-    if(sample.length()<nearest.length()){
-      nearest=sample;
-    }
-
-    if(sample.length()>farthest.length()){
-      farthest=sample;
-    }
-  }
-
-  aprilForwardAxis
-    .copy(nearest)
-    .sub(farthest);
-
-  const movementRange=aprilForwardAxis.length();
-
-  if(movementRange<.02){
-    aprilCalibrated=false;
-
-    setStatus(
-      "APRILTAG · move farther in and out, then retry",
-      "bad"
-    );
-
-    return;
-  }
-
-  aprilForwardAxis.normalize();
-
-  virtualForward
-    .set(0,0,-1)
-    .applyQuaternion(camera.quaternion)
-    .normalize();
-
-  aprilMapQuaternion.setFromUnitVectors(
-    aprilForwardAxis,
-    virtualForward
-  );
-
-  aprilStartPosition.copy(
-    aprilSamples[aprilSamples.length-1]
-  );
-
-  aprilCalibrated=true;
-  clearTranslation();
-
-  setStatus(
-    `APRILTAG · calibrated over ${(movementRange*100).toFixed(1)}cm`,
-    "good"
-  );
+  $("calibrateAprilBtn").disabled=false;$("calibrateAprilBtn").textContent="Calibrate 5 seconds";
+  if(aprilSamples.length<8){aprilReady=false;setTranslationStatus("AprilTag · calibration failed · keep tag visible","bad");return}
+  let nearest=aprilSamples[0],farthest=aprilSamples[0];
+  for(const sample of aprilSamples){if(sample.length()<nearest.length())nearest=sample;if(sample.length()>farthest.length())farthest=sample}
+  aprilAxis.copy(nearest).sub(farthest);
+  const range=aprilAxis.length();
+  if(range<.02){aprilReady=false;setTranslationStatus("AprilTag · move farther in and out","bad");return}
+  aprilAxis.normalize();
+  aprilVirtualForward.set(0,0,-1).applyQuaternion(camera.quaternion).normalize();
+  aprilMapQuaternion.setFromUnitVectors(aprilAxis,aprilVirtualForward);
+  aprilStartPosition.copy(aprilSamples[aprilSamples.length-1]);
+  aprilReady=true;recenterTranslationCommon();
+  setTranslationStatus(`AprilTag · calibrated ${(range*100).toFixed(1)} cm`,"good");
 }
 
-function updateAprilTag(){
-  if(
-    !aprilVideo||
-    !aprilModule||
-    aprilVideo.readyState<2
-  )return;
-
+function updateAprilTagProvider(){
+  if(!aprilModule||!aprilVideo||aprilVideo.readyState<2)return;
   const now=performance.now();
-
-  if(now-aprilLastDetectionTime<90)return;
-  aprilLastDetectionTime=now;
-
+  if(now-aprilLastFrame<90)return;
+  aprilLastFrame=now;
   let detections;
-
-  try{
-    detections=readAprilDetections();
-  }catch(error){
-    console.warn("AprilTag detection error",error);
-    return;
-  }
-
-  const detection=detections.find(
-    item=>item.id===0&&item.pose
-  );
-
-  if(!detection){
-    aprilTagVisible=false;
-
-    if(aprilCalibrationEnd){
-      setStatus(
-        "APRILTAG · keep the entire tag visible",
-        "warn"
-      );
-    }else{
-      setStatus(
-        "APRILTAG · ID 0 not visible",
-        "warn"
-      );
-    }
-
-    return;
-  }
-
-  aprilTagVisible=true;
-
-  const rotation=detection.pose.R;
-  const position=detection.pose.t;
-
-  /*
-    The detector serializes R by columns. Convert it to a Three.js
-    transform, then invert it to obtain camera position relative to tag.
-  */
-  aprilTagMatrix.set(
-    rotation[0][0],
-    rotation[1][0],
-    rotation[2][0],
-    position[0],
-
-    rotation[0][1],
-    rotation[1][1],
-    rotation[2][1],
-    position[1],
-
-    rotation[0][2],
-    rotation[1][2],
-    rotation[2][2],
-    position[2],
-
-    0,0,0,1
-  );
-
-  aprilCameraMatrix
-    .copy(aprilTagMatrix)
-    .invert();
-
-  aprilCameraMatrix.decompose(
-    aprilCameraPosition,
-    aprilCameraQuaternion,
-    aprilCameraScale
-  );
-
+  try{detections=readAprilDetections()}catch(err){console.warn("AprilTag detection",err);return}
+  const detection=detections.find(item=>item.id===0&&item.pose);
+  if(!detection){setTranslationStatus(aprilCalibrationEnd?"AprilTag · keep entire target visible":"AprilTag · ID 0 not visible","warn");return}
+  const r=detection.pose.R,t=detection.pose.t;
+  aprilTagMatrix.set(r[0][0],r[1][0],r[2][0],t[0],r[0][1],r[1][1],r[2][1],t[1],r[0][2],r[1][2],r[2][2],t[2],0,0,0,1);
+  aprilCameraMatrix.copy(aprilTagMatrix).invert();
+  aprilCameraMatrix.decompose(aprilPosition,aprilQuaternion,aprilScale);
   if(aprilCalibrationEnd){
-    aprilSamples.push(
-      aprilCameraPosition.clone()
-    );
-
-    const remaining=Math.max(
-      0,
-      Math.ceil(
-        (aprilCalibrationEnd-now)/1000
-      )
-    );
-
-    $("calibrate").textContent=
-      `Move in/out · ${remaining}`;
-
-    setStatus(
-      `APRILTAG · move closer and farther · ${remaining}s`,
-      "warn"
-    );
-
-    if(now>=aprilCalibrationEnd){
-      finishAprilCalibration();
-    }
-
+    aprilSamples.push(aprilPosition.clone());
+    const remaining=Math.max(0,Math.ceil((aprilCalibrationEnd-now)/1000));
+    $("calibrateAprilBtn").textContent=`Move in/out · ${remaining}`;
+    setTranslationStatus(`AprilTag · move closer and farther · ${remaining}s`,"warn");
+    if(now>=aprilCalibrationEnd)finishAprilCalibration();
     return;
   }
-
-  if(!aprilCalibrated){
-    setStatus(
-      "APRILTAG · tag locked, press Calibrate",
-      "warn"
-    );
-
-    return;
-  }
-
-  aprilDelta
-    .copy(aprilCameraPosition)
-    .sub(aprilStartPosition)
-    .applyQuaternion(aprilMapQuaternion);
-
+  if(!aprilReady){setTranslationStatus("AprilTag · locked · press Calibrate","warn");return}
+  aprilDelta.copy(aprilPosition).sub(aprilStartPosition).applyQuaternion(aprilMapQuaternion);
   translationRaw.copy(aprilDelta);
-  setStatus("APRILTAG · calibrated tracking","good");
+  setTranslationStatus("AprilTag calibrated tracking","good");
 }
 
-async function stopAprilTag(){
-  try{
-    aprilStream
-      ?.getTracks()
-      ?.forEach(track=>track.stop());
-  }catch{}
-
-  try{
-    aprilDestroy?.();
-  }catch{}
-
-  aprilStream=null;
-  aprilVideo=null;
-  aprilModule=null;
-  aprilDestroy=null;
-  aprilDetect=null;
-  aprilTagVisible=false;
-  aprilCalibrated=false;
-  aprilCalibrationEnd=0;
-  aprilSamples=[];
-
-  $("calibrate").disabled=false;
-  $("calibrate").textContent="Calibrate 5 sec";
-}
-
-$("calibrate").onclick=async()=>{
-  if(
-    !trackerActive||
-    activeMethod!=="apriltag"
-  ){
-    methodSelect.value="apriltag";
-    updatePanels();
-
-    const started=await activateTracker();
-
-    if(!started)return;
+$("calibrateAprilBtn").onclick=async()=>{
+  if(trackingMethodSelect.value!=="apriltag"||!translationActive){
+    trackingMethodSelect.value="apriltag";
+    updateTrackerPanels();
+    if(!await activateSelectedTracker())return;
   }
-
-  aprilSamples=[];
-  aprilCalibrated=false;
-  aprilCalibrationEnd=performance.now()+5000;
-
-  clearTranslation();
-
-  $("calibrate").disabled=true;
-  $("calibrate").textContent="Move in/out · 5";
-
-  setStatus(
-    "APRILTAG · move closer and farther for 5 seconds",
-    "warn"
-  );
+  aprilSamples=[];aprilReady=false;aprilCalibrationEnd=performance.now()+5000;
+  recenterTranslationCommon();
+  $("calibrateAprilBtn").disabled=true;$("calibrateAprilBtn").textContent="Move in/out · 5";
+  setTranslationStatus("AprilTag · move closer and farther · 5s","warn");
 };
 
-/* TRACKER LIFECYCLE */
+/* ---------- Hybrid: WebXR + step-based dead reckoning ---------- */
+let pdrGravityMag=9.81,pdrLastStep=0,pdrStepCount=0;
+const pdrForward=new THREE.Vector3();
+addEventListener("devicemotion",e=>{
+  if(!translationActive||trackingMethod!=="hybrid")return;
+  const a=e.accelerationIncludingGravity||e.acceleration;
+  if(!a)return;
+  const x=a.x||0,y=a.y||0,z=a.z||0;
+  const mag=Math.hypot(x,y,z);
+  pdrGravityMag=pdrGravityMag*.94+mag*.06;
+  const impulse=Math.abs(mag-pdrGravityMag);
+  const now=performance.now();
+  const threshold=Math.max(.3,Number($("stepThreshold").value)||1.25);
+  const xrFresh=xrGood&&now-xrLastGoodTime<300;
+  if(xrFresh)return;
+  if(impulse>threshold&&now-pdrLastStep>330){
+    pdrLastStep=now;pdrStepCount++;
+    pdrForward.set(0,0,-1).applyQuaternion(camera.quaternion);pdrForward.y=0;
+    if(pdrForward.lengthSq()<1e-8)return;
+    pdrForward.normalize();
+    const stride=Math.max(.2,Number($("strideCm").value)||62)/100;
+    translationRaw.addScaledVector(pdrForward,stride);
+    xrNeedsRebase=true;xrWasGood=false;xrGood=false;
+    setTranslationStatus(`HYBRID · XR lost · step ${pdrStepCount}`,"warn");
+  }
+},true);
 
-async function stopTracker(){
-  trackerActive=false;
+/* ---------- lifecycle ---------- */
+async function activateSelectedTracker(){
+  if(translationActive)await stopTranslationTracker();
+  trackingMethod=trackingMethodSelect.value;
+  recenterTranslationCommon();
+  trackerStartTime=performance.now();pdrStepCount=0;pdrLastStep=0;
 
-  if(activeMethod==="mindar"){
-    await stopMindAR();
+  if(trackingMethod==="none"){
+    translationActive=false;
+    clearTrackingHost();
+    trackingEngineHost.classList.remove("show");
+    trackerPreviewLabel.classList.remove("show");
+    setTranslationStatus("gyro only","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro only";
+    return true;
   }
 
-  if(activeMethod==="arjs"){
-    await stopARJS();
-  }
-
-  if(activeMethod==="apriltag"){
-    await stopAprilTag();
-  }
-
-  activeMethod="none";
-  clearTranslation();
-  clearPreview();
-
-  setStatus("POSITION · stopped","warn");
-  updateDiagnostics();
+  let ok=false;
+  if(trackingMethod==="flow")ok=await startFlowProvider();
+  else if(trackingMethod==="webxr"||trackingMethod==="hybrid")ok=await startWebXRProvider();
+  else if(trackingMethod==="mindar")ok=await startMindARProvider();
+  else if(trackingMethod==="arjs")ok=await startARJSProvider();
+  else if(trackingMethod==="apriltag")ok=await startAprilTagProvider();
+  translationActive=!!ok;
+  if(!ok){trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: failed`;return false}
+  if(trackingMethod==="hybrid")setTranslationStatus("HYBRID · XR starting","warn");
+  trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: active`;
+  return true;
 }
 
-async function activateTracker(){
-  await stopTracker();
+async function stopTranslationTracker(){
+  const old=trackingMethod;
+  translationActive=false;
+  if(old==="flow")await stopFlowProvider();
+  if(old==="webxr"||old==="hybrid")await stopWebXRProvider();
+  if(old==="mindar")await stopMindARProvider();
+  if(old==="arjs")await stopARJSProvider();
+  if(old==="apriltag")await stopAprilTagProvider();
+  recenterTranslationCommon();
+  clearTrackingHost();
+  trackingEngineHost.classList.remove("show");trackerPreviewLabel.classList.remove("show");
+
+  if(old==="none"){
+    setTranslationStatus("gyro only","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro only";
+  }else{
+    setTranslationStatus("off","off");
+    trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: inactive`;
+  }
+}
+
+function recenterActiveTracker(){
+  recenterTranslationCommon();
+  if(trackingMethod==="none"){
+    recenterDirectorGyro();
+    setTranslationStatus("gyro recentered","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro recentered";
+  }else if(trackingMethod==="webxr"||trackingMethod==="hybrid"){
+    resetXRState(false);xrNeedsRebase=true;
+    setTranslationStatus("XR recentering…","warn");
+  }else if(trackingMethod==="mindar"){
+    mindReady=false;setTranslationStatus("MindAR · recenter on target","warn");
+  }else if(trackingMethod==="arjs"){
+    arjsReady=false;setTranslationStatus("AR.js · recenter on target","warn");
+  }else if(trackingMethod==="flow"){
+    flowPrevious=null;setTranslationStatus("camera motion · recentered","good");
+  }else if(trackingMethod==="apriltag"){
+    aprilReady=false;aprilCalibrationEnd=0;aprilSamples=[];
+    $("calibrateAprilBtn").disabled=false;$("calibrateAprilBtn").textContent="Calibrate 5 seconds";
+    setTranslationStatus("AprilTag · press Calibrate","warn");
+  }
+}
+
+activateTrackerBtn.onclick=activateSelectedTracker;
+recenterTrackerBtn.onclick=recenterActiveTracker;
+stopTrackerBtn.onclick=stopTranslationTracker;
+
+function updateTranslationProvider(dt){
+  if(trackingMethod==="none"){
+    translationRaw.set(0,0,0);
+    translationDesired.set(0,0,0);
+    translationFiltered.set(0,0,0);
+    return;
+  }
+  if(!translationActive){translationFiltered.multiplyScalar(Math.exp(-12*dt));return}
+  if(trackingMethod==="flow")updateFlowProvider();
+  else if(trackingMethod==="mindar")updateMindARProvider();
+  else if(trackingMethod==="arjs")updateARJSProvider();
+  else if(trackingMethod==="apriltag")updateAprilTagProvider();
+
+  const scale=Number(translationScale.value)||1;
+  translationDesired.copy(translationRaw).multiplyScalar(scale);
+  // Guard against a tracking provider ever trying to teleport the camera.
+  const maxRadius=4.5;
+  if(translationDesired.length()>maxRadius)translationDesired.setLength(maxRadius);
+  const follow=1-Math.exp(-11*dt);
+  translationFiltered.lerp(translationDesired,follow);
+
+  trackingDiagnostics.textContent=
+    `method: ${trackingMethod}\n`+
+    `raw Δ: ${translationRaw.x.toFixed(2)}, ${translationRaw.y.toFixed(2)}, ${translationRaw.z.toFixed(2)} m\n`+
+    `view Δ: ${translationFiltered.x.toFixed(2)}, ${translationFiltered.y.toFixed(2)}, ${translationFiltered.z.toFixed(2)} m\n`+
+    `state: ${trackerStatusText}`;
+}
+
+
+/* RECORDING */
+const recordBtn=$("recordBtn"),recordStatus=$("recordStatus"),previewPanel=$("previewPanel"),previewVideo=$("previewVideo");
+let recording=false,mediaRecorder=null,recordedParts=[],recordedVideo=null,recordingURL=null;
+
+function recorderSupported(){return !!(window.MediaRecorder&&renderer.domElement.captureStream)}
+function bestRecordingMime(){
+  for(const type of ["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm","video/mp4"]){
+    try{if(MediaRecorder.isTypeSupported(type))return type}catch{}
+  }
+  return "";
+}
+async function startRecording(){
+  if(recording)return;
+  if(!recorderSupported()){showError("Video recording is not supported by this browser. Try current Chrome or Edge on Android.");return}
   await requestSensors();
-
-  activeMethod=methodSelect.value;
-  clearTranslation();
-
-  let started=true;
-
-  if(activeMethod==="mindar"){
-    started=await startMindAR();
-  }else if(activeMethod==="arjs"){
-    started=await startARJS();
-  }else if(activeMethod==="apriltag"){
-    started=await startAprilTag();
-  }else{
-    setStatus("GYRO · rotation only","good");
+  trackingMethod=trackingMethodSelect.value;
+  if(trackingMethod!=="none"&&!translationActive){
+    const ok=await activateSelectedTracker();
+    if(!ok)console.warn("Position tracker did not start; recording gyro-only.");
+  }else if(trackingMethod==="none"){
+    recenterTranslationCommon();
+    clearTrackingHost();
+    trackingEngineHost.classList.remove("show");
+    trackerPreviewLabel.classList.remove("show");
+    setTranslationStatus("gyro only","good");
   }
-
-  trackerActive=started;
-
-  if(!started){
-    activeMethod="none";
-  }
-
-  updateDiagnostics();
-  return started;
+  recenterDirectorGyro();
+  let stream;
+  try{stream=renderer.domElement.captureStream(60)}catch{try{stream=renderer.domElement.captureStream(30)}catch{showError("The browser could not capture the Three.js canvas.");return}}
+  const mime=bestRecordingMime();
+  try{const options={videoBitsPerSecond:16000000};if(mime)options.mimeType=mime;mediaRecorder=new MediaRecorder(stream,options)}
+  catch{try{mediaRecorder=new MediaRecorder(stream)}catch(err2){showError("MediaRecorder could not start: "+(err2?.message||err2));return}}
+  recordedParts=[];
+  mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)recordedParts.push(e.data)};
+  mediaRecorder.onerror=e=>showError("Recording error: "+(e.error?.message||"unknown recording error"));
+  mediaRecorder.onstop=()=>{
+    document.body.classList.remove("recording");
+    if(!recordedParts.length){showError("The recording stopped but the browser returned no video data.");return}
+    recordedVideo=new Blob(recordedParts,{type:mediaRecorder.mimeType||mime||"video/webm"});
+    if(recordingURL)URL.revokeObjectURL(recordingURL);
+    recordingURL=URL.createObjectURL(recordedVideo);
+    previewVideo.src=recordingURL;previewVideo.load();previewPanel.classList.add("open");
+  };
+  try{mediaRecorder.start(200)}catch(err){showError("Recording failed to start: "+(err?.message||err));return}
+  recording=true;document.body.classList.add("recording");directorMenu.classList.remove("open");
+  recordBtn.classList.add("recording");recordStatus.textContent="STOP";
 }
-
-function recenterTracker(){
-  clearTranslation();
-  gyroNeedsCalibration=true;
-
-  if(activeMethod==="mindar"){
-    mindReady=false;
-    setStatus("MINDAR · recenter on visible target","warn");
-  }else if(activeMethod==="arjs"){
-    arjsReady=false;
-    setStatus("AR.JS · recenter on visible target","warn");
-  }else if(activeMethod==="apriltag"){
-    aprilCalibrated=false;
-    aprilCalibrationEnd=0;
-    aprilSamples=[];
-    setStatus("APRILTAG · press Calibrate again","warn");
-  }else{
-    setStatus("GYRO · recentered","good");
+function stopRecording(){
+  if(!recording)return;
+  recording=false;recordBtn.classList.remove("recording");recordStatus.textContent="REC";document.body.classList.remove("recording");
+  if(mediaRecorder&&mediaRecorder.state!=="inactive"){
+    try{mediaRecorder.requestData()}catch{}
+    setTimeout(()=>{try{if(mediaRecorder.state!=="inactive")mediaRecorder.stop()}catch{}},80);
   }
 }
+recordBtn.onclick=()=>recording?stopRecording():startRecording();
+$("closePreview").onclick=()=>{previewVideo.pause();previewPanel.classList.remove("open")};
+$("replayBtn").onclick=async()=>{try{previewVideo.currentTime=0;await previewVideo.play()}catch{}};
+$("startOverBtn").onclick=()=>{previewVideo.pause();previewPanel.classList.remove("open");if(recordingURL){URL.revokeObjectURL(recordingURL);recordingURL=null}recordedVideo=null;recordedParts=[]};
+$("downloadBtn").onclick=()=>{if(!recordedVideo)return;const extension=(recordedVideo.type||"").includes("mp4")?"mp4":"webm";const a=document.createElement("a");a.href=recordingURL||URL.createObjectURL(recordedVideo);a.download=`virtual-camera-${Date.now()}.${extension}`;document.body.appendChild(a);a.click();a.remove()};
 
-function updatePanels(){
-  document
-    .querySelectorAll(".trackerPanel")
-    .forEach(element=>{
-      element.classList.remove("active");
-    });
+/* DIRECTOR CAMERA — exact good gyro + separately filtered XYZ translation */
+function updateDirectorCamera(dt){
+  if(trackingMethod==="none"){
+    camera.position.copy(cameraBase);
+  }else{
+    updateTranslationProvider(dt);
+    camera.position.copy(cameraBase).add(translationFiltered);
+  }
 
-  $(`panel-${methodSelect.value}`)
-    ?.classList
-    .add("active");
+  if(!gyroHasReading||!sensorPermissionGranted){
+    camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0;return;
+  }
+  if(gyroNeedsCalibration&&!calibrateGyroToCurrentView())return;
+  gyroTargetQ.copy(gyroCalibrationQ).multiply(gyroRawQ).normalize();
+
+  const gyroProfile=currentGyroSmoothingProfile();
+  let gyroResponseRate=gyroProfile.baseRate;
+
+  if(gyroProfile.boostRate>0){
+    /* Quaternion angular error is a clean measure of how deliberate the
+       movement is. Near zero = likely sensor jitter, so use the slow base
+       rate. A larger real camera move raises the rate and catches up faster. */
+    const angleError=camera.quaternion.angleTo(gyroTargetQ);
+    const motionAmount=THREE.MathUtils.smoothstep(
+      angleError,
+      0,
+      gyroProfile.motionAngle
+    );
+    gyroResponseRate+=gyroProfile.boostRate*motionAmount;
+  }
+
+  /* Stop 1 evaluates to the exact old expression: 1-exp(-24*dt).
+     Higher stops progressively reduce the response rate, creating more
+     smoothing and more intentional visual lag. */
+  const gyroFollow=1-Math.exp(-gyroResponseRate*dt);
+  camera.quaternion.slerp(gyroTargetQ,gyroFollow).normalize();
+
+  if(performance.now()-lastSensorReading>750)sensorStatus.textContent="GYRO · waiting for sensor";
 }
 
-methodSelect.onchange=async()=>{
-  await stopTracker();
-  updatePanels();
-};
+function updateStatus(){
+  coords.innerHTML=
+    `World: ${activeWorld.name}<br>`+
+    `Texture: 4096 × 2048<br>`+
+    `Camera: ${cameraBase.x.toFixed(2)}, ${cameraBase.y.toFixed(2)}, ${cameraBase.z.toFixed(2)}<br>`+
+    `FOV: ${Math.round(camera.fov)}°<br>`+
+    `Dolls: ${dolls.length}<br>`+
+    `Selected: ${selectedDoll?selectedDoll.userData.name:"none"}`;
+}
 
-$("activate").onclick=activateTracker;
-$("recenter").onclick=recenterTracker;
-$("stop").onclick=stopTracker;
+/* RENDER LOOP */
+let previousFrame=performance.now();
+function renderAppFrame(now=performance.now()){
+  const dt=Math.min(.05,Math.max(.001,(now-previousFrame)/1000));previousFrame=now;
+  if(heldControl)performControl(heldControl);
+  camera.fov+=(targetFov-camera.fov)*.13;camera.updateProjectionMatrix();
+  if(directorMode)updateDirectorCamera(dt);
+  else{camera.position.copy(cameraBase);camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0}
 
-updatePanels();
-
-/* RENDER */
-
-let previousTime=performance.now();
-
-function animate(now){
-  requestAnimationFrame(animate);
-
-  const deltaTime=Math.min(
-    .05,
-    Math.max(.001,(now-previousTime)/1000)
-  );
-
-  previousTime=now;
-
-  if(gyroAvailable){
-    if(gyroNeedsCalibration){
-      calibrateGyro();
-    }
-
-    gyroTargetQuaternion
-      .copy(gyroCalibrationQuaternion)
-      .multiply(gyroRawQuaternion)
-      .normalize();
-
-    const follow=1-Math.exp(-24*deltaTime);
-
-    camera.quaternion
-      .slerp(gyroTargetQuaternion,follow)
-      .normalize();
-  }else{
-    camera.rotation.order="YXZ";
-    camera.rotation.y=yaw;
-    camera.rotation.x=pitch;
-    camera.rotation.z=0;
-  }
-
-  if(trackerActive){
-    if(activeMethod==="mindar"){
-      updateMindAR();
-    }else if(activeMethod==="arjs"){
-      updateARJS();
-    }else if(activeMethod==="apriltag"){
-      updateAprilTag();
-    }
-  }
-
-  const positionFollow=
-    1-Math.exp(-11*deltaTime);
-
-  translationFiltered.lerp(
-    translationRaw,
-    positionFollow
-  );
-
-  camera.position
-    .copy(cameraBase)
-    .add(translationFiltered);
-
-  updateDiagnostics();
+  const gyroOnlyRecording=directorMode&&recording&&trackingMethod==="none";
+  if(!gyroOnlyRecording)updateStatus();
   renderer.render(scene,camera);
+  if(!recording)controlRenderer.render(controlScene,controlCamera);
 }
+function animate(now){
+  normalRAF=0;
+  if(xrSession)return;
+  renderAppFrame(now||performance.now());
+  normalRAF=requestAnimationFrame(animate);
+}
+function xrAnimationFrame(now,frame){
+  if(!xrSession||frame.session!==xrSession)return;
+  xrSession.requestAnimationFrame(xrAnimationFrame);
+  processXRFrame(frame);clearXRLayer();renderAppFrame(now);
+}
+normalRAF=requestAnimationFrame(animate);
 
-requestAnimationFrame(animate);
-
+/* RESIZE */
 function resize(){
   camera.aspect=innerWidth/innerHeight;
   camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+  renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+  updateInterfaceMode();
 
-  renderer.setPixelRatio(
-    Math.min(devicePixelRatio,2)
-  );
-
-  renderer.setSize(
-    innerWidth,
-    innerHeight
-  );
+  if(!directorMode&&recording)stopRecording();
+  if(!directorMode&&translationActive)stopTranslationTracker();
 }
 
 addEventListener("resize",resize);
-screen.orientation?.addEventListener?.("change",()=>{
-  gyroNeedsCalibration=true;
-  resize();
-});
+screen.orientation?.addEventListener?.("change",resize);
+
+/* BOOT */
+renderWorldCards();
+await loadWorld(worlds[0]);
 </script>
 </body>
 </html>
