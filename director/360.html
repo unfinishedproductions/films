@@ -39,6 +39,18 @@ body.director #arrowOverlay{z-index:80}
 #closePreview{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:45px;height:45px;border-radius:50%;border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(0,0,0,.58);font-size:25px}
 #previewControls{position:absolute;left:0;right:0;bottom:max(16px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:9px}
 .previewButton{padding:10px 14px;border:1px solid rgba(255,255,255,.25);border-radius:10px;color:#fff;background:rgba(0,0,0,.68)}
+#trackingPanel{position:absolute;right:18px;bottom:max(18px,env(safe-area-inset-bottom));width:190px;border:1px solid rgba(255,255,255,.25);border-radius:12px;overflow:hidden;background:rgba(0,0,0,.72);box-shadow:0 6px 26px rgba(0,0,0,.38);backdrop-filter:blur(10px);pointer-events:none}
+#trackingViewport{position:relative;width:100%;aspect-ratio:16/9;background:#050505;overflow:hidden}
+#trackingPreviewVideo,#trackingPreviewCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
+#trackingPreviewCanvas{transform:scaleY(-1)}
+#trackingPreviewMessage{position:absolute;inset:0;display:grid;place-items:center;padding:10px;color:rgba(255,255,255,.75);font-size:10px;line-height:1.3;text-align:center;background:rgba(0,0,0,.28)}
+#trackingReadout{padding:7px 9px;color:#fff;font-size:9px;line-height:1.45;letter-spacing:.02em}
+#trackingLine{display:flex;align-items:center;gap:6px;font-weight:650}
+#trackingDot{width:7px;height:7px;border-radius:50%;background:#777;box-shadow:0 0 0 2px rgba(255,255,255,.08)}
+#trackingDot.good{background:#4de27f;box-shadow:0 0 9px rgba(77,226,127,.75)}
+#trackingDot.warn{background:#ffc857;box-shadow:0 0 9px rgba(255,200,87,.65)}
+#trackingDot.bad{background:#ef3d43;box-shadow:0 0 9px rgba(239,61,67,.7)}
+#trackingXYZ{margin-top:2px;opacity:.72;font-variant-numeric:tabular-nums}
 #cameraReference,#cameraFlowCanvas{display:none}
 #errorBox{display:none;position:fixed;left:12px;right:12px;top:74px;z-index:200;padding:10px 12px;border-radius:10px;background:rgba(110,0,0,.92);color:#fff;font-size:12px}
 </style>
@@ -78,6 +90,18 @@ body.director #arrowOverlay{z-index:80}
   <div id="directorLabel">DIRECTOR</div>
   <button id="recordBtn" aria-label="Record"></button>
   <div id="recordStatus">REC</div>
+
+  <div id="trackingPanel">
+    <div id="trackingViewport">
+      <video id="trackingPreviewVideo" playsinline muted></video>
+      <canvas id="trackingPreviewCanvas" width="192" height="108"></canvas>
+      <div id="trackingPreviewMessage">Tap REC to start camera tracking</div>
+    </div>
+    <div id="trackingReadout">
+      <div id="trackingLine"><span id="trackingDot"></span><span id="trackingText">TRACKING OFF</span></div>
+      <div id="trackingXYZ">Δ x 0.00 · y 0.00 · z 0.00 m</div>
+    </div>
+  </div>
 </div>
 
 <div id="previewPanel">
@@ -580,303 +604,542 @@ function updateInterfaceMode(){
 }
 updateInterfaceMode();
 
-/* WEBXR / ARCORE 6DOF DIRECTOR TRACKING
-   WebXR is used only as a hidden real-world pose tracker.
-   The visible Three.js canvas stays exactly the same, so the Arctic world,
-   mannequins, FOV and canvas recording continue to use the normal renderer. */
-let xrSession=null,xrReferenceSpace=null,xrTrackingReady=false;
-let xrTrackingCanvas=null,xrTrackingGL=null;
-const xrInitialInverse=new THREE.Matrix4();
-const xrCurrentPoseMatrix=new THREE.Matrix4();
-const xrVirtualStartMatrix=new THREE.Matrix4();
-const xrVirtualCameraMatrix=new THREE.Matrix4();
-const xrScaleScratch=new THREE.Vector3(1,1,1);
-const xrOne=new THREE.Vector3(1,1,1);
-const xrStartQuaternion=new THREE.Quaternion();
-const xrStartEuler=new THREE.Euler(0,0,0,"YXZ");
+/* DIRECTOR TRACKING DEBUG / CAMERA PREVIEW */
+const trackingPanel=$("trackingPanel");
+const trackingPreviewVideo=$("trackingPreviewVideo");
+const trackingPreviewCanvas=$("trackingPreviewCanvas");
+const trackingPreviewContext=trackingPreviewCanvas.getContext("2d");
+const trackingPreviewMessage=$("trackingPreviewMessage");
+const trackingDot=$("trackingDot");
+const trackingText=$("trackingText");
+const trackingXYZ=$("trackingXYZ");
 
-function stopCameraReference(){
-  if(cameraReferenceStream){
-    cameraReferenceStream.getTracks().forEach(track=>track.stop());
-    cameraReferenceStream=null;
+function setTrackingState(text,state="off",message=null){
+  trackingText.textContent=text;
+  trackingDot.className="";
+  if(state==="good")trackingDot.classList.add("good");
+  else if(state==="warn")trackingDot.classList.add("warn");
+  else if(state==="bad")trackingDot.classList.add("bad");
+
+  if(message!==null){
+    trackingPreviewMessage.textContent=message;
+    trackingPreviewMessage.style.display=message?"grid":"none";
   }
-  cameraReferenceActive=false;
-  cameraReference.srcObject=null;
-  previousFlowFrame=null;
-  opticalX=opticalY=0;
+}
+
+function setTrackingXYZ(v){
+  trackingXYZ.textContent=`Δ x ${v.x.toFixed(2)} · y ${v.y.toFixed(2)} · z ${v.z.toFixed(2)} m`;
+}
+
+function showFallbackPreview(){
+  trackingPreviewCanvas.style.display="none";
+  trackingPreviewVideo.style.display="block";
+  trackingPreviewMessage.style.display="none";
+}
+
+function showXRPreview(){
+  trackingPreviewVideo.style.display="none";
+  trackingPreviewCanvas.style.display="block";
+  trackingPreviewMessage.style.display="none";
+}
+
+function clearTrackingPreview(message="Tap REC to start camera tracking"){
+  trackingPreviewVideo.style.display="none";
+  trackingPreviewCanvas.style.display="none";
+  trackingPreviewMessage.textContent=message;
+  trackingPreviewMessage.style.display="grid";
+}
+
+/* WEBXR / ARCORE 6DoF
+
+   IMPORTANT DIFFERENCE FROM THE PREVIOUS VERSION:
+
+   We do NOT multiply the complete AR pose matrix straight into the virtual
+   camera anymore.
+
+   Position and rotation are separated:
+
+   1. ARCore gives a position in its stable LOCAL world coordinates.
+      Its Y axis is gravity-up, so real vertical movement remains vertical.
+
+   2. We subtract the starting real phone position. This creates an actual
+      displacement in meters: step 0.25 m forward = about 0.25 virtual meters.
+
+   3. Only the horizontal X/Z displacement is rotated to line up the real
+      phone's starting heading with the virtual camera's starting yaw.
+      The Y value is NEVER mixed with phone pitch/roll. This is the key fix
+      for the broken up/down behavior.
+
+   4. Rotation is handled independently with a relative quaternion:
+         inverse(start real orientation) * current real orientation
+      and that relative rotation is added to the existing virtual camera.
+
+   This prevents a landscape-phone orientation change from turning into a
+   fake vertical teleport / ceiling view.
+*/
+let xrSession=null;
+let xrReferenceSpace=null;
+let xrTrackingGL=null;
+let xrTrackingCanvas=null;
+let xrLayer=null;
+let xrGLBinding=null;
+let xrTrackingReady=false;
+let xrPoseWasValid=false;
+let xrRawPreviewAvailable=false;
+let xrPreviewFrameCounter=0;
+
+const XR_POSITION_SCALE=1.0;
+const XR_SMOOTHING=.62;
+const XR_JUMP_LIMIT=.80; // metres between consecutive XR frames => reject/rebase
+
+const xrStartPosition=new THREE.Vector3();
+const xrCurrentPosition=new THREE.Vector3();
+const xrPreviousPosition=new THREE.Vector3();
+const xrWorldDelta=new THREE.Vector3();
+const xrSceneDelta=new THREE.Vector3();
+const xrTargetPosition=new THREE.Vector3();
+const xrVirtualStartPosition=new THREE.Vector3();
+
+const xrStartOrientation=new THREE.Quaternion();
+const xrStartOrientationInverse=new THREE.Quaternion();
+const xrCurrentOrientation=new THREE.Quaternion();
+const xrRelativeOrientation=new THREE.Quaternion();
+const xrVirtualStartQuaternion=new THREE.Quaternion();
+const xrTargetQuaternion=new THREE.Quaternion();
+const xrYawMapQuaternion=new THREE.Quaternion();
+const xrVirtualStartEuler=new THREE.Euler(0,0,0,"YXZ");
+const xrRealForward=new THREE.Vector3();
+const XR_FORWARD=new THREE.Vector3(0,0,-1);
+const XR_UP=new THREE.Vector3(0,1,0);
+let xrYawOffset=0;
+
+/* Raw WebXR camera preview buffers.
+   Chrome Android exposes the ARCore camera through the WebXR camera-access
+   feature on supported devices. We copy it into the tiny bottom-right canvas. */
+const XR_PREVIEW_W=192,XR_PREVIEW_H=108;
+let xrCameraFramebuffer=null;
+let xrPreviewFramebuffer=null;
+let xrPreviewTexture=null;
+let xrPreviewPixels=null;
+let xrPreviewImageData=null;
+
+function initXRRawPreview(){
+  if(!xrTrackingGL||!xrGLBinding)return false;
+
+  // Fast down-scaling uses WebGL2 blitFramebuffer. If the browser gave us
+  // only WebGL1, 6DoF still works; only the raw XR preview is unavailable.
+  const isGL2=(typeof WebGL2RenderingContext!=="undefined")&&(xrTrackingGL instanceof WebGL2RenderingContext);
+  if(!isGL2)return false;
+
+  const gl=xrTrackingGL;
+  xrCameraFramebuffer=gl.createFramebuffer();
+  xrPreviewFramebuffer=gl.createFramebuffer();
+  xrPreviewTexture=gl.createTexture();
+
+  gl.bindTexture(gl.TEXTURE_2D,xrPreviewTexture);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,XR_PREVIEW_W,XR_PREVIEW_H,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
+
+  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER,xrPreviewFramebuffer);
+  gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,xrPreviewTexture,0);
+
+  if(gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){
+    return false;
+  }
+
+  xrPreviewPixels=new Uint8Array(XR_PREVIEW_W*XR_PREVIEW_H*4);
+  xrPreviewImageData=trackingPreviewContext.createImageData(XR_PREVIEW_W,XR_PREVIEW_H);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
+  return true;
+}
+
+function updateXRRawCameraPreview(pose){
+  if(!xrTrackingGL||!xrGLBinding||!pose?.views?.length)return false;
+
+  // Preview does not need 60 fps. About 12-15 fps keeps the debugging window
+  // responsive without wasting phone GPU bandwidth on readback every XR frame.
+  if(++xrPreviewFrameCounter%4!==0)return xrRawPreviewAvailable;
+
+  const view=pose.views.find(v=>v.camera);
+  if(!view?.camera)return false;
+
+  let cameraTexture=null;
+  try{
+    cameraTexture=xrGLBinding.getCameraImage(view.camera);
+  }catch(err){
+    console.warn("XR raw camera texture unavailable",err);
+    return false;
+  }
+  if(!cameraTexture)return false;
+
+  const gl=xrTrackingGL;
+  const isGL2=(typeof WebGL2RenderingContext!=="undefined")&&(gl instanceof WebGL2RenderingContext);
+  if(!isGL2||!xrCameraFramebuffer||!xrPreviewFramebuffer)return false;
+
+  try{
+    // Official Chromium camera-access samples expose the camera image as a
+    // WebGL texture. Attach that texture to a READ framebuffer.
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER,xrCameraFramebuffer);
+    gl.framebufferTexture2D(gl.READ_FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,cameraTexture,0);
+
+    if(gl.checkFramebufferStatus(gl.READ_FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)return false;
+
+    // Downscale the whole camera image into our tiny preview texture.
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER,xrPreviewFramebuffer);
+    gl.blitFramebuffer(
+      0,0,view.camera.width,view.camera.height,
+      0,0,XR_PREVIEW_W,XR_PREVIEW_H,
+      gl.COLOR_BUFFER_BIT,
+      gl.LINEAR
+    );
+
+    // Read only the tiny 192×108 result back to the 2D preview canvas.
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER,xrPreviewFramebuffer);
+    gl.readPixels(0,0,XR_PREVIEW_W,XR_PREVIEW_H,gl.RGBA,gl.UNSIGNED_BYTE,xrPreviewPixels);
+
+    xrPreviewImageData.data.set(xrPreviewPixels);
+    trackingPreviewContext.putImageData(xrPreviewImageData,0,0);
+    showXRPreview();
+    xrRawPreviewAvailable=true;
+    return true;
+  }catch(err){
+    console.warn("XR camera preview readback failed",err);
+    return false;
+  }
+}
+
+function resetXRTrackingOrigin(position,orientation){
+  xrStartPosition.copy(position);
+  xrPreviousPosition.copy(position);
+  xrStartOrientation.copy(orientation).normalize();
+  xrStartOrientationInverse.copy(xrStartOrientation).invert();
+
+  // The virtual camera can already be anywhere in the Arctic room.
+  // That location becomes the origin of this physical take.
+  xrVirtualStartPosition.copy(cameraBase);
+  xrVirtualStartEuler.set(pitch,yaw,0,"YXZ");
+  xrVirtualStartQuaternion.setFromEuler(xrVirtualStartEuler).normalize();
+
+  // Find the real phone camera's initial horizontal heading.
+  xrRealForward.copy(XR_FORWARD).applyQuaternion(xrStartOrientation);
+  xrRealForward.y=0;
+
+  if(xrRealForward.lengthSq()<1e-8){
+    xrYawOffset=0;
+  }else{
+    xrRealForward.normalize();
+    const realYaw=Math.atan2(-xrRealForward.x,-xrRealForward.z);
+    xrYawOffset=yaw-realYaw;
+  }
+
+  xrYawMapQuaternion.setFromAxisAngle(XR_UP,xrYawOffset);
+  xrTrackingReady=true;
+  xrPoseWasValid=true;
+  setTrackingXYZ(new THREE.Vector3());
 }
 
 function updateXRDirectorPose(frame){
   if(!xrSession||!xrReferenceSpace||!frame)return false;
 
   const pose=frame.getViewerPose(xrReferenceSpace);
-  if(!pose)return false;
-
-  xrCurrentPoseMatrix.fromArray(pose.transform.matrix);
-
-  if(!xrTrackingReady){
-    /*
-      The first AR pose becomes our physical origin.
-
-      Virtual camera =
-      existing virtual camera start
-      × inverse(real phone start pose)
-      × current real phone pose
-
-      That gives true relative 6DoF motion without teleporting the camera
-      when the AR tracker starts.
-    */
-    xrInitialInverse.copy(xrCurrentPoseMatrix).invert();
-
-    xrStartEuler.set(pitch,yaw,0,"YXZ");
-    xrStartQuaternion.setFromEuler(xrStartEuler);
-
-    xrVirtualStartMatrix.compose(
-      cameraBase,
-      xrStartQuaternion,
-      xrOne
-    );
-
-    xrTrackingReady=true;
+  if(!pose){
+    xrPoseWasValid=false;
+    setTrackingState("ARCORE · TRACKING LOST","bad","Move the phone slowly until ARCore relocalizes");
+    return false;
   }
 
-  xrVirtualCameraMatrix
-    .copy(xrVirtualStartMatrix)
-    .multiply(xrInitialInverse)
-    .multiply(xrCurrentPoseMatrix);
+  const p=pose.transform.position;
+  const o=pose.transform.orientation;
+  xrCurrentPosition.set(p.x,p.y,p.z);
+  xrCurrentOrientation.set(o.x,o.y,o.z,o.w).normalize();
 
-  xrVirtualCameraMatrix.decompose(
-    camera.position,
-    camera.quaternion,
-    xrScaleScratch
-  );
+  if(!xrTrackingReady){
+    resetXRTrackingOrigin(xrCurrentPosition,xrCurrentOrientation);
+  }
 
-  camera.rotation.order="YXZ";
+  // A huge one-frame pose jump is AR relocalization, not you teleporting.
+  // Rebase instead of throwing the virtual camera into the ceiling/wall.
+  const oneFrameJump=xrCurrentPosition.distanceTo(xrPreviousPosition);
+  if(xrPoseWasValid&&oneFrameJump>XR_JUMP_LIMIT){
+    console.warn("Rejected XR relocalization jump",oneFrameJump);
+    resetXRTrackingOrigin(xrCurrentPosition,xrCurrentOrientation);
+  }
+  xrPreviousPosition.copy(xrCurrentPosition);
+  xrPoseWasValid=true;
+
+  /* POSITION
+
+     ARCore's LOCAL reference space is gravity aligned:
+       +Y = physical up
+
+     Therefore we first keep the real displacement in AR world coordinates.
+     We rotate it ONLY around Y to align the real room's horizontal heading
+     with the virtual Arctic room. Physical Y is never mixed with pitch/roll.
+  */
+  xrWorldDelta.copy(xrCurrentPosition).sub(xrStartPosition);
+
+  // If WebXR reports emulatedPosition, orientation is still useful but the
+  // positional solution is not reliable. Freeze translation until it recovers.
+  if(!pose.emulatedPosition){
+    xrSceneDelta.copy(xrWorldDelta)
+      .applyQuaternion(xrYawMapQuaternion)
+      .multiplyScalar(XR_POSITION_SCALE);
+
+    xrTargetPosition.copy(xrVirtualStartPosition).add(xrSceneDelta);
+
+    // Keep the operator inside the useful physical volume without changing
+    // cameraBase. Normal manual camera controls are otherwise untouched.
+    const horizontal=Math.hypot(xrTargetPosition.x,xrTargetPosition.z);
+    const maxHorizontal=5.5;
+    if(horizontal>maxHorizontal){
+      xrTargetPosition.x*=maxHorizontal/horizontal;
+      xrTargetPosition.z*=maxHorizontal/horizontal;
+    }
+    xrTargetPosition.y=THREE.MathUtils.clamp(xrTargetPosition.y,.08,4.5);
+
+    camera.position.lerp(xrTargetPosition,XR_SMOOTHING);
+    setTrackingXYZ(xrSceneDelta);
+  }
+
+  /* ROTATION
+
+     Instead of using absolute AR orientation directly, remove the phone's
+     starting orientation. That means whatever angle you were holding the phone
+     at when tracking began becomes "zero" and cannot suddenly snap the Arctic
+     camera to ARCore's absolute coordinate frame.
+  */
+  xrRelativeOrientation
+    .copy(xrStartOrientationInverse)
+    .multiply(xrCurrentOrientation)
+    .normalize();
+
+  xrTargetQuaternion
+    .copy(xrVirtualStartQuaternion)
+    .multiply(xrRelativeOrientation)
+    .normalize();
+
+  camera.quaternion.slerp(xrTargetQuaternion,XR_SMOOTHING);
+
+  const previewOK=updateXRRawCameraPreview(pose);
+
+  if(pose.emulatedPosition){
+    setTrackingState(
+      "ARCORE · ROTATION ONLY / POSITION LOST",
+      "warn",
+      previewOK?null:"ARCore is estimating orientation; move slowly and keep textured objects in view"
+    );
+  }else{
+    setTrackingState(
+      previewOK?"ARCORE 6DOF · RAW CAMERA":"ARCORE 6DOF",
+      "good",
+      previewOK?null:"6DoF is active; raw camera preview is not available on this browser/device"
+    );
+  }
 
   return true;
 }
 
 function clearXRTrackingLayer(){
   if(!xrSession||!xrTrackingGL)return;
-
   const layer=xrSession.renderState.baseLayer;
   if(!layer)return;
-
-  xrTrackingGL.bindFramebuffer(
-    xrTrackingGL.FRAMEBUFFER,
-    layer.framebuffer
-  );
-
-  xrTrackingGL.viewport(
-    0,
-    0,
-    layer.framebufferWidth,
-    layer.framebufferHeight
-  );
-
+  xrTrackingGL.bindFramebuffer(xrTrackingGL.FRAMEBUFFER,layer.framebuffer);
+  xrTrackingGL.viewport(0,0,layer.framebufferWidth,layer.framebufferHeight);
   xrTrackingGL.clearColor(0,0,0,0);
   xrTrackingGL.clearDepth(1);
+  xrTrackingGL.clear(xrTrackingGL.COLOR_BUFFER_BIT|xrTrackingGL.DEPTH_BUFFER_BIT);
+}
 
-  xrTrackingGL.clear(
-    xrTrackingGL.COLOR_BUFFER_BIT|
-    xrTrackingGL.DEPTH_BUFFER_BIT
-  );
+function disposeXRPreviewResources(){
+  if(xrTrackingGL){
+    try{if(xrCameraFramebuffer)xrTrackingGL.deleteFramebuffer(xrCameraFramebuffer)}catch{}
+    try{if(xrPreviewFramebuffer)xrTrackingGL.deleteFramebuffer(xrPreviewFramebuffer)}catch{}
+    try{if(xrPreviewTexture)xrTrackingGL.deleteTexture(xrPreviewTexture)}catch{}
+  }
+  xrCameraFramebuffer=xrPreviewFramebuffer=xrPreviewTexture=null;
+  xrPreviewPixels=xrPreviewImageData=null;
+  xrRawPreviewAvailable=false;
+  xrPreviewFrameCounter=0;
 }
 
 function handleXRSessionEnded(){
+  disposeXRPreviewResources();
   xrSession=null;
   xrReferenceSpace=null;
   xrTrackingReady=false;
+  xrPoseWasValid=false;
+  xrGLBinding=null;
+  xrLayer=null;
   xrTrackingCanvas=null;
   xrTrackingGL=null;
-
   previousFrame=performance.now();
 
-  if(!normalRAF){
-    normalRAF=requestAnimationFrame(animate);
+  if(!recording){
+    setTrackingState("TRACKING OFF","off","Tap REC to start camera tracking");
+    clearTrackingPreview("Tap REC to start camera tracking");
   }
+
+  if(!normalRAF)normalRAF=requestAnimationFrame(animate);
 }
 
 async function startXRTracking(){
   if(xrSession)return true;
 
-  if(
-    !directorMode||
-    !window.isSecureContext||
-    !navigator.xr||
-    typeof XRWebGLLayer==="undefined"
-  ){
+  if(!directorMode){
+    setTrackingState("AR UNAVAILABLE · NOT LANDSCAPE","warn","Director tracking activates in landscape");
+    return false;
+  }
+  if(!window.isSecureContext){
+    setTrackingState("AR UNAVAILABLE · HTTPS REQUIRED","bad","Open this page from HTTPS, not file:// or plain HTTP");
+    return false;
+  }
+  if(!navigator.xr||typeof XRWebGLLayer==="undefined"){
+    setTrackingState("AR UNAVAILABLE · WEBXR MISSING","warn","Using gyro/camera fallback");
     return false;
   }
 
-  /*
-    ARCore needs the rear camera for visual-inertial tracking.
-    Release the old optical-flow getUserMedia stream before asking WebXR
-    for the AR session.
-  */
+  // Do NOT await isSessionSupported() here. requestSession() needs to stay
+  // directly inside the REC-button user gesture on mobile Chrome. An awaited
+  // capability probe can consume transient user activation and make AR fail.
+
+  // ARCore needs exclusive access to the rear camera. Stop any fallback
+  // getUserMedia stream before starting immersive AR.
   stopCameraReference();
+  clearTrackingPreview("Starting ARCore…");
+  setTrackingState("STARTING ARCORE…","warn","Starting ARCore…");
 
   let session=null;
-
   try{
-    /*
-      This request must happen as a direct consequence of the REC tap.
-
-      DOM overlay is required here because we are deliberately NOT using
-      WebXR to render the Arctic scene. WebXR runs invisibly underneath as
-      our 6DoF tracker while the existing Three.js canvas stays on screen.
-    */
-    session=await navigator.xr.requestSession(
-      "immersive-ar",
-      {
-        requiredFeatures:[
-          "local",
-          "dom-overlay"
-        ],
-        domOverlay:{
-          root:document.body
-        }
-      }
-    );
-
-    /*
-      Separate tiny WebGL context used only to satisfy the XR compositor.
-
-      This is intentionally NOT the main Three.js renderer.
-      That means renderer.domElement remains a normal canvas, which preserves:
-      - your existing FOV
-      - current 360 rendering
-      - current mannequin rendering
-      - captureStream recording
-      - normal Three.js camera
-    */
-    xrTrackingCanvas=document.createElement("canvas");
-
-    xrTrackingGL=
-      xrTrackingCanvas.getContext(
-        "webgl2",
-        {
-          xrCompatible:true,
-          alpha:true,
-          antialias:false
-        }
-      )||
-      xrTrackingCanvas.getContext(
-        "webgl",
-        {
-          xrCompatible:true,
-          alpha:true,
-          antialias:false
-        }
-      );
-
-    if(!xrTrackingGL){
-      throw new Error("No XR-compatible WebGL context");
-    }
-
-    if(xrTrackingGL.makeXRCompatible){
-      await xrTrackingGL.makeXRCompatible();
-    }
-
-    const layer=new XRWebGLLayer(
-      session,
-      xrTrackingGL,
-      {
-        alpha:true,
-        antialias:false,
-        depth:true,
-        stencil:false
-      }
-    );
-
-    session.updateRenderState({
-      baseLayer:layer
+    session=await navigator.xr.requestSession("immersive-ar",{
+      requiredFeatures:["dom-overlay"],
+      optionalFeatures:["camera-access"],
+      domOverlay:{root:document.body}
     });
 
-    /*
-      'local' is room-scale tracking.
+    xrTrackingCanvas=document.createElement("canvas");
+    xrTrackingGL=
+      xrTrackingCanvas.getContext("webgl2",{xrCompatible:true,alpha:true,antialias:false,preserveDrawingBuffer:false})||
+      xrTrackingCanvas.getContext("webgl",{xrCompatible:true,alpha:true,antialias:false,preserveDrawingBuffer:false});
 
-      It gives us changes in:
-      X = physical left/right
-      Y = physical up/down
-      Z = physical forward/back
+    if(!xrTrackingGL)throw new Error("No XR-compatible WebGL context");
+    if(xrTrackingGL.makeXRCompatible)await xrTrackingGL.makeXRCompatible();
 
-      plus complete orientation.
-    */
-    xrReferenceSpace=
-      await session.requestReferenceSpace("local");
+    xrLayer=new XRWebGLLayer(session,xrTrackingGL,{
+      alpha:true,
+      antialias:false,
+      depth:true,
+      stencil:false
+    });
+    session.updateRenderState({baseLayer:xrLayer});
+
+    xrReferenceSpace=await session.requestReferenceSpace("local");
+
+    if(typeof XRWebGLBinding!=="undefined"){
+      try{
+        xrGLBinding=new XRWebGLBinding(session,xrTrackingGL);
+      }catch(err){
+        console.warn("XRWebGLBinding unavailable",err);
+        xrGLBinding=null;
+      }
+    }
 
     xrSession=session;
     xrTrackingReady=false;
+    xrPoseWasValid=false;
 
-    session.addEventListener(
-      "end",
-      handleXRSessionEnded,
-      {once:true}
-    );
+    if(xrGLBinding)initXRRawPreview();
 
-    /*
-      While immersive AR is active Android may throttle the normal page
-      requestAnimationFrame loop.
+    session.addEventListener("end",handleXRSessionEnded,{once:true});
 
-      So we temporarily drive THIS SAME Three.js renderer from the XR
-      animation clock.
-    */
     if(normalRAF){
       cancelAnimationFrame(normalRAF);
       normalRAF=0;
     }
 
     session.requestAnimationFrame(xrAnimationFrame);
-
+    setTrackingState("ARCORE · ACQUIRING POSE","warn","Move the phone slowly and keep the room in view");
     return true;
 
   }catch(err){
-    console.warn(
-      "WebXR 6DoF tracking unavailable; using gyro/motion fallback.",
-      err
-    );
+    console.warn("WebXR/ARCore 6DoF unavailable; using sensor fallback.",err);
+    if(session){try{await session.end()}catch{}}
 
-    if(session){
-      try{
-        await session.end();
-      }catch{}
-    }
-
+    disposeXRPreviewResources();
     xrSession=null;
     xrReferenceSpace=null;
     xrTrackingReady=false;
+    xrPoseWasValid=false;
+    xrGLBinding=null;
+    xrLayer=null;
     xrTrackingCanvas=null;
     xrTrackingGL=null;
 
+    setTrackingState("GYRO FALLBACK","warn","ARCore failed; using camera + phone sensors");
     return false;
   }
 }
 
 async function stopXRTracking(){
   const session=xrSession;
-
   if(!session)return;
-
-  try{
-    await session.end();
-  }catch{}
+  try{await session.end()}catch{}
 }
 
-/* PHONE ORIENTATION */
-let deviceYaw=0,devicePitch=0,deviceRoll=0,zeroAlpha=null,zeroBeta=null,zeroGamma=null;
-const radians=d=>(d||0)*Math.PI/180;
+/* PHONE ORIENTATION — QUATERNION FALLBACK
+   This replaces the old raw beta/gamma subtraction that could gimbal-lock in
+   landscape and point the virtual camera at the ceiling. */
+const deviceQuaternion=new THREE.Quaternion();
+const deviceZeroQuaternion=new THREE.Quaternion();
+const deviceZeroInverse=new THREE.Quaternion();
+const deviceRelativeQuaternion=new THREE.Quaternion();
+const deviceEuler=new THREE.Euler();
+const deviceScreenQuaternion=new THREE.Quaternion();
+const deviceZAxis=new THREE.Vector3(0,0,1);
+const deviceCameraFix=new THREE.Quaternion(-Math.sqrt(.5),0,0,Math.sqrt(.5));
+let deviceHasZero=false;
+
+function screenOrientationRadians(){
+  const angle=screen.orientation?.angle;
+  if(Number.isFinite(angle))return THREE.MathUtils.degToRad(angle);
+  const legacy=window.orientation;
+  return THREE.MathUtils.degToRad(Number.isFinite(legacy)?legacy:0);
+}
+
+function buildDeviceQuaternion(alpha,beta,gamma,orient){
+  // Same coordinate conversion used by Three.js' historical
+  // DeviceOrientationControls: phone sensor coordinates -> camera coordinates.
+  deviceEuler.set(beta,alpha,-gamma,"YXZ");
+  deviceQuaternion.setFromEuler(deviceEuler);
+  deviceQuaternion.multiply(deviceCameraFix);
+  deviceQuaternion.multiply(deviceScreenQuaternion.setFromAxisAngle(deviceZAxis,-orient));
+  deviceQuaternion.normalize();
+}
 
 addEventListener("deviceorientation",e=>{
   if(!directorMode)return;
-  const a=radians(e.alpha),b=radians(e.beta),g=radians(e.gamma);
-  if(zeroAlpha===null){zeroAlpha=a;zeroBeta=b;zeroGamma=g}
-  let dy=a-zeroAlpha;
-  while(dy>Math.PI)dy-=Math.PI*2;
-  while(dy<-Math.PI)dy+=Math.PI*2;
-  deviceYaw=dy;
-  devicePitch=b-zeroBeta;
-  deviceRoll=g-zeroGamma;
+  if(e.alpha==null||e.beta==null||e.gamma==null)return;
+
+  buildDeviceQuaternion(
+    THREE.MathUtils.degToRad(e.alpha),
+    THREE.MathUtils.degToRad(e.beta),
+    THREE.MathUtils.degToRad(e.gamma),
+    screenOrientationRadians()
+  );
+
+  if(!deviceHasZero){
+    deviceZeroQuaternion.copy(deviceQuaternion);
+    deviceZeroInverse.copy(deviceZeroQuaternion).invert();
+    deviceHasZero=true;
+  }
+
+  deviceRelativeQuaternion
+    .copy(deviceZeroInverse)
+    .multiply(deviceQuaternion)
+    .normalize();
 },true);
 
 /* ACCELEROMETER HANDHELD MOTION */
@@ -923,6 +1186,18 @@ const cameraReference=$("cameraReference"),cameraFlowCanvas=$("cameraFlowCanvas"
 const flowContext=cameraFlowCanvas.getContext("2d",{willReadFrequently:true});
 let cameraReferenceStream=null,cameraReferenceActive=false,previousFlowFrame=null,opticalX=0,opticalY=0,flowCounter=0;
 
+function stopCameraReference(){
+  if(cameraReferenceStream){
+    cameraReferenceStream.getTracks().forEach(track=>track.stop());
+    cameraReferenceStream=null;
+  }
+  cameraReferenceActive=false;
+  cameraReference.srcObject=null;
+  trackingPreviewVideo.srcObject=null;
+  previousFlowFrame=null;
+  opticalX=opticalY=0;
+}
+
 async function startCameraReference(){
   if(cameraReferenceActive)return true;
   if(!navigator.mediaDevices?.getUserMedia)return false;
@@ -937,8 +1212,12 @@ async function startCameraReference(){
       audio:false
     });
     cameraReference.srcObject=cameraReferenceStream;
+    trackingPreviewVideo.srcObject=cameraReferenceStream;
     await cameraReference.play();
+    try{await trackingPreviewVideo.play()}catch{}
     cameraReferenceActive=true;
+    showFallbackPreview();
+    setTrackingState("GYRO + CAMERA FALLBACK","warn",null);
     return true;
   }catch(err){
     console.warn("Camera reference unavailable; recording still works without it.",err);
@@ -1016,29 +1295,21 @@ async function startRecording(){
     return;
   }
 
-  /*
-    PRIMARY:
-    WebXR / ARCore gives true world-space 6DoF pose.
-
-    FALLBACK:
-    Device orientation + accelerometer + optical flow.
-
-    The accelerometer is deliberately not used to establish position when
-    AR tracking is available.
-  */
+  // Try real ARCore/WebXR 6DoF first. If it cannot start, fall back to the
+  // existing camera + device sensors path.
   const xrStarted=await startXRTracking();
 
   if(!xrStarted){
     await requestSensors();
-
-    /*
-      Only use the camera optical-flow reference when WebXR/ARCore
-      was unavailable.
-    */
-    startCameraReference().catch(()=>{});
+    deviceHasZero=false;
+    deviceRelativeQuaternion.identity();
+    const cameraOK=await startCameraReference();
+    if(!cameraOK){
+      clearTrackingPreview("Rear camera unavailable · gyro only");
+      setTrackingState("GYRO FALLBACK · NO CAMERA","warn","Rear camera unavailable · gyro only");
+    }
   }
 
-  zeroAlpha=zeroBeta=zeroGamma=null;
   physicalOffset.set(0,0,0);
   physicalVelocity.set(0,0,0);
   physicalRotation.set(0,0,0);
@@ -1052,6 +1323,8 @@ async function startRecording(){
     try{
       stream=renderer.domElement.captureStream(30);
     }catch(err2){
+      await stopXRTracking();
+      stopCameraReference();
       showError("The browser could not capture the Three.js canvas.");
       return;
     }
@@ -1067,6 +1340,8 @@ async function startRecording(){
     try{
       mediaRecorder=new MediaRecorder(stream);
     }catch(err2){
+      await stopXRTracking();
+      stopCameraReference();
       showError("MediaRecorder could not start: "+(err2?.message||err2));
       return;
     }
@@ -1097,11 +1372,9 @@ async function startRecording(){
     if(recordingURL)URL.revokeObjectURL(recordingURL);
     recordingURL=URL.createObjectURL(recordedVideo);
 
-    /*
-      Exit the invisible immersive AR tracking session before displaying
-      the existing take preview.
-    */
+    // End ARCore only after the recorder has received the final canvas data.
     await stopXRTracking();
+    stopCameraReference();
 
     previewVideo.src=recordingURL;
     previewVideo.load();
@@ -1111,6 +1384,8 @@ async function startRecording(){
   try{
     mediaRecorder.start(200);
   }catch(err){
+    await stopXRTracking();
+    stopCameraReference();
     showError("Recording failed to start: "+(err?.message||err));
     return;
   }
@@ -1159,6 +1434,8 @@ $("startOverBtn").onclick=()=>{
   if(recordingURL){URL.revokeObjectURL(recordingURL);recordingURL=null}
   recordedVideo=null;
   recordedParts=[];
+  setTrackingState("TRACKING OFF","off","Tap REC to start camera tracking");
+  clearTrackingPreview("Tap REC to start camera tracking");
 };
 
 $("downloadBtn").onclick=()=>{
@@ -1173,7 +1450,12 @@ $("downloadBtn").onclick=()=>{
   a.remove();
 };
 
-/* DIRECTOR CAMERA — NON-WEBXR FALLBACK */
+/* DIRECTOR CAMERA — SENSOR FALLBACK */
+const fallbackBaseEuler=new THREE.Euler(0,0,0,"YXZ");
+const fallbackBaseQuaternion=new THREE.Quaternion();
+const fallbackHandheldEuler=new THREE.Euler(0,0,0,"YXZ");
+const fallbackHandheldQuaternion=new THREE.Quaternion();
+
 function updateDirectorCamera(dt){
   sampleOpticalMotion();
 
@@ -1191,18 +1473,24 @@ function updateDirectorCamera(dt){
   camera.position.copy(cameraBase).add(physicalOffset);
   camera.position.y+=bob;
 
-  camera.rotation.order="YXZ";
-  camera.rotation.y=yaw-deviceYaw+physicalRotation.y;
-  camera.rotation.x=THREE.MathUtils.clamp(
-    pitch-devicePitch*.72+physicalRotation.x+opticalY*.0004,
-    -Math.PI/2+.015,
-    Math.PI/2-.015
+  // Quaternion-relative device orientation avoids the raw beta/gamma
+  // landscape singularity that caused the ceiling lock.
+  fallbackBaseEuler.set(pitch,yaw,0,"YXZ");
+  fallbackBaseQuaternion.setFromEuler(fallbackBaseEuler);
+
+  fallbackHandheldEuler.set(
+    physicalRotation.x+opticalY*.0004,
+    physicalRotation.y,
+    physicalRotation.z-opticalX*.00035,
+    "YXZ"
   );
-  camera.rotation.z=THREE.MathUtils.clamp(
-    -deviceRoll*.17+physicalRotation.z-opticalX*.00035,
-    -.22,
-    .22
-  );
+  fallbackHandheldQuaternion.setFromEuler(fallbackHandheldEuler);
+
+  camera.quaternion
+    .copy(fallbackBaseQuaternion)
+    .multiply(deviceRelativeQuaternion)
+    .multiply(fallbackHandheldQuaternion)
+    .normalize();
 }
 
 function updateStatus(){
@@ -1229,34 +1517,8 @@ function renderFrame(now=performance.now(),xrFrame=null){
   camera.updateProjectionMatrix();
 
   if(directorMode){
-
-    /*
-      When AR tracking is active, updateXRDirectorPose() writes the real
-      physical phone pose directly into our existing Three.js camera.
-
-      Physical motion now means:
-
-      step forward/back  -> virtual dolly
-      sidestep           -> virtual truck
-      raise phone        -> pedestal up
-      lower/crouch       -> pedestal down
-      lean               -> actual translation/parallax
-      rotate phone       -> full tracked orientation
-    */
-    const usingTrackedAR=!!(
-      xrSession &&
-      xrFrame &&
-      updateXRDirectorPose(xrFrame)
-    );
-
-    /*
-      Only fall back to the old sensor method when a real AR pose is
-      unavailable.
-    */
-    if(!usingTrackedAR){
-      updateDirectorCamera(dt);
-    }
-
+    const usingXR=!!(xrSession&&xrFrame&&updateXRDirectorPose(xrFrame));
+    if(!usingXR)updateDirectorCamera(dt);
   }else{
     camera.position.copy(cameraBase);
     camera.rotation.order="YXZ";
@@ -1266,43 +1528,25 @@ function renderFrame(now=performance.now(),xrFrame=null){
   }
 
   updateStatus();
-
   renderer.render(scene,camera);
   controlRenderer.render(controlScene,controlCamera);
 }
 
 function animate(now){
   normalRAF=0;
-
-  /*
-    XR owns the timing while the immersive tracking session is alive.
-  */
   if(xrSession)return;
-
-  renderFrame(
-    now||performance.now(),
-    null
-  );
-
+  renderFrame(now||performance.now(),null);
   normalRAF=requestAnimationFrame(animate);
 }
 
 function xrAnimationFrame(now,frame){
-  const session=frame.session;
+  if(!xrSession||frame.session!==xrSession)return;
+  xrSession.requestAnimationFrame(xrAnimationFrame);
 
-  if(!xrSession||session!==xrSession)return;
-
-  session.requestAnimationFrame(xrAnimationFrame);
-
-  /*
-    Keep the AR compositor alive, but render nothing into it.
-    The actual visible image remains our existing Arctic Three.js canvas.
-  */
+  // The XR compositor itself stays transparent. ARCore is being used as a
+  // tracker; the visible image remains this Arctic Three.js canvas in the
+  // DOM overlay.
   clearXRTrackingLayer();
-
-  /*
-    Feed the XRFrame pose into the normal app renderer.
-  */
   renderFrame(now,frame);
 }
 
@@ -1317,6 +1561,7 @@ function resize(){
   updateInterfaceMode();
 
   if(!directorMode&&recording)stopRecording();
+  if(!directorMode&&xrSession)stopXRTracking();
 }
 
 addEventListener("resize",resize);
@@ -1324,6 +1569,8 @@ screen.orientation?.addEventListener?.("change",resize);
 
 /* BOOT */
 renderWorldCards();
+setTrackingState("TRACKING OFF","off","Tap REC to start camera tracking");
+clearTrackingPreview("Tap REC to start camera tracking");
 await loadWorld(worlds[0]);
 </script>
 </body>
