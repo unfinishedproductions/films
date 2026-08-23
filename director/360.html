@@ -580,6 +580,289 @@ function updateInterfaceMode(){
 }
 updateInterfaceMode();
 
+/* WEBXR / ARCORE 6DOF DIRECTOR TRACKING
+   WebXR is used only as a hidden real-world pose tracker.
+   The visible Three.js canvas stays exactly the same, so the Arctic world,
+   mannequins, FOV and canvas recording continue to use the normal renderer. */
+let xrSession=null,xrReferenceSpace=null,xrTrackingReady=false;
+let xrTrackingCanvas=null,xrTrackingGL=null;
+const xrInitialInverse=new THREE.Matrix4();
+const xrCurrentPoseMatrix=new THREE.Matrix4();
+const xrVirtualStartMatrix=new THREE.Matrix4();
+const xrVirtualCameraMatrix=new THREE.Matrix4();
+const xrScaleScratch=new THREE.Vector3(1,1,1);
+const xrOne=new THREE.Vector3(1,1,1);
+const xrStartQuaternion=new THREE.Quaternion();
+const xrStartEuler=new THREE.Euler(0,0,0,"YXZ");
+
+function stopCameraReference(){
+  if(cameraReferenceStream){
+    cameraReferenceStream.getTracks().forEach(track=>track.stop());
+    cameraReferenceStream=null;
+  }
+  cameraReferenceActive=false;
+  cameraReference.srcObject=null;
+  previousFlowFrame=null;
+  opticalX=opticalY=0;
+}
+
+function updateXRDirectorPose(frame){
+  if(!xrSession||!xrReferenceSpace||!frame)return false;
+
+  const pose=frame.getViewerPose(xrReferenceSpace);
+  if(!pose)return false;
+
+  xrCurrentPoseMatrix.fromArray(pose.transform.matrix);
+
+  if(!xrTrackingReady){
+    /*
+      The first AR pose becomes our physical origin.
+
+      Virtual camera =
+      existing virtual camera start
+      × inverse(real phone start pose)
+      × current real phone pose
+
+      That gives true relative 6DoF motion without teleporting the camera
+      when the AR tracker starts.
+    */
+    xrInitialInverse.copy(xrCurrentPoseMatrix).invert();
+
+    xrStartEuler.set(pitch,yaw,0,"YXZ");
+    xrStartQuaternion.setFromEuler(xrStartEuler);
+
+    xrVirtualStartMatrix.compose(
+      cameraBase,
+      xrStartQuaternion,
+      xrOne
+    );
+
+    xrTrackingReady=true;
+  }
+
+  xrVirtualCameraMatrix
+    .copy(xrVirtualStartMatrix)
+    .multiply(xrInitialInverse)
+    .multiply(xrCurrentPoseMatrix);
+
+  xrVirtualCameraMatrix.decompose(
+    camera.position,
+    camera.quaternion,
+    xrScaleScratch
+  );
+
+  camera.rotation.order="YXZ";
+
+  return true;
+}
+
+function clearXRTrackingLayer(){
+  if(!xrSession||!xrTrackingGL)return;
+
+  const layer=xrSession.renderState.baseLayer;
+  if(!layer)return;
+
+  xrTrackingGL.bindFramebuffer(
+    xrTrackingGL.FRAMEBUFFER,
+    layer.framebuffer
+  );
+
+  xrTrackingGL.viewport(
+    0,
+    0,
+    layer.framebufferWidth,
+    layer.framebufferHeight
+  );
+
+  xrTrackingGL.clearColor(0,0,0,0);
+  xrTrackingGL.clearDepth(1);
+
+  xrTrackingGL.clear(
+    xrTrackingGL.COLOR_BUFFER_BIT|
+    xrTrackingGL.DEPTH_BUFFER_BIT
+  );
+}
+
+function handleXRSessionEnded(){
+  xrSession=null;
+  xrReferenceSpace=null;
+  xrTrackingReady=false;
+  xrTrackingCanvas=null;
+  xrTrackingGL=null;
+
+  previousFrame=performance.now();
+
+  if(!normalRAF){
+    normalRAF=requestAnimationFrame(animate);
+  }
+}
+
+async function startXRTracking(){
+  if(xrSession)return true;
+
+  if(
+    !directorMode||
+    !window.isSecureContext||
+    !navigator.xr||
+    typeof XRWebGLLayer==="undefined"
+  ){
+    return false;
+  }
+
+  /*
+    ARCore needs the rear camera for visual-inertial tracking.
+    Release the old optical-flow getUserMedia stream before asking WebXR
+    for the AR session.
+  */
+  stopCameraReference();
+
+  let session=null;
+
+  try{
+    /*
+      This request must happen as a direct consequence of the REC tap.
+
+      DOM overlay is required here because we are deliberately NOT using
+      WebXR to render the Arctic scene. WebXR runs invisibly underneath as
+      our 6DoF tracker while the existing Three.js canvas stays on screen.
+    */
+    session=await navigator.xr.requestSession(
+      "immersive-ar",
+      {
+        requiredFeatures:[
+          "local",
+          "dom-overlay"
+        ],
+        domOverlay:{
+          root:document.body
+        }
+      }
+    );
+
+    /*
+      Separate tiny WebGL context used only to satisfy the XR compositor.
+
+      This is intentionally NOT the main Three.js renderer.
+      That means renderer.domElement remains a normal canvas, which preserves:
+      - your existing FOV
+      - current 360 rendering
+      - current mannequin rendering
+      - captureStream recording
+      - normal Three.js camera
+    */
+    xrTrackingCanvas=document.createElement("canvas");
+
+    xrTrackingGL=
+      xrTrackingCanvas.getContext(
+        "webgl2",
+        {
+          xrCompatible:true,
+          alpha:true,
+          antialias:false
+        }
+      )||
+      xrTrackingCanvas.getContext(
+        "webgl",
+        {
+          xrCompatible:true,
+          alpha:true,
+          antialias:false
+        }
+      );
+
+    if(!xrTrackingGL){
+      throw new Error("No XR-compatible WebGL context");
+    }
+
+    if(xrTrackingGL.makeXRCompatible){
+      await xrTrackingGL.makeXRCompatible();
+    }
+
+    const layer=new XRWebGLLayer(
+      session,
+      xrTrackingGL,
+      {
+        alpha:true,
+        antialias:false,
+        depth:true,
+        stencil:false
+      }
+    );
+
+    session.updateRenderState({
+      baseLayer:layer
+    });
+
+    /*
+      'local' is room-scale tracking.
+
+      It gives us changes in:
+      X = physical left/right
+      Y = physical up/down
+      Z = physical forward/back
+
+      plus complete orientation.
+    */
+    xrReferenceSpace=
+      await session.requestReferenceSpace("local");
+
+    xrSession=session;
+    xrTrackingReady=false;
+
+    session.addEventListener(
+      "end",
+      handleXRSessionEnded,
+      {once:true}
+    );
+
+    /*
+      While immersive AR is active Android may throttle the normal page
+      requestAnimationFrame loop.
+
+      So we temporarily drive THIS SAME Three.js renderer from the XR
+      animation clock.
+    */
+    if(normalRAF){
+      cancelAnimationFrame(normalRAF);
+      normalRAF=0;
+    }
+
+    session.requestAnimationFrame(xrAnimationFrame);
+
+    return true;
+
+  }catch(err){
+    console.warn(
+      "WebXR 6DoF tracking unavailable; using gyro/motion fallback.",
+      err
+    );
+
+    if(session){
+      try{
+        await session.end();
+      }catch{}
+    }
+
+    xrSession=null;
+    xrReferenceSpace=null;
+    xrTrackingReady=false;
+    xrTrackingCanvas=null;
+    xrTrackingGL=null;
+
+    return false;
+  }
+}
+
+async function stopXRTracking(){
+  const session=xrSession;
+
+  if(!session)return;
+
+  try{
+    await session.end();
+  }catch{}
+}
+
 /* PHONE ORIENTATION */
 let deviceYaw=0,devicePitch=0,deviceRoll=0,zeroAlpha=null,zeroBeta=null,zeroGamma=null;
 const radians=d=>(d||0)*Math.PI/180;
@@ -733,10 +1016,27 @@ async function startRecording(){
     return;
   }
 
-  await requestSensors();
+  /*
+    PRIMARY:
+    WebXR / ARCore gives true world-space 6DoF pose.
 
-  // Camera reference is optional. Failure must never stop the actual take.
-  startCameraReference().catch(()=>{});
+    FALLBACK:
+    Device orientation + accelerometer + optical flow.
+
+    The accelerometer is deliberately not used to establish position when
+    AR tracking is available.
+  */
+  const xrStarted=await startXRTracking();
+
+  if(!xrStarted){
+    await requestSensors();
+
+    /*
+      Only use the camera optical-flow reference when WebXR/ARCore
+      was unavailable.
+    */
+    startCameraReference().catch(()=>{});
+  }
 
   zeroAlpha=zeroBeta=zeroGamma=null;
   physicalOffset.set(0,0,0);
@@ -782,8 +1082,9 @@ async function startRecording(){
     showError("Recording error: "+(e.error?.message||"unknown recorder error"));
   };
 
-  mediaRecorder.onstop=()=>{
+  mediaRecorder.onstop=async()=>{
     if(!recordedParts.length){
+      await stopXRTracking();
       showError("The recording stopped but the browser returned no video data.");
       return;
     }
@@ -795,6 +1096,12 @@ async function startRecording(){
 
     if(recordingURL)URL.revokeObjectURL(recordingURL);
     recordingURL=URL.createObjectURL(recordedVideo);
+
+    /*
+      Exit the invisible immersive AR tracking session before displaying
+      the existing take preview.
+    */
+    await stopXRTracking();
 
     previewVideo.src=recordingURL;
     previewVideo.load();
@@ -866,7 +1173,7 @@ $("downloadBtn").onclick=()=>{
   a.remove();
 };
 
-/* DIRECTOR CAMERA */
+/* DIRECTOR CAMERA — NON-WEBXR FALLBACK */
 function updateDirectorCamera(dt){
   sampleOpticalMotion();
 
@@ -910,10 +1217,9 @@ function updateStatus(){
 
 /* RENDER LOOP */
 let previousFrame=performance.now();
-function animate(){
-  requestAnimationFrame(animate);
+let normalRAF=0;
 
-  const now=performance.now();
+function renderFrame(now=performance.now(),xrFrame=null){
   const dt=Math.min(.05,Math.max(.001,(now-previousFrame)/1000));
   previousFrame=now;
 
@@ -923,7 +1229,34 @@ function animate(){
   camera.updateProjectionMatrix();
 
   if(directorMode){
-    updateDirectorCamera(dt);
+
+    /*
+      When AR tracking is active, updateXRDirectorPose() writes the real
+      physical phone pose directly into our existing Three.js camera.
+
+      Physical motion now means:
+
+      step forward/back  -> virtual dolly
+      sidestep           -> virtual truck
+      raise phone        -> pedestal up
+      lower/crouch       -> pedestal down
+      lean               -> actual translation/parallax
+      rotate phone       -> full tracked orientation
+    */
+    const usingTrackedAR=!!(
+      xrSession &&
+      xrFrame &&
+      updateXRDirectorPose(xrFrame)
+    );
+
+    /*
+      Only fall back to the old sensor method when a real AR pose is
+      unavailable.
+    */
+    if(!usingTrackedAR){
+      updateDirectorCamera(dt);
+    }
+
   }else{
     camera.position.copy(cameraBase);
     camera.rotation.order="YXZ";
@@ -933,10 +1266,47 @@ function animate(){
   }
 
   updateStatus();
+
   renderer.render(scene,camera);
   controlRenderer.render(controlScene,controlCamera);
 }
-animate();
+
+function animate(now){
+  normalRAF=0;
+
+  /*
+    XR owns the timing while the immersive tracking session is alive.
+  */
+  if(xrSession)return;
+
+  renderFrame(
+    now||performance.now(),
+    null
+  );
+
+  normalRAF=requestAnimationFrame(animate);
+}
+
+function xrAnimationFrame(now,frame){
+  const session=frame.session;
+
+  if(!xrSession||session!==xrSession)return;
+
+  session.requestAnimationFrame(xrAnimationFrame);
+
+  /*
+    Keep the AR compositor alive, but render nothing into it.
+    The actual visible image remains our existing Arctic Three.js canvas.
+  */
+  clearXRTrackingLayer();
+
+  /*
+    Feed the XRFrame pose into the normal app renderer.
+  */
+  renderFrame(now,frame);
+}
+
+normalRAF=requestAnimationFrame(animate);
 
 /* RESIZE */
 function resize(){
