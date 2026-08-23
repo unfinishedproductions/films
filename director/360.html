@@ -28,6 +28,7 @@ button{font:inherit;-webkit-tap-highlight-color:transparent}
 body.director #directorUI{display:block}
 body.director #menu,body.director #menuBtn{display:none!important}
 body.director #arrowOverlay{z-index:80}
+body.recording #arrowOverlay{display:none!important}
 #directorLabel{position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;padding:7px 10px;border-radius:9px;color:#fff;background:rgba(0,0,0,.45);font-size:12px;backdrop-filter:blur(8px)}
 #recordBtn{position:absolute;left:18px;bottom:max(18px,env(safe-area-inset-bottom));width:66px;height:66px;padding:0;border:4px solid #fff;border-radius:50%;background:rgba(0,0,0,.28);display:grid;place-items:center;pointer-events:auto}
 #recordBtn:after{content:"";width:38px;height:38px;border-radius:50%;background:#ef3d43}
@@ -39,20 +40,49 @@ body.director #arrowOverlay{z-index:80}
 #closePreview{position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;width:45px;height:45px;border-radius:50%;border:1px solid rgba(255,255,255,.25);color:#fff;background:rgba(0,0,0,.58);font-size:25px}
 #previewControls{position:absolute;left:0;right:0;bottom:max(16px,env(safe-area-inset-bottom));display:flex;justify-content:center;gap:9px}
 .previewButton{padding:10px 14px;border:1px solid rgba(255,255,255,.25);border-radius:10px;color:#fff;background:rgba(0,0,0,.68)}
-#trackingPanel{position:absolute;right:18px;bottom:max(18px,env(safe-area-inset-bottom));width:190px;border:1px solid rgba(255,255,255,.25);border-radius:12px;overflow:hidden;background:rgba(0,0,0,.72);box-shadow:0 6px 26px rgba(0,0,0,.38);backdrop-filter:blur(10px);pointer-events:none}
-#trackingViewport{position:relative;width:100%;aspect-ratio:16/9;background:#050505;overflow:hidden}
-#trackingPreviewVideo,#trackingPreviewCanvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none}
-#trackingPreviewCanvas{transform:scaleY(-1)}
-#trackingPreviewMessage{position:absolute;inset:0;display:grid;place-items:center;padding:10px;color:rgba(255,255,255,.75);font-size:10px;line-height:1.3;text-align:center;background:rgba(0,0,0,.28)}
-#trackingReadout{padding:7px 9px;color:#fff;font-size:9px;line-height:1.45;letter-spacing:.02em}
-#trackingLine{display:flex;align-items:center;gap:6px;font-weight:650}
-#trackingDot{width:7px;height:7px;border-radius:50%;background:#777;box-shadow:0 0 0 2px rgba(255,255,255,.08)}
-#trackingDot.good{background:#4de27f;box-shadow:0 0 9px rgba(77,226,127,.75)}
-#trackingDot.warn{background:#ffc857;box-shadow:0 0 9px rgba(255,200,87,.65)}
-#trackingDot.bad{background:#ef3d43;box-shadow:0 0 9px rgba(239,61,67,.7)}
-#trackingXYZ{margin-top:2px;opacity:.72;font-variant-numeric:tabular-nums}
-#cameraReference,#cameraFlowCanvas{display:none}
+#cameraReference{display:none}
+#cameraFlowCanvas{display:none}
+body.director #cameraReference.active{display:block;position:fixed;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:86;width:min(34vw,180px);aspect-ratio:16/9;object-fit:cover;border:2px solid rgba(255,255,255,.88);border-radius:10px;background:#050505;box-shadow:0 4px 18px rgba(0,0,0,.45);pointer-events:none}
+#cameraPreviewLabel{display:none;position:fixed;right:18px;bottom:max(116px,calc(env(safe-area-inset-bottom) + 116px));z-index:87;color:#fff;font-size:10px;letter-spacing:.08em;text-shadow:0 1px 4px #000;pointer-events:none}
+body.director #cameraPreviewLabel{display:block}
+#sensorStatus{position:absolute;top:max(50px,calc(env(safe-area-inset-top) + 50px));left:14px;padding:6px 9px;border-radius:8px;color:#fff;background:rgba(0,0,0,.42);font-size:11px;backdrop-filter:blur(8px)}
 #errorBox{display:none;position:fixed;left:12px;right:12px;top:74px;z-index:200;padding:10px 12px;border-radius:10px;background:rgba(110,0,0,.92);color:#fff;font-size:12px}
+
+/* DIRECTOR TRACKING LAB — separate from the normal editor menu */
+#directorMenuBtn{display:none;position:absolute;top:max(14px,env(safe-area-inset-top));right:14px;z-index:93;width:46px;height:46px;border:1px solid rgba(255,255,255,.22);border-radius:13px;background:rgba(8,8,8,.65);color:#fff;font-size:24px;place-items:center;pointer-events:auto;backdrop-filter:blur(10px)}
+body.director:not(.recording) #directorMenuBtn{display:grid}
+body.recording #directorMenuBtn,body.recording #directorMenu{display:none!important}
+#directorMenu{display:none;position:absolute;top:max(68px,calc(env(safe-area-inset-top) + 58px));right:14px;z-index:92;width:min(370px,calc(100vw - 28px));max-height:calc(100vh - 105px);overflow:auto;padding:12px;border:1px solid rgba(255,255,255,.16);border-radius:15px;background:rgba(8,8,8,.88);color:#fff;pointer-events:auto;backdrop-filter:blur(14px);box-shadow:0 12px 30px rgba(0,0,0,.38)}
+#directorMenu.open{display:block}
+#directorMenu label{display:block;margin:9px 0 4px;font-size:11px;opacity:.72;text-transform:uppercase;letter-spacing:.06em}
+#directorMenu select,#directorMenu input{box-sizing:border-box;width:100%;min-height:39px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:#171717;color:#fff;padding:7px 9px;font:inherit}
+#directorMenu input[type=range]{padding:0;min-height:30px}
+.directorButtons{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:10px}
+.directorAction{min-height:40px;border:1px solid rgba(255,255,255,.16);border-radius:9px;background:rgba(255,255,255,.08);color:#fff}
+.directorAction.primary{background:rgba(255,255,255,.17);font-weight:650}
+.trackerPanel{display:none;margin-top:9px;padding:9px;border:1px solid rgba(255,255,255,.10);border-radius:10px;background:rgba(255,255,255,.035)}
+.trackerPanel.active{display:block}
+.trackerHelp{margin-top:6px;font-size:10px;line-height:1.42;opacity:.64}
+.trackerHelp a{color:#fff}
+#translationStatus{position:absolute;top:max(82px,calc(env(safe-area-inset-top) + 82px));left:14px;max-width:min(72vw,520px);padding:6px 9px;border-radius:8px;color:#fff;background:rgba(0,0,0,.42);font-size:11px;backdrop-filter:blur(8px)}
+#translationStatus.good{background:rgba(0,72,38,.66)}
+#translationStatus.warn{background:rgba(116,75,0,.72)}
+#translationStatus.bad{background:rgba(110,0,0,.76)}
+#trackingEngineHost{display:none;position:absolute;right:18px;bottom:max(18px,env(safe-area-inset-bottom));z-index:86;width:min(34vw,190px);aspect-ratio:16/9;overflow:hidden;border:2px solid rgba(255,255,255,.88);border-radius:10px;background:#050505;box-shadow:0 4px 18px rgba(0,0,0,.45);pointer-events:none}
+body.director #trackingEngineHost.show{display:block}
+#trackingEngineHost video,#trackingEngineHost>video{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;object-fit:cover!important;transform:none!important;margin:0!important}
+#trackingEngineHost canvas{display:none!important}
+#trackerPreviewMessage{position:absolute;inset:0;display:grid;place-items:center;padding:8px;text-align:center;color:#fff;font-size:10px;line-height:1.35;background:#070707}
+#trackerPreviewLabel{display:none;position:absolute;right:18px;bottom:max(116px,calc(env(safe-area-inset-bottom) + 116px));z-index:87;color:#fff;font-size:10px;letter-spacing:.06em;text-shadow:0 1px 4px #000;pointer-events:none}
+body.director #trackerPreviewLabel.show{display:block}
+#trackingDiagnostics{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.11);font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.82;white-space:pre-line}
+.scaleLine{display:flex;align-items:center;gap:8px}.scaleLine input{flex:1}.scaleLine output{width:42px;text-align:right;font-size:11px}
+#gyroSmoothingOut{width:96px}
+.gyroSmoothingLabels{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:1px 0 4px;font-size:8px;line-height:1.15;text-align:center;opacity:.52}
+.gyroSmoothingLabels span:first-child{text-align:left}.gyroSmoothingLabels span:last-child{text-align:right}
+#gyroSmoothingHelp{min-height:28px}
+#mindFile{padding:7px 4px!important}
+
 </style>
 </head>
 <body>
@@ -88,20 +118,90 @@ body.director #arrowOverlay{z-index:80}
 
 <div id="directorUI">
   <div id="directorLabel">DIRECTOR</div>
+  <div id="sensorStatus">GYRO · waiting for orientation</div>
+  <div id="translationStatus">POSITION · off</div>
+
+  <button id="directorMenuBtn" aria-label="Director tracking settings">☰</button>
+  <div id="directorMenu">
+    <div class="sectionTitle">Gyro camera</div>
+
+    <label for="gyroSmoothing">Motion smoothing</label>
+    <div class="scaleLine">
+      <input id="gyroSmoothing" type="range" min="1" max="5" step="1" value="1">
+      <output id="gyroSmoothingOut">1 · Raw</output>
+    </div>
+    <div class="gyroSmoothingLabels" aria-hidden="true">
+      <span>Raw</span><span>Light</span><span>Handheld</span><span>Stable</span><span>Gimbal</span>
+    </div>
+    <div class="trackerHelp" id="gyroSmoothingHelp">Exact current gyro response. Maximum immediacy; every tiny phone movement is visible.</div>
+
+    <div class="sectionTitle" style="margin-top:16px">Director position tracking</div>
+
+    <label for="trackingMethodSelect">Method</label>
+    <select id="trackingMethodSelect">
+      <option value="none" selected>None · Gyro only</option>
+      <option value="webxr">1 · WebXR / ARCore</option>
+      <option value="mindar">2 · MindAR natural image</option>
+      <option value="arjs">3 · AR.js NFT natural image</option>
+      <option value="hybrid">4 · Hybrid XR + step fallback</option>
+    </select>
+
+    <div id="panel-none" class="trackerPanel active">
+      <b>None · Gyro only</b>
+      <div class="trackerHelp">Maximum-performance recording mode. Only the proven quaternion gyro drives the Director camera. No WebXR session, no rear-camera tracker, no MindAR/AR.js processing, no translation filter, and no position-preview rendering.</div>
+    </div>
+
+    <div id="panel-webxr" class="trackerPanel">
+      <b>WebXR / ARCore</b>
+      <div class="trackerHelp">Uses a room-scale <code>local</code> XR reference space for position only. Emulated poses are rejected. Tracking-loss recovery rebases at your current virtual position instead of accepting a teleport.</div>
+    </div>
+
+    <div id="panel-mindar" class="trackerPanel">
+      <b>MindAR image target</b>
+      <label for="mindFile">Compiled .mind target (optional)</label>
+      <input id="mindFile" type="file" accept=".mind,application/octet-stream">
+      <label for="mindUrl">Or .mind target URL</label>
+      <input id="mindUrl" value="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind">
+      <label for="mindWidthCm">Physical width of target image (cm)</label>
+      <input id="mindWidthCm" type="number" min="1" max="300" step="0.1" value="20">
+      <div class="trackerHelp">Mount the target upright on a wall/monitor. The default target is MindAR's card demo. <a href="https://hiukim.github.io/mind-ar-js-doc/tools/compile/" target="_blank" rel="noopener">MindAR target compiler</a> · <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">demo image</a></div>
+    </div>
+
+    <div id="panel-arjs" class="trackerPanel">
+      <b>AR.js NFT image target</b>
+      <label for="arjsBaseUrl">Descriptor base URL (no extension)</label>
+      <input id="arjsBaseUrl" value="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/data/dataNFT/pinball">
+      <label for="arjsWidthCm">Physical width of printed/displayed target (cm)</label>
+      <input id="arjsWidthCm" type="number" min="1" max="300" step="0.1" value="20">
+      <div class="trackerHelp">AR.js NFT needs the matching <code>.iset</code>, <code>.fset</code> and <code>.fset3</code> files at that base URL. <a href="https://carnaux.github.io/NFT-Marker-Creator/" target="_blank" rel="noopener">NFT descriptor creator</a> · <a href="https://ar-js-org.github.io/AR.js/aframe/examples/image-tracking/nft-video/pinball.jpg" target="_blank" rel="noopener">demo pinball image</a></div>
+    </div>
+
+    <div id="panel-hybrid" class="trackerPanel">
+      <b>Hybrid XR + step dead reckoning</b>
+      <label for="strideCm">Estimated stride length (cm)</label>
+      <input id="strideCm" type="number" min="20" max="150" step="1" value="62">
+      <label for="stepThreshold">Step sensitivity threshold</label>
+      <input id="stepThreshold" type="number" min="0.3" max="5" step="0.05" value="1.25">
+      <div class="trackerHelp">XR supplies absolute translation while healthy. If XR position becomes emulated/lost, camera Y freezes and detected walking steps continue horizontal movement. When XR returns it rebases to the current virtual location, avoiding snap-back.</div>
+    </div>
+
+    <label for="translationScale">Translation scale</label>
+    <div class="scaleLine"><input id="translationScale" type="range" min="0.1" max="4" step="0.05" value="1"><output id="translationScaleOut">1.00×</output></div>
+
+    <div class="directorButtons">
+      <button id="activateTrackerBtn" class="directorAction primary">Activate</button>
+      <button id="recenterTrackerBtn" class="directorAction">Recenter</button>
+      <button id="stopTrackerBtn" class="directorAction">Stop</button>
+    </div>
+    <div id="trackingDiagnostics">method: none
+position: gyro only</div>
+  </div>
+
   <button id="recordBtn" aria-label="Record"></button>
   <div id="recordStatus">REC</div>
 
-  <div id="trackingPanel">
-    <div id="trackingViewport">
-      <video id="trackingPreviewVideo" playsinline muted></video>
-      <canvas id="trackingPreviewCanvas" width="192" height="108"></canvas>
-      <div id="trackingPreviewMessage">Tap REC to start camera tracking</div>
-    </div>
-    <div id="trackingReadout">
-      <div id="trackingLine"><span id="trackingDot"></span><span id="trackingText">TRACKING OFF</span></div>
-      <div id="trackingXYZ">Δ x 0.00 · y 0.00 · z 0.00 m</div>
-    </div>
-  </div>
+  <div id="trackingEngineHost"><div id="trackerPreviewMessage">POSITION TRACKER PREVIEW</div></div>
+  <div id="trackerPreviewLabel">POSITION CAMERA</div>
 </div>
 
 <div id="previewPanel">
@@ -114,11 +214,10 @@ body.director #arrowOverlay{z-index:80}
   </div>
 </div>
 
-<video id="cameraReference" playsinline muted></video>
 <canvas id="cameraFlowCanvas" width="96" height="54"></canvas>
 
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js"}}
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js","mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js","threex":"https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/build/ar-threex.mjs"}}
 </script>
 
 <script type="module">
@@ -411,6 +510,7 @@ renderer.domElement.onpointerdown=e=>{
   lastX=startX=e.clientX;lastY=startY=e.clientY;pointerMoved=false;
 
   if(directorMode){
+    requestSensors().catch(()=>{});
     pointerAction="camera";
     renderer.domElement.setPointerCapture(e.pointerId);
     return;
@@ -456,6 +556,7 @@ renderer.domElement.onpointermove=e=>{
   if(pointerAction==="camera"){
     yaw-=dx*.004;
     pitch=THREE.MathUtils.clamp(pitch-dy*.004,-Math.PI/2+.015,Math.PI/2-.015);
+    if(directorMode)recenterDirectorGyro();
   }else if(pointerAction==="moveDoll"&&selectedDoll){
     updateRay(e.clientX,e.clientY);
     const floor=raycaster.intersectObject(floorHit,false)[0];
@@ -597,900 +698,810 @@ controlRenderer.domElement.onpointercancel=releaseControl;
 /* DIRECTOR MODE */
 const PHONE_LIKE=matchMedia("(pointer: coarse)").matches||navigator.maxTouchPoints>0;
 let directorMode=false;
+
+/*
+  PHONE-LOOK / 360 VIEWER ORIENTATION
+
+  This intentionally does NOT try to infer position from acceleration and it
+  does NOT use WebXR. It follows the same basic pattern used by established
+  phone-driven 360 viewers:
+
+  1. Read DeviceOrientation alpha / beta / gamma.
+  2. Convert the intrinsic phone Euler angles into a quaternion.
+  3. Apply the camera-axis correction used by Three.js DeviceOrientationControls.
+  4. Apply the current screen rotation (portrait / landscape-left / landscape-right).
+  5. Calibrate the current physical phone direction to the current virtual view.
+  6. From then on apply quaternion changes directly to the virtual camera.
+
+  Because the final camera orientation stays a quaternion, there is no
+  pitch clamp and no Euler singularity when looking high or low.
+*/
+const sensorStatus=$("sensorStatus");
+const gyroEuler=new THREE.Euler();
+const gyroManualEuler=new THREE.Euler();
+const gyroZAxis=new THREE.Vector3(0,0,1);
+const gyroScreenQ=new THREE.Quaternion();
+const gyroCameraCorrectionQ=new THREE.Quaternion(
+  -Math.sqrt(.5),0,0,Math.sqrt(.5)
+); // -90 degrees around X: phone frame -> Three.js camera frame
+
+const gyroRawQ=new THREE.Quaternion();
+const gyroRawInverseQ=new THREE.Quaternion();
+const gyroCalibrationQ=new THREE.Quaternion();
+const gyroTargetQ=new THREE.Quaternion();
+const gyroManualQ=new THREE.Quaternion();
+
+let gyroHasReading=false;
+let gyroNeedsCalibration=true;
+let sensorPermissionRequested=false;
+let sensorPermissionGranted=true;
+let lastSensorReading=0;
+
+function screenOrientationRadians(){
+  const angle=(screen.orientation&&Number.isFinite(screen.orientation.angle))
+    ?screen.orientation.angle
+    :(Number(window.orientation)||0);
+  return THREE.MathUtils.degToRad(angle);
+}
+
+function deviceEventToQuaternion(out,alpha,beta,gamma,screenAngle){
+  /*
+    DeviceOrientation angles are intrinsic Z-X'-Y'' rotations.
+    Three.js cameras are easiest to drive using a quaternion produced from
+    YXZ, with gamma negated. This is the long-established
+    DeviceOrientationControls conversion.
+  */
+  gyroEuler.set(beta,alpha,-gamma,"YXZ");
+  out.setFromEuler(gyroEuler);
+
+  /* Phone sensors describe the device differently from a Three.js camera.
+     This rotates the sensor frame so that holding the phone upright points
+     the virtual camera toward the horizon instead of toward the ceiling. */
+  out.multiply(gyroCameraCorrectionQ);
+
+  /* Correct for the fact that Android/iOS rotate the screen when the phone
+     is landscape while the physical sensor coordinate frame does not. */
+  gyroScreenQ.setFromAxisAngle(gyroZAxis,-screenAngle);
+  out.multiply(gyroScreenQ);
+
+  return out.normalize();
+}
+
+function currentManualViewQuaternion(out){
+  gyroManualEuler.set(pitch,yaw,0,"YXZ");
+  return out.setFromEuler(gyroManualEuler).normalize();
+}
+
+function calibrateGyroToCurrentView(){
+  if(!gyroHasReading)return false;
+
+  /*
+    correction = current virtual view * inverse(current phone orientation)
+
+    Therefore on the calibration frame:
+      correction * current phone orientation = current virtual view
+
+    No jump is possible when sensor control takes over.
+  */
+  currentManualViewQuaternion(gyroManualQ);
+  gyroRawInverseQ.copy(gyroRawQ).invert();
+  gyroCalibrationQ.copy(gyroManualQ).multiply(gyroRawInverseQ).normalize();
+  gyroNeedsCalibration=false;
+
+  gyroTargetQ.copy(gyroCalibrationQ).multiply(gyroRawQ).normalize();
+  camera.quaternion.copy(gyroTargetQ);
+  return true;
+}
+
+function recenterDirectorGyro(){
+  gyroNeedsCalibration=true;
+}
+
 function updateInterfaceMode(){
+  const wasDirector=directorMode;
   directorMode=PHONE_LIKE&&innerWidth>innerHeight;
   document.body.classList.toggle("director",directorMode);
   if(directorMode)menu.classList.remove("open");
+
+  if(directorMode&&!wasDirector){
+    recenterDirectorGyro();
+    sensorStatus.textContent=gyroHasReading
+      ?"GYRO · move phone to look around"
+      :"GYRO · tap screen or REC to enable";
+  }
 }
 updateInterfaceMode();
-
-/* DIRECTOR TRACKING DEBUG / CAMERA PREVIEW */
-const trackingPanel=$("trackingPanel");
-const trackingPreviewVideo=$("trackingPreviewVideo");
-const trackingPreviewCanvas=$("trackingPreviewCanvas");
-const trackingPreviewContext=trackingPreviewCanvas.getContext("2d");
-const trackingPreviewMessage=$("trackingPreviewMessage");
-const trackingDot=$("trackingDot");
-const trackingText=$("trackingText");
-const trackingXYZ=$("trackingXYZ");
-
-function setTrackingState(text,state="off",message=null){
-  trackingText.textContent=text;
-  trackingDot.className="";
-  if(state==="good")trackingDot.classList.add("good");
-  else if(state==="warn")trackingDot.classList.add("warn");
-  else if(state==="bad")trackingDot.classList.add("bad");
-
-  if(message!==null){
-    trackingPreviewMessage.textContent=message;
-    trackingPreviewMessage.style.display=message?"grid":"none";
-  }
-}
-
-function setTrackingXYZ(v){
-  trackingXYZ.textContent=`Δ x ${v.x.toFixed(2)} · y ${v.y.toFixed(2)} · z ${v.z.toFixed(2)} m`;
-}
-
-function showFallbackPreview(){
-  trackingPreviewCanvas.style.display="none";
-  trackingPreviewVideo.style.display="block";
-  trackingPreviewMessage.style.display="none";
-}
-
-function showXRPreview(){
-  trackingPreviewVideo.style.display="none";
-  trackingPreviewCanvas.style.display="block";
-  trackingPreviewMessage.style.display="none";
-}
-
-function clearTrackingPreview(message="Tap REC to start camera tracking"){
-  trackingPreviewVideo.style.display="none";
-  trackingPreviewCanvas.style.display="none";
-  trackingPreviewMessage.textContent=message;
-  trackingPreviewMessage.style.display="grid";
-}
-
-/* WEBXR / ARCORE 6DoF
-
-   IMPORTANT DIFFERENCE FROM THE PREVIOUS VERSION:
-
-   We do NOT multiply the complete AR pose matrix straight into the virtual
-   camera anymore.
-
-   Position and rotation are separated:
-
-   1. ARCore gives a position in its stable LOCAL world coordinates.
-      Its Y axis is gravity-up, so real vertical movement remains vertical.
-
-   2. We subtract the starting real phone position. This creates an actual
-      displacement in meters: step 0.25 m forward = about 0.25 virtual meters.
-
-   3. Only the horizontal X/Z displacement is rotated to line up the real
-      phone's starting heading with the virtual camera's starting yaw.
-      The Y value is NEVER mixed with phone pitch/roll. This is the key fix
-      for the broken up/down behavior.
-
-   4. Rotation is handled independently with a relative quaternion:
-         inverse(start real orientation) * current real orientation
-      and that relative rotation is added to the existing virtual camera.
-
-   This prevents a landscape-phone orientation change from turning into a
-   fake vertical teleport / ceiling view.
-*/
-let xrSession=null;
-let xrReferenceSpace=null;
-let xrTrackingGL=null;
-let xrTrackingCanvas=null;
-let xrLayer=null;
-let xrGLBinding=null;
-let xrTrackingReady=false;
-let xrPoseWasValid=false;
-let xrRawPreviewAvailable=false;
-let xrPreviewFrameCounter=0;
-
-const XR_POSITION_SCALE=1.0;
-const XR_SMOOTHING=.62;
-const XR_JUMP_LIMIT=.80; // metres between consecutive XR frames => reject/rebase
-
-const xrStartPosition=new THREE.Vector3();
-const xrCurrentPosition=new THREE.Vector3();
-const xrPreviousPosition=new THREE.Vector3();
-const xrWorldDelta=new THREE.Vector3();
-const xrSceneDelta=new THREE.Vector3();
-const xrTargetPosition=new THREE.Vector3();
-const xrVirtualStartPosition=new THREE.Vector3();
-
-const xrStartOrientation=new THREE.Quaternion();
-const xrStartOrientationInverse=new THREE.Quaternion();
-const xrCurrentOrientation=new THREE.Quaternion();
-const xrRelativeOrientation=new THREE.Quaternion();
-const xrVirtualStartQuaternion=new THREE.Quaternion();
-const xrTargetQuaternion=new THREE.Quaternion();
-const xrYawMapQuaternion=new THREE.Quaternion();
-const xrVirtualStartEuler=new THREE.Euler(0,0,0,"YXZ");
-const xrRealForward=new THREE.Vector3();
-const XR_FORWARD=new THREE.Vector3(0,0,-1);
-const XR_UP=new THREE.Vector3(0,1,0);
-let xrYawOffset=0;
-
-/* Raw WebXR camera preview buffers.
-   Chrome Android exposes the ARCore camera through the WebXR camera-access
-   feature on supported devices. We copy it into the tiny bottom-right canvas. */
-const XR_PREVIEW_W=192,XR_PREVIEW_H=108;
-let xrCameraFramebuffer=null;
-let xrPreviewFramebuffer=null;
-let xrPreviewTexture=null;
-let xrPreviewPixels=null;
-let xrPreviewImageData=null;
-
-function initXRRawPreview(){
-  if(!xrTrackingGL||!xrGLBinding)return false;
-
-  // Fast down-scaling uses WebGL2 blitFramebuffer. If the browser gave us
-  // only WebGL1, 6DoF still works; only the raw XR preview is unavailable.
-  const isGL2=(typeof WebGL2RenderingContext!=="undefined")&&(xrTrackingGL instanceof WebGL2RenderingContext);
-  if(!isGL2)return false;
-
-  const gl=xrTrackingGL;
-  xrCameraFramebuffer=gl.createFramebuffer();
-  xrPreviewFramebuffer=gl.createFramebuffer();
-  xrPreviewTexture=gl.createTexture();
-
-  gl.bindTexture(gl.TEXTURE_2D,xrPreviewTexture);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
-  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,XR_PREVIEW_W,XR_PREVIEW_H,0,gl.RGBA,gl.UNSIGNED_BYTE,null);
-
-  gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER,xrPreviewFramebuffer);
-  gl.framebufferTexture2D(gl.DRAW_FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,xrPreviewTexture,0);
-
-  if(gl.checkFramebufferStatus(gl.DRAW_FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE){
-    return false;
-  }
-
-  xrPreviewPixels=new Uint8Array(XR_PREVIEW_W*XR_PREVIEW_H*4);
-  xrPreviewImageData=trackingPreviewContext.createImageData(XR_PREVIEW_W,XR_PREVIEW_H);
-
-  gl.bindFramebuffer(gl.FRAMEBUFFER,null);
-  return true;
-}
-
-function updateXRRawCameraPreview(pose){
-  if(!xrTrackingGL||!xrGLBinding||!pose?.views?.length)return false;
-
-  // Preview does not need 60 fps. About 12-15 fps keeps the debugging window
-  // responsive without wasting phone GPU bandwidth on readback every XR frame.
-  if(++xrPreviewFrameCounter%4!==0)return xrRawPreviewAvailable;
-
-  const view=pose.views.find(v=>v.camera);
-  if(!view?.camera)return false;
-
-  let cameraTexture=null;
-  try{
-    cameraTexture=xrGLBinding.getCameraImage(view.camera);
-  }catch(err){
-    console.warn("XR raw camera texture unavailable",err);
-    return false;
-  }
-  if(!cameraTexture)return false;
-
-  const gl=xrTrackingGL;
-  const isGL2=(typeof WebGL2RenderingContext!=="undefined")&&(gl instanceof WebGL2RenderingContext);
-  if(!isGL2||!xrCameraFramebuffer||!xrPreviewFramebuffer)return false;
-
-  try{
-    // Official Chromium camera-access samples expose the camera image as a
-    // WebGL texture. Attach that texture to a READ framebuffer.
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER,xrCameraFramebuffer);
-    gl.framebufferTexture2D(gl.READ_FRAMEBUFFER,gl.COLOR_ATTACHMENT0,gl.TEXTURE_2D,cameraTexture,0);
-
-    if(gl.checkFramebufferStatus(gl.READ_FRAMEBUFFER)!==gl.FRAMEBUFFER_COMPLETE)return false;
-
-    // Downscale the whole camera image into our tiny preview texture.
-    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER,xrPreviewFramebuffer);
-    gl.blitFramebuffer(
-      0,0,view.camera.width,view.camera.height,
-      0,0,XR_PREVIEW_W,XR_PREVIEW_H,
-      gl.COLOR_BUFFER_BIT,
-      gl.LINEAR
-    );
-
-    // Read only the tiny 192×108 result back to the 2D preview canvas.
-    gl.bindFramebuffer(gl.READ_FRAMEBUFFER,xrPreviewFramebuffer);
-    gl.readPixels(0,0,XR_PREVIEW_W,XR_PREVIEW_H,gl.RGBA,gl.UNSIGNED_BYTE,xrPreviewPixels);
-
-    xrPreviewImageData.data.set(xrPreviewPixels);
-    trackingPreviewContext.putImageData(xrPreviewImageData,0,0);
-    showXRPreview();
-    xrRawPreviewAvailable=true;
-    return true;
-  }catch(err){
-    console.warn("XR camera preview readback failed",err);
-    return false;
-  }
-}
-
-function resetXRTrackingOrigin(position,orientation){
-  xrStartPosition.copy(position);
-  xrPreviousPosition.copy(position);
-  xrStartOrientation.copy(orientation).normalize();
-  xrStartOrientationInverse.copy(xrStartOrientation).invert();
-
-  // The virtual camera can already be anywhere in the Arctic room.
-  // That location becomes the origin of this physical take.
-  xrVirtualStartPosition.copy(cameraBase);
-  xrVirtualStartEuler.set(pitch,yaw,0,"YXZ");
-  xrVirtualStartQuaternion.setFromEuler(xrVirtualStartEuler).normalize();
-
-  // Find the real phone camera's initial horizontal heading.
-  xrRealForward.copy(XR_FORWARD).applyQuaternion(xrStartOrientation);
-  xrRealForward.y=0;
-
-  if(xrRealForward.lengthSq()<1e-8){
-    xrYawOffset=0;
-  }else{
-    xrRealForward.normalize();
-    const realYaw=Math.atan2(-xrRealForward.x,-xrRealForward.z);
-    xrYawOffset=yaw-realYaw;
-  }
-
-  xrYawMapQuaternion.setFromAxisAngle(XR_UP,xrYawOffset);
-  xrTrackingReady=true;
-  xrPoseWasValid=true;
-  setTrackingXYZ(new THREE.Vector3());
-}
-
-function updateXRDirectorPose(frame){
-  if(!xrSession||!xrReferenceSpace||!frame)return false;
-
-  const pose=frame.getViewerPose(xrReferenceSpace);
-  if(!pose){
-    xrPoseWasValid=false;
-    setTrackingState("ARCORE · TRACKING LOST","bad","Move the phone slowly until ARCore relocalizes");
-    return false;
-  }
-
-  const p=pose.transform.position;
-  const o=pose.transform.orientation;
-  xrCurrentPosition.set(p.x,p.y,p.z);
-  xrCurrentOrientation.set(o.x,o.y,o.z,o.w).normalize();
-
-  if(!xrTrackingReady){
-    resetXRTrackingOrigin(xrCurrentPosition,xrCurrentOrientation);
-  }
-
-  // A huge one-frame pose jump is AR relocalization, not you teleporting.
-  // Rebase instead of throwing the virtual camera into the ceiling/wall.
-  const oneFrameJump=xrCurrentPosition.distanceTo(xrPreviousPosition);
-  if(xrPoseWasValid&&oneFrameJump>XR_JUMP_LIMIT){
-    console.warn("Rejected XR relocalization jump",oneFrameJump);
-    resetXRTrackingOrigin(xrCurrentPosition,xrCurrentOrientation);
-  }
-  xrPreviousPosition.copy(xrCurrentPosition);
-  xrPoseWasValid=true;
-
-  /* POSITION
-
-     ARCore's LOCAL reference space is gravity aligned:
-       +Y = physical up
-
-     Therefore we first keep the real displacement in AR world coordinates.
-     We rotate it ONLY around Y to align the real room's horizontal heading
-     with the virtual Arctic room. Physical Y is never mixed with pitch/roll.
-  */
-  xrWorldDelta.copy(xrCurrentPosition).sub(xrStartPosition);
-
-  // If WebXR reports emulatedPosition, orientation is still useful but the
-  // positional solution is not reliable. Freeze translation until it recovers.
-  if(!pose.emulatedPosition){
-    xrSceneDelta.copy(xrWorldDelta)
-      .applyQuaternion(xrYawMapQuaternion)
-      .multiplyScalar(XR_POSITION_SCALE);
-
-    xrTargetPosition.copy(xrVirtualStartPosition).add(xrSceneDelta);
-
-    // Keep the operator inside the useful physical volume without changing
-    // cameraBase. Normal manual camera controls are otherwise untouched.
-    const horizontal=Math.hypot(xrTargetPosition.x,xrTargetPosition.z);
-    const maxHorizontal=5.5;
-    if(horizontal>maxHorizontal){
-      xrTargetPosition.x*=maxHorizontal/horizontal;
-      xrTargetPosition.z*=maxHorizontal/horizontal;
-    }
-    xrTargetPosition.y=THREE.MathUtils.clamp(xrTargetPosition.y,.08,4.5);
-
-    camera.position.lerp(xrTargetPosition,XR_SMOOTHING);
-    setTrackingXYZ(xrSceneDelta);
-  }
-
-  /* ROTATION
-
-     Instead of using absolute AR orientation directly, remove the phone's
-     starting orientation. That means whatever angle you were holding the phone
-     at when tracking began becomes "zero" and cannot suddenly snap the Arctic
-     camera to ARCore's absolute coordinate frame.
-  */
-  xrRelativeOrientation
-    .copy(xrStartOrientationInverse)
-    .multiply(xrCurrentOrientation)
-    .normalize();
-
-  xrTargetQuaternion
-    .copy(xrVirtualStartQuaternion)
-    .multiply(xrRelativeOrientation)
-    .normalize();
-
-  camera.quaternion.slerp(xrTargetQuaternion,XR_SMOOTHING);
-
-  const previewOK=updateXRRawCameraPreview(pose);
-
-  if(pose.emulatedPosition){
-    setTrackingState(
-      "ARCORE · ROTATION ONLY / POSITION LOST",
-      "warn",
-      previewOK?null:"ARCore is estimating orientation; move slowly and keep textured objects in view"
-    );
-  }else{
-    setTrackingState(
-      previewOK?"ARCORE 6DOF · RAW CAMERA":"ARCORE 6DOF",
-      "good",
-      previewOK?null:"6DoF is active; raw camera preview is not available on this browser/device"
-    );
-  }
-
-  return true;
-}
-
-function clearXRTrackingLayer(){
-  if(!xrSession||!xrTrackingGL)return;
-  const layer=xrSession.renderState.baseLayer;
-  if(!layer)return;
-  xrTrackingGL.bindFramebuffer(xrTrackingGL.FRAMEBUFFER,layer.framebuffer);
-  xrTrackingGL.viewport(0,0,layer.framebufferWidth,layer.framebufferHeight);
-  xrTrackingGL.clearColor(0,0,0,0);
-  xrTrackingGL.clearDepth(1);
-  xrTrackingGL.clear(xrTrackingGL.COLOR_BUFFER_BIT|xrTrackingGL.DEPTH_BUFFER_BIT);
-}
-
-function disposeXRPreviewResources(){
-  if(xrTrackingGL){
-    try{if(xrCameraFramebuffer)xrTrackingGL.deleteFramebuffer(xrCameraFramebuffer)}catch{}
-    try{if(xrPreviewFramebuffer)xrTrackingGL.deleteFramebuffer(xrPreviewFramebuffer)}catch{}
-    try{if(xrPreviewTexture)xrTrackingGL.deleteTexture(xrPreviewTexture)}catch{}
-  }
-  xrCameraFramebuffer=xrPreviewFramebuffer=xrPreviewTexture=null;
-  xrPreviewPixels=xrPreviewImageData=null;
-  xrRawPreviewAvailable=false;
-  xrPreviewFrameCounter=0;
-}
-
-function handleXRSessionEnded(){
-  disposeXRPreviewResources();
-  xrSession=null;
-  xrReferenceSpace=null;
-  xrTrackingReady=false;
-  xrPoseWasValid=false;
-  xrGLBinding=null;
-  xrLayer=null;
-  xrTrackingCanvas=null;
-  xrTrackingGL=null;
-  previousFrame=performance.now();
-
-  if(!recording){
-    setTrackingState("TRACKING OFF","off","Tap REC to start camera tracking");
-    clearTrackingPreview("Tap REC to start camera tracking");
-  }
-
-  if(!normalRAF)normalRAF=requestAnimationFrame(animate);
-}
-
-async function startXRTracking(){
-  if(xrSession)return true;
-
-  if(!directorMode){
-    setTrackingState("AR UNAVAILABLE · NOT LANDSCAPE","warn","Director tracking activates in landscape");
-    return false;
-  }
-  if(!window.isSecureContext){
-    setTrackingState("AR UNAVAILABLE · HTTPS REQUIRED","bad","Open this page from HTTPS, not file:// or plain HTTP");
-    return false;
-  }
-  if(!navigator.xr||typeof XRWebGLLayer==="undefined"){
-    setTrackingState("AR UNAVAILABLE · WEBXR MISSING","warn","Using gyro/camera fallback");
-    return false;
-  }
-
-  // Do NOT await isSessionSupported() here. requestSession() needs to stay
-  // directly inside the REC-button user gesture on mobile Chrome. An awaited
-  // capability probe can consume transient user activation and make AR fail.
-
-  // ARCore needs exclusive access to the rear camera. Stop any fallback
-  // getUserMedia stream before starting immersive AR.
-  stopCameraReference();
-  clearTrackingPreview("Starting ARCore…");
-  setTrackingState("STARTING ARCORE…","warn","Starting ARCore…");
-
-  let session=null;
-  try{
-    session=await navigator.xr.requestSession("immersive-ar",{
-      requiredFeatures:["dom-overlay"],
-      optionalFeatures:["camera-access"],
-      domOverlay:{root:document.body}
-    });
-
-    xrTrackingCanvas=document.createElement("canvas");
-    xrTrackingGL=
-      xrTrackingCanvas.getContext("webgl2",{xrCompatible:true,alpha:true,antialias:false,preserveDrawingBuffer:false})||
-      xrTrackingCanvas.getContext("webgl",{xrCompatible:true,alpha:true,antialias:false,preserveDrawingBuffer:false});
-
-    if(!xrTrackingGL)throw new Error("No XR-compatible WebGL context");
-    if(xrTrackingGL.makeXRCompatible)await xrTrackingGL.makeXRCompatible();
-
-    xrLayer=new XRWebGLLayer(session,xrTrackingGL,{
-      alpha:true,
-      antialias:false,
-      depth:true,
-      stencil:false
-    });
-    session.updateRenderState({baseLayer:xrLayer});
-
-    xrReferenceSpace=await session.requestReferenceSpace("local");
-
-    if(typeof XRWebGLBinding!=="undefined"){
-      try{
-        xrGLBinding=new XRWebGLBinding(session,xrTrackingGL);
-      }catch(err){
-        console.warn("XRWebGLBinding unavailable",err);
-        xrGLBinding=null;
-      }
-    }
-
-    xrSession=session;
-    xrTrackingReady=false;
-    xrPoseWasValid=false;
-
-    if(xrGLBinding)initXRRawPreview();
-
-    session.addEventListener("end",handleXRSessionEnded,{once:true});
-
-    if(normalRAF){
-      cancelAnimationFrame(normalRAF);
-      normalRAF=0;
-    }
-
-    session.requestAnimationFrame(xrAnimationFrame);
-    setTrackingState("ARCORE · ACQUIRING POSE","warn","Move the phone slowly and keep the room in view");
-    return true;
-
-  }catch(err){
-    console.warn("WebXR/ARCore 6DoF unavailable; using sensor fallback.",err);
-    if(session){try{await session.end()}catch{}}
-
-    disposeXRPreviewResources();
-    xrSession=null;
-    xrReferenceSpace=null;
-    xrTrackingReady=false;
-    xrPoseWasValid=false;
-    xrGLBinding=null;
-    xrLayer=null;
-    xrTrackingCanvas=null;
-    xrTrackingGL=null;
-
-    setTrackingState("GYRO FALLBACK","warn","ARCore failed; using camera + phone sensors");
-    return false;
-  }
-}
-
-async function stopXRTracking(){
-  const session=xrSession;
-  if(!session)return;
-  try{await session.end()}catch{}
-}
-
-/* PHONE ORIENTATION — QUATERNION FALLBACK
-   This replaces the old raw beta/gamma subtraction that could gimbal-lock in
-   landscape and point the virtual camera at the ceiling. */
-const deviceQuaternion=new THREE.Quaternion();
-const deviceZeroQuaternion=new THREE.Quaternion();
-const deviceZeroInverse=new THREE.Quaternion();
-const deviceRelativeQuaternion=new THREE.Quaternion();
-const deviceEuler=new THREE.Euler();
-const deviceScreenQuaternion=new THREE.Quaternion();
-const deviceZAxis=new THREE.Vector3(0,0,1);
-const deviceCameraFix=new THREE.Quaternion(-Math.sqrt(.5),0,0,Math.sqrt(.5));
-let deviceHasZero=false;
-
-function screenOrientationRadians(){
-  const angle=screen.orientation?.angle;
-  if(Number.isFinite(angle))return THREE.MathUtils.degToRad(angle);
-  const legacy=window.orientation;
-  return THREE.MathUtils.degToRad(Number.isFinite(legacy)?legacy:0);
-}
-
-function buildDeviceQuaternion(alpha,beta,gamma,orient){
-  // Same coordinate conversion used by Three.js' historical
-  // DeviceOrientationControls: phone sensor coordinates -> camera coordinates.
-  deviceEuler.set(beta,alpha,-gamma,"YXZ");
-  deviceQuaternion.setFromEuler(deviceEuler);
-  deviceQuaternion.multiply(deviceCameraFix);
-  deviceQuaternion.multiply(deviceScreenQuaternion.setFromAxisAngle(deviceZAxis,-orient));
-  deviceQuaternion.normalize();
-}
 
 addEventListener("deviceorientation",e=>{
   if(!directorMode)return;
   if(e.alpha==null||e.beta==null||e.gamma==null)return;
 
-  buildDeviceQuaternion(
-    THREE.MathUtils.degToRad(e.alpha),
-    THREE.MathUtils.degToRad(e.beta),
-    THREE.MathUtils.degToRad(e.gamma),
+  const alpha=THREE.MathUtils.degToRad(e.alpha);
+  const beta=THREE.MathUtils.degToRad(e.beta);
+  const gamma=THREE.MathUtils.degToRad(e.gamma);
+
+  deviceEventToQuaternion(
+    gyroRawQ,
+    alpha,
+    beta,
+    gamma,
     screenOrientationRadians()
   );
 
-  if(!deviceHasZero){
-    deviceZeroQuaternion.copy(deviceQuaternion);
-    deviceZeroInverse.copy(deviceZeroQuaternion).invert();
-    deviceHasZero=true;
-  }
+  gyroHasReading=true;
+  lastSensorReading=performance.now();
 
-  deviceRelativeQuaternion
-    .copy(deviceZeroInverse)
-    .multiply(deviceQuaternion)
-    .normalize();
-},true);
-
-/* ACCELEROMETER HANDHELD MOTION */
-const physicalOffset=new THREE.Vector3(),physicalVelocity=new THREE.Vector3(),physicalRotation=new THREE.Vector3();
-let lastMotionTime=performance.now(),stepEnergy=0;
-
-addEventListener("devicemotion",e=>{
-  if(!directorMode)return;
-  const now=performance.now();
-  const dt=Math.min(.05,Math.max(.004,(now-lastMotionTime)/1000));
-  lastMotionTime=now;
-  const a=e.acceleration;
-  if(!a)return;
-
-  const ax=a.x||0,ay=a.y||0,az=a.z||0;
-  physicalRotation.x+=ay*.0004;
-  physicalRotation.y+=ax*.00035;
-  physicalRotation.z+=ax*.00022;
-  physicalVelocity.x+=ax*dt*.009;
-  physicalVelocity.y+=-ay*dt*.006;
-  physicalVelocity.z+=-az*dt*.009;
-
-  const magnitude=Math.hypot(ax,ay,az);
-  if(magnitude>1.25)stepEnergy=Math.min(1,stepEnergy+magnitude*.03);
+  if(gyroNeedsCalibration)calibrateGyroToCurrentView();
+  sensorStatus.textContent="GYRO · 360° orientation active";
 },true);
 
 async function requestSensors(){
+  if(sensorPermissionRequested)return sensorPermissionGranted;
+  sensorPermissionRequested=true;
+
   try{
-    if(typeof DeviceMotionEvent!=="undefined"&&typeof DeviceMotionEvent.requestPermission==="function"){
-      const r=await DeviceMotionEvent.requestPermission();
-      if(r!=="granted")console.warn("Motion permission not granted");
-    }
     if(typeof DeviceOrientationEvent!=="undefined"&&typeof DeviceOrientationEvent.requestPermission==="function"){
-      const r=await DeviceOrientationEvent.requestPermission();
-      if(r!=="granted")console.warn("Orientation permission not granted");
+      const result=await DeviceOrientationEvent.requestPermission();
+      sensorPermissionGranted=result==="granted";
+      if(!sensorPermissionGranted){
+        sensorStatus.textContent="GYRO · permission denied";
+        return false;
+      }
     }
-  }catch(err){
-    console.warn("Sensor permission unavailable",err);
-  }
-}
 
-/* OPTIONAL REAL CAMERA MOTION REFERENCE */
-const cameraReference=$("cameraReference"),cameraFlowCanvas=$("cameraFlowCanvas");
-const flowContext=cameraFlowCanvas.getContext("2d",{willReadFrequently:true});
-let cameraReferenceStream=null,cameraReferenceActive=false,previousFlowFrame=null,opticalX=0,opticalY=0,flowCounter=0;
-
-function stopCameraReference(){
-  if(cameraReferenceStream){
-    cameraReferenceStream.getTracks().forEach(track=>track.stop());
-    cameraReferenceStream=null;
-  }
-  cameraReferenceActive=false;
-  cameraReference.srcObject=null;
-  trackingPreviewVideo.srcObject=null;
-  previousFlowFrame=null;
-  opticalX=opticalY=0;
-}
-
-async function startCameraReference(){
-  if(cameraReferenceActive)return true;
-  if(!navigator.mediaDevices?.getUserMedia)return false;
-  try{
-    cameraReferenceStream=await navigator.mediaDevices.getUserMedia({
-      video:{
-        facingMode:{ideal:"environment"},
-        width:{ideal:320},
-        height:{ideal:180},
-        frameRate:{ideal:30,max:30}
-      },
-      audio:false
-    });
-    cameraReference.srcObject=cameraReferenceStream;
-    trackingPreviewVideo.srcObject=cameraReferenceStream;
-    await cameraReference.play();
-    try{await trackingPreviewVideo.play()}catch{}
-    cameraReferenceActive=true;
-    showFallbackPreview();
-    setTrackingState("GYRO + CAMERA FALLBACK","warn",null);
+    sensorPermissionGranted=true;
+    sensorStatus.textContent=gyroHasReading
+      ?"GYRO · 360° orientation active"
+      :"GYRO · waiting for first reading";
     return true;
   }catch(err){
-    console.warn("Camera reference unavailable; recording still works without it.",err);
+    sensorPermissionGranted=false;
+    sensorStatus.textContent="GYRO · unavailable";
+    console.warn("Orientation permission unavailable",err);
     return false;
   }
 }
 
-function sampleOpticalMotion(){
-  if(!cameraReferenceActive||cameraReference.readyState<2)return;
-  if(++flowCounter%3)return;
+/* Recalibrate after Android/iOS changes the screen coordinate system. */
+screen.orientation?.addEventListener?.("change",()=>{
+  recenterDirectorGyro();
+});
 
-  const w=cameraFlowCanvas.width,h=cameraFlowCanvas.height;
-  flowContext.drawImage(cameraReference,0,0,w,h);
-  const px=flowContext.getImageData(0,0,w,h).data;
-  const frame=new Uint8Array(w*h);
 
-  for(let i=0,j=0;i<px.length;i+=4,j++)frame[j]=(px[i]*3+px[i+1]*6+px[i+2])/10;
+/* =========================================================
+   POSITION TRACKING LAB
 
-  if(previousFlowFrame){
-    let bestScore=Infinity,bestX=0,bestY=0;
+   IMPORTANT ARCHITECTURE:
+   - The proven quaternion gyro above is the ONLY source of rotation.
+   - Every tracker below produces translation only.
+   - All methods feed the same translationRaw -> translationFiltered pipeline.
+   ========================================================= */
+const directorMenuBtn=$("directorMenuBtn"),directorMenu=$("directorMenu"),trackingMethodSelect=$("trackingMethodSelect");
+const translationStatus=$("translationStatus"),trackingDiagnostics=$("trackingDiagnostics");
+const activateTrackerBtn=$("activateTrackerBtn"),recenterTrackerBtn=$("recenterTrackerBtn"),stopTrackerBtn=$("stopTrackerBtn");
+const translationScale=$("translationScale"),translationScaleOut=$("translationScaleOut");
+const trackingEngineHost=$("trackingEngineHost"),trackerPreviewMessage=$("trackerPreviewMessage"),trackerPreviewLabel=$("trackerPreviewLabel");
+const cameraFlowCanvas=$("cameraFlowCanvas");
 
-    for(let oy=-3;oy<=3;oy++){
-      for(let ox=-4;ox<=4;ox++){
-        let score=0,count=0;
+/* Five-stop gyro response control.
+   Stop 1 intentionally preserves the exact previous Director behavior:
+     follow = 1 - exp(-24 * dt)
 
-        for(let y=8;y<h-8;y+=5){
-          for(let x=8;x<w-8;x+=5){
-            const a=frame[y*w+x];
-            const b=previousFlowFrame[(y+oy)*w+(x+ox)];
-            score+=Math.abs(a-b);
-            count++;
-          }
-        }
+   Stops 2-5 use adaptive quaternion smoothing. When the phone is nearly
+   still, the lower base rate suppresses sensor micro-jitter. During a
+   deliberate turn/tilt, angular error increases the response rate so the
+   camera catches up without feeling as disconnected as a fixed heavy filter. */
+const gyroSmoothing=$("gyroSmoothing");
+const gyroSmoothingOut=$("gyroSmoothingOut");
+const gyroSmoothingHelp=$("gyroSmoothingHelp");
 
-        score/=Math.max(1,count);
-        if(score<bestScore){bestScore=score;bestX=ox;bestY=oy}
-      }
-    }
+const GYRO_SMOOTHING_PROFILES=[
+  null,
+  {name:"Raw",baseRate:24,boostRate:0,motionAngle:1,help:"Exact current gyro response. Maximum immediacy; every tiny phone movement is visible."},
+  {name:"Light",baseRate:13,boostRate:10,motionAngle:THREE.MathUtils.degToRad(7),help:"Light cleanup. Small shakes are softened while intentional moves stay almost as immediate as Raw."},
+  {name:"Handheld",baseRate:7,boostRate:14,motionAngle:THREE.MathUtils.degToRad(10),help:"Clean handheld sweet spot. Crisp and near-real-time during deliberate moves, with much less fine gyro jitter."},
+  {name:"Stable",baseRate:4.5,boostRate:7.5,motionAngle:THREE.MathUtils.degToRad(12),help:"Strong stabilization. Camera motion eases into turns and settles cleanly, with a small intentional delay."},
+  {name:"Gimbal",baseRate:2.2,boostRate:2.8,motionAngle:THREE.MathUtils.degToRad(16),help:"Floaty gimbal feel. Heavy smoothing and visible follow delay turn abrupt phone movement into slow, clean camera motion."}
+];
 
-    opticalX=THREE.MathUtils.lerp(opticalX,bestX,.15);
-    opticalY=THREE.MathUtils.lerp(opticalY,bestY,.15);
+function currentGyroSmoothingProfile(){
+  const index=THREE.MathUtils.clamp(Math.round(Number(gyroSmoothing.value)||1),1,5);
+  return GYRO_SMOOTHING_PROFILES[index];
+}
+
+function updateGyroSmoothingUI(){
+  const index=THREE.MathUtils.clamp(Math.round(Number(gyroSmoothing.value)||1),1,5);
+  const profile=GYRO_SMOOTHING_PROFILES[index];
+  gyroSmoothingOut.textContent=`${index} · ${profile.name}`;
+  gyroSmoothingHelp.textContent=profile.help;
+}
+
+gyroSmoothing.oninput=updateGyroSmoothingUI;
+updateGyroSmoothingUI();
+
+let trackingMethod=trackingMethodSelect.value;
+let translationActive=false;
+const translationRaw=new THREE.Vector3();
+const translationFiltered=new THREE.Vector3();
+const translationDesired=new THREE.Vector3();
+let trackerStatusText="inactive",trackerQuality="off";
+let trackerStartTime=0;
+
+function setTranslationStatus(text,quality="off"){
+  trackerStatusText=text;trackerQuality=quality;
+  translationStatus.textContent=`POSITION · ${text}`;
+  translationStatus.classList.remove("good","warn","bad");
+  if(quality==="good")translationStatus.classList.add("good");
+  else if(quality==="warn")translationStatus.classList.add("warn");
+  else if(quality==="bad")translationStatus.classList.add("bad");
+}
+
+function setPreviewMode(mode,message=""){
+  trackingEngineHost.classList.add("show");
+  trackerPreviewLabel.classList.add("show");
+  trackerPreviewLabel.textContent=mode;
+  trackerPreviewMessage.style.display=message?"grid":"none";
+  trackerPreviewMessage.textContent=message;
+}
+
+function clearTrackingHost(){
+  [...trackingEngineHost.children].forEach(el=>{if(el!==trackerPreviewMessage)el.remove()});
+  trackerPreviewMessage.style.display="grid";
+}
+
+function updateTrackerPanels(){
+  trackingMethod=trackingMethodSelect.value;
+  document.querySelectorAll(".trackerPanel").forEach(p=>p.classList.remove("active"));
+  $("panel-"+trackingMethod)?.classList.add("active");
+
+  if(trackingMethod==="none"){
+    recenterTranslationCommon();
+    clearTrackingHost();
+    trackingEngineHost.classList.remove("show");
+    trackerPreviewLabel.classList.remove("show");
+    setTranslationStatus("gyro only","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro only";
+  }else{
+    trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: ${translationActive?trackerStatusText:"inactive"}`;
+  }
+}
+trackingMethodSelect.onchange=async()=>{
+  if(translationActive)await stopTranslationTracker();
+  updateTrackerPanels();
+};
+directorMenuBtn.onclick=()=>directorMenu.classList.toggle("open");
+translationScale.oninput=()=>translationScaleOut.textContent=Number(translationScale.value).toFixed(2)+"×";
+translationScale.oninput();
+updateTrackerPanels();
+
+function yawFromQuaternion(q){
+  const f=new THREE.Vector3(0,0,-1).applyQuaternion(q);
+  f.y=0;
+  if(f.lengthSq()<1e-8)return 0;
+  f.normalize();
+  return Math.atan2(-f.x,-f.z);
+}
+function yawMapQuaternion(fromQ,toQ,out=new THREE.Quaternion()){
+  return out.setFromAxisAngle(new THREE.Vector3(0,1,0),yawFromQuaternion(toQ)-yawFromQuaternion(fromQ));
+}
+
+function recenterTranslationCommon(){
+  translationRaw.set(0,0,0);
+  translationFiltered.set(0,0,0);
+  translationDesired.set(0,0,0);
+}
+
+/* ---------- WebXR position provider ---------- */
+let xrSession=null,xrReferenceSpace=null,xrGL=null,xrLayer=null;
+let xrGood=false,xrWasGood=false,xrNeedsRebase=false,xrHaveBaseline=false;
+let xrStableFrames=0,xrLastGoodTime=0,xrLastFrameTime=0;
+const xrStartPos=new THREE.Vector3(),xrPrevPos=new THREE.Vector3(),xrCurrentPos=new THREE.Vector3();
+const xrCurrentQ=new THREE.Quaternion(),xrMapQ=new THREE.Quaternion(),xrBaseOffset=new THREE.Vector3(),xrDelta=new THREE.Vector3();
+let normalRAF=0;
+
+function resetXRState(preserve=false){
+  const keep=preserve?translationRaw.clone():new THREE.Vector3();
+  xrGood=xrWasGood=false;xrNeedsRebase=false;xrHaveBaseline=false;xrStableFrames=0;
+  xrLastGoodTime=0;xrLastFrameTime=0;
+  xrBaseOffset.copy(keep);
+}
+
+function rebaseXR(p,q,preserve){
+  xrStartPos.copy(p);xrPrevPos.copy(p);
+  yawMapQuaternion(q,camera.quaternion,xrMapQ);
+  xrBaseOffset.copy(preserve);
+  xrHaveBaseline=true;xrNeedsRebase=false;xrGood=true;xrWasGood=true;
+  xrLastGoodTime=performance.now();
+}
+
+function processXRFrame(frame){
+  if(!xrSession||!xrReferenceSpace)return;
+  const pose=frame.getViewerPose(xrReferenceSpace);
+  const now=performance.now();
+  xrLastFrameTime=now;
+
+  if(!pose||pose.emulatedPosition){
+    xrGood=false;
+    if(xrWasGood){xrWasGood=false;xrNeedsRebase=true}
+    setTranslationStatus(pose?.emulatedPosition?"XR position emulated · frozen":"XR tracking lost · frozen","warn");
+    return;
   }
 
-  previousFlowFrame=frame;
+  const t=pose.transform;
+  xrCurrentPos.set(t.position.x,t.position.y,t.position.z);
+  xrCurrentQ.set(t.orientation.x,t.orientation.y,t.orientation.z,t.orientation.w).normalize();
+
+  if(!xrHaveBaseline){
+    if(xrStableFrames===0)xrPrevPos.copy(xrCurrentPos);
+    const jump=xrCurrentPos.distanceTo(xrPrevPos);
+    xrPrevPos.copy(xrCurrentPos);
+    xrStableFrames=jump<0.08?xrStableFrames+1:0;
+    setTranslationStatus(`XR stabilizing ${Math.min(xrStableFrames,8)}/8`,"warn");
+    if(xrStableFrames>=8)rebaseXR(xrCurrentPos,xrCurrentQ,translationRaw);
+    return;
+  }
+
+  const oneFrameJump=xrCurrentPos.distanceTo(xrPrevPos);
+  const recovered=!xrWasGood||(xrLastGoodTime&&now-xrLastGoodTime>350);
+  if(oneFrameJump>.45||xrNeedsRebase||recovered){
+    rebaseXR(xrCurrentPos,xrCurrentQ,translationRaw);
+    setTranslationStatus("XR recovered · rebased","warn");
+    return;
+  }
+
+  xrPrevPos.copy(xrCurrentPos);
+  xrLastGoodTime=now;xrGood=xrWasGood=true;
+
+  xrDelta.copy(xrCurrentPos).sub(xrStartPos).applyQuaternion(xrMapQ);
+  translationRaw.copy(xrBaseOffset).add(xrDelta);
+  setTranslationStatus("WebXR 6DoF","good");
 }
+
+function clearXRLayer(){
+  if(!xrGL||!xrLayer)return;
+  xrGL.bindFramebuffer(xrGL.FRAMEBUFFER,xrLayer.framebuffer);
+  xrGL.viewport(0,0,xrLayer.framebufferWidth,xrLayer.framebufferHeight);
+  xrGL.clearColor(0,0,0,0);xrGL.clearDepth(1);
+  xrGL.clear(xrGL.COLOR_BUFFER_BIT|xrGL.DEPTH_BUFFER_BIT);
+}
+
+async function startWebXRProvider(){
+  if(xrSession)return true;
+  if(!window.isSecureContext||!navigator.xr||typeof XRWebGLLayer==="undefined"){
+    setTranslationStatus("WebXR unavailable — use HTTPS + compatible Android Chrome","bad");
+    return false;
+  }
+  let pendingSession=null;
+  try{
+    const supported=await navigator.xr.isSessionSupported("immersive-ar");
+    if(!supported){setTranslationStatus("immersive-ar unsupported","bad");return false}
+    const session=await navigator.xr.requestSession("immersive-ar",{
+      requiredFeatures:["local","dom-overlay"],
+      domOverlay:{root:document.body}
+    });
+    pendingSession=session;
+    const c=document.createElement("canvas");
+    xrGL=c.getContext("webgl2",{xrCompatible:true,alpha:true,antialias:false})||c.getContext("webgl",{xrCompatible:true,alpha:true,antialias:false});
+    if(!xrGL)throw new Error("No XR-compatible WebGL context");
+    await xrGL.makeXRCompatible?.();
+    xrLayer=new XRWebGLLayer(session,xrGL,{alpha:true,antialias:false,depth:true});
+    session.updateRenderState({baseLayer:xrLayer});
+    xrReferenceSpace=await session.requestReferenceSpace("local");
+    xrSession=session;
+    pendingSession=null;
+    resetXRState(false);
+    xrReferenceSpace.addEventListener("reset",()=>{xrNeedsRebase=true;xrWasGood=false});
+    session.addEventListener("end",()=>{
+      xrSession=null;xrReferenceSpace=null;xrGL=null;xrLayer=null;xrGood=xrWasGood=false;
+      if(!normalRAF)normalRAF=requestAnimationFrame(animate);
+    },{once:true});
+    if(normalRAF){cancelAnimationFrame(normalRAF);normalRAF=0}
+    setPreviewMode("WEBXR / ARCORE","ARCore owns the rear camera. Preview is disabled here to avoid competing camera sessions.");
+    session.requestAnimationFrame(xrAnimationFrame);
+    setTranslationStatus("XR starting…","warn");
+    return true;
+  }catch(err){
+    console.warn("WebXR start failed",err);
+    if(pendingSession){try{await pendingSession.end()}catch{}}
+    xrSession=null;xrReferenceSpace=null;xrGL=null;xrLayer=null;
+    resetXRState(false);
+    setTranslationStatus("WebXR start failed: "+(err?.message||err),"bad");
+    return false;
+  }
+}
+
+async function stopWebXRProvider(){
+  const s=xrSession;
+  if(s){try{await s.end()}catch{}}
+  xrSession=null;xrReferenceSpace=null;xrGL=null;xrLayer=null;
+  resetXRState(false);
+}
+
+/* ---------- MindAR natural-image position provider ---------- */
+let mindarThree=null,mindAnchor=null,mindObjectURL=null,mindReady=false,mindHadTarget=false;
+const mindCamMatrix=new THREE.Matrix4(),mindCamPos=new THREE.Vector3(),mindCamQ=new THREE.Quaternion(),mindScaleScratch=new THREE.Vector3();
+const mindStartPos=new THREE.Vector3(),mindMapQ=new THREE.Quaternion(),mindDelta=new THREE.Vector3();
+
+async function startMindARProvider(){
+  try{
+    clearTrackingHost();
+    const {MindARThree}=await import("mindar-image-three");
+    const file=$("mindFile").files?.[0];
+    if(mindObjectURL){URL.revokeObjectURL(mindObjectURL);mindObjectURL=null}
+    const src=file?(mindObjectURL=URL.createObjectURL(file)):$("mindUrl").value.trim();
+    if(!src)throw new Error("Choose a .mind target or enter a URL");
+    mindarThree=new MindARThree({
+      container:trackingEngineHost,
+      imageTargetSrc:src,
+      filterMinCF:0.0005,
+      filterBeta:0.012,
+      warmupTolerance:4,
+      missTolerance:8
+    });
+    mindAnchor=mindarThree.addAnchor(0);
+    await mindarThree.start();
+    if(mindarThree.video&&!mindarThree.video.isConnected)trackingEngineHost.appendChild(mindarThree.video);
+    mindarThree.renderer.setAnimationLoop(()=>mindarThree.renderer.render(mindarThree.scene,mindarThree.camera));
+    mindReady=false;mindHadTarget=false;
+    setPreviewMode("MINDAR TARGET");
+    setTranslationStatus("MindAR · find target image","warn");
+    return true;
+  }catch(err){
+    console.warn("MindAR start failed",err);
+    if(mindarThree){
+      try{mindarThree.renderer?.setAnimationLoop?.(null)}catch{}
+      try{await mindarThree.stop?.()}catch{}
+      try{mindarThree.renderer?.dispose?.()}catch{}
+    }
+    mindarThree=null;mindAnchor=null;mindReady=false;mindHadTarget=false;
+    clearTrackingHost();
+    setTranslationStatus("MindAR failed: "+(err?.message||err),"bad");
+    return false;
+  }
+}
+
+async function stopMindARProvider(){
+  if(mindarThree){
+    try{mindarThree.renderer.setAnimationLoop(null)}catch{}
+    try{await mindarThree.stop()}catch{}
+    try{mindarThree.renderer.dispose()}catch{}
+  }
+  mindarThree=null;mindAnchor=null;mindReady=false;mindHadTarget=false;
+  if(mindObjectURL){URL.revokeObjectURL(mindObjectURL);mindObjectURL=null}
+  clearTrackingHost();
+}
+
+function updateMindARProvider(){
+  if(!mindarThree||!mindAnchor)return;
+  mindAnchor.group.updateMatrixWorld(true);
+  if(!mindAnchor.group.visible){
+    if(mindHadTarget)setTranslationStatus("MindAR target lost · frozen","warn");
+    else setTranslationStatus("MindAR · point camera at target","warn");
+    return;
+  }
+  mindHadTarget=true;
+  mindCamMatrix.copy(mindAnchor.group.matrixWorld).invert();
+  mindCamMatrix.decompose(mindCamPos,mindCamQ,mindScaleScratch);
+  const widthM=Math.max(.01,Number($("mindWidthCm").value)||20)/100;
+  if(!mindReady){
+    mindStartPos.copy(mindCamPos);
+    yawMapQuaternion(mindCamQ,camera.quaternion,mindMapQ);
+    mindReady=true;
+    setTranslationStatus("MindAR target locked · zeroed","good");
+    return;
+  }
+  mindDelta.copy(mindCamPos).sub(mindStartPos).applyQuaternion(mindMapQ).multiplyScalar(widthM);
+  translationRaw.copy(mindDelta);
+  setTranslationStatus("MindAR image tracking","good");
+}
+
+/* ---------- AR.js NFT natural-image position provider ---------- */
+let arjsSource=null,arjsContext=null,arjsCamera=null,arjsControls=null,arjsReady=false,arjsHadTarget=false;
+let arjsMetersPerUnit=.001,arjsInitListener=null;
+const arjsPos=new THREE.Vector3(),arjsQ=new THREE.Quaternion(),arjsScaleScratch=new THREE.Vector3(),arjsStartPos=new THREE.Vector3(),arjsMapQ=new THREE.Quaternion(),arjsDelta=new THREE.Vector3();
+
+async function startARJSProvider(){
+  try{
+    clearTrackingHost();
+    const {ArToolkitSource,ArToolkitContext,ArMarkerControls}=await import("threex");
+    ArToolkitContext.baseURL="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/";
+    const descriptorsUrl=$("arjsBaseUrl").value.trim();
+    if(!descriptorsUrl)throw new Error("Enter the NFT descriptor base URL");
+    arjsSource=new ArToolkitSource({sourceType:"webcam",sourceWidth:640,sourceHeight:480});
+    await new Promise((resolve,reject)=>{
+      let done=false;
+      const timer=setTimeout(()=>{if(!done)reject(new Error("camera startup timeout"))},12000);
+      arjsSource.init(()=>{done=true;clearTimeout(timer);resolve()});
+    });
+    if(arjsSource.domElement)trackingEngineHost.appendChild(arjsSource.domElement);
+    arjsContext=new ArToolkitContext({detectionMode:"mono",canvasWidth:640,canvasHeight:480},{sourceWidth:640,sourceHeight:480});
+    await new Promise(resolve=>arjsContext.init(resolve));
+    arjsCamera=new THREE.Camera();
+    arjsCamera.matrixAutoUpdate=false;
+    arjsControls=new ArMarkerControls(arjsContext,arjsCamera,{
+      type:"nft",
+      descriptorsUrl,
+      changeMatrixMode:"cameraTransformMatrix",
+      smooth:true,
+      smoothCount:7,
+      smoothTolerance:.01,
+      smoothThreshold:2
+    });
+    arjsReady=false;arjsHadTarget=false;arjsMetersPerUnit=.001;
+    arjsInitListener=e=>{
+      const d=e.detail||{};
+      const descriptorWidthM=(Number(d.width)>0&&Number(d.dpi)>0)?(Number(d.width)/Number(d.dpi))*0.0254:0;
+      const actualWidthM=Math.max(.01,Number($("arjsWidthCm").value)||20)/100;
+      // AR.js' own NFT Three example positions content using mm-like values.
+      // Correct that nominal scale by the actual physical display/print width.
+      if(descriptorWidthM>0)arjsMetersPerUnit=.001*(actualWidthM/descriptorWidthM);
+    };
+    addEventListener("arjs-nft-init-data",arjsInitListener);
+    setPreviewMode("AR.JS NFT TARGET");
+    setTranslationStatus("AR.js · loading NFT descriptors","warn");
+    return true;
+  }catch(err){
+    console.warn("AR.js start failed",err);
+    try{arjsSource?.domElement?.srcObject?.getTracks?.().forEach(t=>t.stop())}catch{}
+    arjsSource=null;arjsContext=null;arjsCamera=null;arjsControls=null;
+    arjsReady=false;arjsHadTarget=false;
+    clearTrackingHost();
+    setTranslationStatus("AR.js failed: "+(err?.message||err),"bad");
+    return false;
+  }
+}
+
+async function stopARJSProvider(){
+  if(arjsInitListener)removeEventListener("arjs-nft-init-data",arjsInitListener);
+  arjsInitListener=null;
+  try{arjsSource?.domElement?.srcObject?.getTracks?.().forEach(t=>t.stop())}catch{}
+  arjsSource=null;arjsContext=null;arjsCamera=null;arjsControls=null;arjsReady=false;arjsHadTarget=false;
+  clearTrackingHost();
+}
+
+function updateARJSProvider(){
+  if(!arjsSource||!arjsContext||!arjsCamera||!arjsSource.ready)return;
+  try{arjsContext.update(arjsSource.domElement)}catch(err){console.warn("AR.js update",err);return}
+  if(!arjsCamera.visible){
+    if(arjsHadTarget)setTranslationStatus("AR.js target lost · frozen","warn");
+    else setTranslationStatus("AR.js · point camera at NFT target","warn");
+    return;
+  }
+  arjsHadTarget=true;
+  arjsCamera.updateMatrixWorld(true);
+  arjsCamera.matrixWorld.decompose(arjsPos,arjsQ,arjsScaleScratch);
+  if(!arjsReady){
+    arjsStartPos.copy(arjsPos);
+    yawMapQuaternion(arjsQ,camera.quaternion,arjsMapQ);
+    arjsReady=true;
+    setTranslationStatus("AR.js target locked · zeroed","good");
+    return;
+  }
+  arjsDelta.copy(arjsPos).sub(arjsStartPos).applyQuaternion(arjsMapQ).multiplyScalar(arjsMetersPerUnit);
+  translationRaw.copy(arjsDelta);
+  setTranslationStatus("AR.js NFT tracking","good");
+}
+
+/* ---------- Hybrid: WebXR + step-based dead reckoning ---------- */
+let pdrGravityMag=9.81,pdrLastStep=0,pdrStepCount=0;
+const pdrForward=new THREE.Vector3();
+addEventListener("devicemotion",e=>{
+  if(!translationActive||trackingMethod!=="hybrid")return;
+  const a=e.accelerationIncludingGravity||e.acceleration;
+  if(!a)return;
+  const x=a.x||0,y=a.y||0,z=a.z||0;
+  const mag=Math.hypot(x,y,z);
+  pdrGravityMag=pdrGravityMag*.94+mag*.06;
+  const impulse=Math.abs(mag-pdrGravityMag);
+  const now=performance.now();
+  const threshold=Math.max(.3,Number($("stepThreshold").value)||1.25);
+  const xrFresh=xrGood&&now-xrLastGoodTime<300;
+  if(xrFresh)return;
+  if(impulse>threshold&&now-pdrLastStep>330){
+    pdrLastStep=now;pdrStepCount++;
+    pdrForward.set(0,0,-1).applyQuaternion(camera.quaternion);pdrForward.y=0;
+    if(pdrForward.lengthSq()<1e-8)return;
+    pdrForward.normalize();
+    const stride=Math.max(.2,Number($("strideCm").value)||62)/100;
+    translationRaw.addScaledVector(pdrForward,stride);
+    xrNeedsRebase=true;xrWasGood=false;xrGood=false;
+    setTranslationStatus(`HYBRID · XR lost · step ${pdrStepCount}`,"warn");
+  }
+},true);
+
+/* ---------- lifecycle ---------- */
+async function activateSelectedTracker(){
+  if(translationActive)await stopTranslationTracker();
+  trackingMethod=trackingMethodSelect.value;
+  recenterTranslationCommon();
+  trackerStartTime=performance.now();pdrStepCount=0;pdrLastStep=0;
+
+  if(trackingMethod==="none"){
+    translationActive=false;
+    clearTrackingHost();
+    trackingEngineHost.classList.remove("show");
+    trackerPreviewLabel.classList.remove("show");
+    setTranslationStatus("gyro only","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro only";
+    return true;
+  }
+
+  let ok=false;
+  if(trackingMethod==="webxr"||trackingMethod==="hybrid")ok=await startWebXRProvider();
+  else if(trackingMethod==="mindar")ok=await startMindARProvider();
+  else if(trackingMethod==="arjs")ok=await startARJSProvider();
+  translationActive=!!ok;
+  if(!ok){trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: failed`;return false}
+  if(trackingMethod==="hybrid")setTranslationStatus("HYBRID · XR starting","warn");
+  trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: active`;
+  return true;
+}
+
+async function stopTranslationTracker(){
+  const old=trackingMethod;
+  translationActive=false;
+  if(old==="webxr"||old==="hybrid")await stopWebXRProvider();
+  if(old==="mindar")await stopMindARProvider();
+  if(old==="arjs")await stopARJSProvider();
+  recenterTranslationCommon();
+  clearTrackingHost();
+  trackingEngineHost.classList.remove("show");trackerPreviewLabel.classList.remove("show");
+
+  if(old==="none"){
+    setTranslationStatus("gyro only","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro only";
+  }else{
+    setTranslationStatus("off","off");
+    trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: inactive`;
+  }
+}
+
+function recenterActiveTracker(){
+  recenterTranslationCommon();
+  if(trackingMethod==="none"){
+    recenterDirectorGyro();
+    setTranslationStatus("gyro recentered","good");
+    trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro recentered";
+  }else if(trackingMethod==="webxr"||trackingMethod==="hybrid"){
+    resetXRState(false);xrNeedsRebase=true;
+    setTranslationStatus("XR recentering…","warn");
+  }else if(trackingMethod==="mindar"){
+    mindReady=false;setTranslationStatus("MindAR · recenter on target","warn");
+  }else if(trackingMethod==="arjs"){
+    arjsReady=false;setTranslationStatus("AR.js · recenter on target","warn");
+  }
+}
+
+activateTrackerBtn.onclick=activateSelectedTracker;
+recenterTrackerBtn.onclick=recenterActiveTracker;
+stopTrackerBtn.onclick=stopTranslationTracker;
+
+function updateTranslationProvider(dt){
+  if(trackingMethod==="none"){
+    translationRaw.set(0,0,0);
+    translationDesired.set(0,0,0);
+    translationFiltered.set(0,0,0);
+    return;
+  }
+  if(!translationActive){translationFiltered.multiplyScalar(Math.exp(-12*dt));return}
+  if(trackingMethod==="mindar")updateMindARProvider();
+  else if(trackingMethod==="arjs")updateARJSProvider();
+
+  const scale=Number(translationScale.value)||1;
+  translationDesired.copy(translationRaw).multiplyScalar(scale);
+  // Guard against a tracking provider ever trying to teleport the camera.
+  const maxRadius=4.5;
+  if(translationDesired.length()>maxRadius)translationDesired.setLength(maxRadius);
+  const follow=1-Math.exp(-11*dt);
+  translationFiltered.lerp(translationDesired,follow);
+
+  trackingDiagnostics.textContent=
+    `method: ${trackingMethod}\n`+
+    `raw Δ: ${translationRaw.x.toFixed(2)}, ${translationRaw.y.toFixed(2)}, ${translationRaw.z.toFixed(2)} m\n`+
+    `view Δ: ${translationFiltered.x.toFixed(2)}, ${translationFiltered.y.toFixed(2)}, ${translationFiltered.z.toFixed(2)} m\n`+
+    `state: ${trackerStatusText}`;
+}
+
 
 /* RECORDING */
 const recordBtn=$("recordBtn"),recordStatus=$("recordStatus"),previewPanel=$("previewPanel"),previewVideo=$("previewVideo");
 let recording=false,mediaRecorder=null,recordedParts=[],recordedVideo=null,recordingURL=null;
 
-function recorderSupported(){
-  return !!(window.MediaRecorder&&renderer.domElement.captureStream);
-}
-
+function recorderSupported(){return !!(window.MediaRecorder&&renderer.domElement.captureStream)}
 function bestRecordingMime(){
-  const types=[
-    "video/webm;codecs=vp9",
-    "video/webm;codecs=vp8",
-    "video/webm",
-    "video/mp4"
-  ];
-  for(const type of types){
-    try{
-      if(MediaRecorder.isTypeSupported(type))return type;
-    }catch{}
+  for(const type of ["video/webm;codecs=vp9","video/webm;codecs=vp8","video/webm","video/mp4"]){
+    try{if(MediaRecorder.isTypeSupported(type))return type}catch{}
   }
   return "";
 }
-
 async function startRecording(){
   if(recording)return;
-
-  if(!recorderSupported()){
-    showError("Video recording is not supported by this browser. Try current Chrome or Edge on Android.");
-    return;
+  if(!recorderSupported()){showError("Video recording is not supported by this browser. Try current Chrome or Edge on Android.");return}
+  await requestSensors();
+  trackingMethod=trackingMethodSelect.value;
+  if(trackingMethod!=="none"&&!translationActive){
+    const ok=await activateSelectedTracker();
+    if(!ok)console.warn("Position tracker did not start; recording gyro-only.");
+  }else if(trackingMethod==="none"){
+    recenterTranslationCommon();
+    clearTrackingHost();
+    trackingEngineHost.classList.remove("show");
+    trackerPreviewLabel.classList.remove("show");
+    setTranslationStatus("gyro only","good");
   }
-
-  // Try real ARCore/WebXR 6DoF first. If it cannot start, fall back to the
-  // existing camera + device sensors path.
-  const xrStarted=await startXRTracking();
-
-  if(!xrStarted){
-    await requestSensors();
-    deviceHasZero=false;
-    deviceRelativeQuaternion.identity();
-    const cameraOK=await startCameraReference();
-    if(!cameraOK){
-      clearTrackingPreview("Rear camera unavailable · gyro only");
-      setTrackingState("GYRO FALLBACK · NO CAMERA","warn","Rear camera unavailable · gyro only");
-    }
-  }
-
-  physicalOffset.set(0,0,0);
-  physicalVelocity.set(0,0,0);
-  physicalRotation.set(0,0,0);
-  opticalX=opticalY=0;
-  previousFlowFrame=null;
-
+  recenterDirectorGyro();
   let stream;
-  try{
-    stream=renderer.domElement.captureStream(60);
-  }catch(err){
-    try{
-      stream=renderer.domElement.captureStream(30);
-    }catch(err2){
-      await stopXRTracking();
-      stopCameraReference();
-      showError("The browser could not capture the Three.js canvas.");
-      return;
-    }
-  }
-
+  try{stream=renderer.domElement.captureStream(60)}catch{try{stream=renderer.domElement.captureStream(30)}catch{showError("The browser could not capture the Three.js canvas.");return}}
   const mime=bestRecordingMime();
-
-  try{
-    const options={videoBitsPerSecond:16000000};
-    if(mime)options.mimeType=mime;
-    mediaRecorder=new MediaRecorder(stream,options);
-  }catch(err){
-    try{
-      mediaRecorder=new MediaRecorder(stream);
-    }catch(err2){
-      await stopXRTracking();
-      stopCameraReference();
-      showError("MediaRecorder could not start: "+(err2?.message||err2));
-      return;
-    }
-  }
-
+  try{const options={videoBitsPerSecond:16000000};if(mime)options.mimeType=mime;mediaRecorder=new MediaRecorder(stream,options)}
+  catch{try{mediaRecorder=new MediaRecorder(stream)}catch(err2){showError("MediaRecorder could not start: "+(err2?.message||err2));return}}
   recordedParts=[];
-
-  mediaRecorder.ondataavailable=e=>{
-    if(e.data&&e.data.size>0)recordedParts.push(e.data);
-  };
-
-  mediaRecorder.onerror=e=>{
-    showError("Recording error: "+(e.error?.message||"unknown recorder error"));
-  };
-
-  mediaRecorder.onstop=async()=>{
-    if(!recordedParts.length){
-      await stopXRTracking();
-      showError("The recording stopped but the browser returned no video data.");
-      return;
-    }
-
-    recordedVideo=new Blob(
-      recordedParts,
-      {type:mediaRecorder.mimeType||mime||"video/webm"}
-    );
-
+  mediaRecorder.ondataavailable=e=>{if(e.data&&e.data.size>0)recordedParts.push(e.data)};
+  mediaRecorder.onerror=e=>showError("Recording error: "+(e.error?.message||"unknown recording error"));
+  mediaRecorder.onstop=()=>{
+    document.body.classList.remove("recording");
+    if(!recordedParts.length){showError("The recording stopped but the browser returned no video data.");return}
+    recordedVideo=new Blob(recordedParts,{type:mediaRecorder.mimeType||mime||"video/webm"});
     if(recordingURL)URL.revokeObjectURL(recordingURL);
     recordingURL=URL.createObjectURL(recordedVideo);
-
-    // End ARCore only after the recorder has received the final canvas data.
-    await stopXRTracking();
-    stopCameraReference();
-
-    previewVideo.src=recordingURL;
-    previewVideo.load();
-    previewPanel.classList.add("open");
+    previewVideo.src=recordingURL;previewVideo.load();previewPanel.classList.add("open");
   };
-
-  try{
-    mediaRecorder.start(200);
-  }catch(err){
-    await stopXRTracking();
-    stopCameraReference();
-    showError("Recording failed to start: "+(err?.message||err));
-    return;
-  }
-
-  recording=true;
-  recordBtn.classList.add("recording");
-  recordStatus.textContent="STOP";
+  try{mediaRecorder.start(200)}catch(err){showError("Recording failed to start: "+(err?.message||err));return}
+  recording=true;document.body.classList.add("recording");directorMenu.classList.remove("open");
+  recordBtn.classList.add("recording");recordStatus.textContent="STOP";
 }
-
 function stopRecording(){
   if(!recording)return;
-
-  recording=false;
-  recordBtn.classList.remove("recording");
-  recordStatus.textContent="REC";
-
+  recording=false;recordBtn.classList.remove("recording");recordStatus.textContent="REC";document.body.classList.remove("recording");
   if(mediaRecorder&&mediaRecorder.state!=="inactive"){
-    try{
-      mediaRecorder.requestData();
-    }catch{}
-    setTimeout(()=>{
-      try{
-        if(mediaRecorder.state!=="inactive")mediaRecorder.stop();
-      }catch{}
-    },80);
+    try{mediaRecorder.requestData()}catch{}
+    setTimeout(()=>{try{if(mediaRecorder.state!=="inactive")mediaRecorder.stop()}catch{}},80);
   }
 }
-
 recordBtn.onclick=()=>recording?stopRecording():startRecording();
+$("closePreview").onclick=()=>{previewVideo.pause();previewPanel.classList.remove("open")};
+$("replayBtn").onclick=async()=>{try{previewVideo.currentTime=0;await previewVideo.play()}catch{}};
+$("startOverBtn").onclick=()=>{previewVideo.pause();previewPanel.classList.remove("open");if(recordingURL){URL.revokeObjectURL(recordingURL);recordingURL=null}recordedVideo=null;recordedParts=[]};
+$("downloadBtn").onclick=()=>{if(!recordedVideo)return;const extension=(recordedVideo.type||"").includes("mp4")?"mp4":"webm";const a=document.createElement("a");a.href=recordingURL||URL.createObjectURL(recordedVideo);a.download=`virtual-camera-${Date.now()}.${extension}`;document.body.appendChild(a);a.click();a.remove()};
 
-$("closePreview").onclick=()=>{
-  previewVideo.pause();
-  previewPanel.classList.remove("open");
-};
-
-$("replayBtn").onclick=async()=>{
-  try{
-    previewVideo.currentTime=0;
-    await previewVideo.play();
-  }catch{}
-};
-
-$("startOverBtn").onclick=()=>{
-  previewVideo.pause();
-  previewPanel.classList.remove("open");
-  if(recordingURL){URL.revokeObjectURL(recordingURL);recordingURL=null}
-  recordedVideo=null;
-  recordedParts=[];
-  setTrackingState("TRACKING OFF","off","Tap REC to start camera tracking");
-  clearTrackingPreview("Tap REC to start camera tracking");
-};
-
-$("downloadBtn").onclick=()=>{
-  if(!recordedVideo)return;
-
-  const extension=(recordedVideo.type||"").includes("mp4")?"mp4":"webm";
-  const a=document.createElement("a");
-  a.href=recordingURL||URL.createObjectURL(recordedVideo);
-  a.download=`virtual-camera-${Date.now()}.${extension}`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-};
-
-/* DIRECTOR CAMERA — SENSOR FALLBACK */
-const fallbackBaseEuler=new THREE.Euler(0,0,0,"YXZ");
-const fallbackBaseQuaternion=new THREE.Quaternion();
-const fallbackHandheldEuler=new THREE.Euler(0,0,0,"YXZ");
-const fallbackHandheldQuaternion=new THREE.Quaternion();
-
+/* DIRECTOR CAMERA — exact good gyro + separately filtered XYZ translation */
 function updateDirectorCamera(dt){
-  sampleOpticalMotion();
+  if(trackingMethod==="none"){
+    camera.position.copy(cameraBase);
+  }else{
+    updateTranslationProvider(dt);
+    camera.position.copy(cameraBase).add(translationFiltered);
+  }
 
-  physicalVelocity.multiplyScalar(Math.pow(.08,dt));
-  physicalOffset.addScaledVector(physicalVelocity,dt*1.5);
-  physicalOffset.multiplyScalar(Math.pow(.08,dt));
-  physicalRotation.multiplyScalar(Math.pow(.03,dt));
+  if(!gyroHasReading||!sensorPermissionGranted){
+    camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0;return;
+  }
+  if(gyroNeedsCalibration&&!calibrateGyroToCurrentView())return;
+  gyroTargetQ.copy(gyroCalibrationQ).multiply(gyroRawQ).normalize();
 
-  physicalOffset.x+=opticalX*.0001;
-  physicalOffset.y+=opticalY*.00007;
+  const gyroProfile=currentGyroSmoothingProfile();
+  let gyroResponseRate=gyroProfile.baseRate;
 
-  stepEnergy*=Math.pow(.15,dt);
-  const bob=Math.sin(performance.now()*.012)*stepEnergy*.022;
+  if(gyroProfile.boostRate>0){
+    /* Quaternion angular error is a clean measure of how deliberate the
+       movement is. Near zero = likely sensor jitter, so use the slow base
+       rate. A larger real camera move raises the rate and catches up faster. */
+    const angleError=camera.quaternion.angleTo(gyroTargetQ);
+    const motionAmount=THREE.MathUtils.smoothstep(
+      angleError,
+      0,
+      gyroProfile.motionAngle
+    );
+    gyroResponseRate+=gyroProfile.boostRate*motionAmount;
+  }
 
-  camera.position.copy(cameraBase).add(physicalOffset);
-  camera.position.y+=bob;
+  /* Stop 1 evaluates to the exact old expression: 1-exp(-24*dt).
+     Higher stops progressively reduce the response rate, creating more
+     smoothing and more intentional visual lag. */
+  const gyroFollow=1-Math.exp(-gyroResponseRate*dt);
+  camera.quaternion.slerp(gyroTargetQ,gyroFollow).normalize();
 
-  // Quaternion-relative device orientation avoids the raw beta/gamma
-  // landscape singularity that caused the ceiling lock.
-  fallbackBaseEuler.set(pitch,yaw,0,"YXZ");
-  fallbackBaseQuaternion.setFromEuler(fallbackBaseEuler);
-
-  fallbackHandheldEuler.set(
-    physicalRotation.x+opticalY*.0004,
-    physicalRotation.y,
-    physicalRotation.z-opticalX*.00035,
-    "YXZ"
-  );
-  fallbackHandheldQuaternion.setFromEuler(fallbackHandheldEuler);
-
-  camera.quaternion
-    .copy(fallbackBaseQuaternion)
-    .multiply(deviceRelativeQuaternion)
-    .multiply(fallbackHandheldQuaternion)
-    .normalize();
+  if(performance.now()-lastSensorReading>750)sensorStatus.textContent="GYRO · waiting for sensor";
 }
 
 function updateStatus(){
@@ -1505,51 +1516,29 @@ function updateStatus(){
 
 /* RENDER LOOP */
 let previousFrame=performance.now();
-let normalRAF=0;
-
-function renderFrame(now=performance.now(),xrFrame=null){
-  const dt=Math.min(.05,Math.max(.001,(now-previousFrame)/1000));
-  previousFrame=now;
-
+function renderAppFrame(now=performance.now()){
+  const dt=Math.min(.05,Math.max(.001,(now-previousFrame)/1000));previousFrame=now;
   if(heldControl)performControl(heldControl);
+  camera.fov+=(targetFov-camera.fov)*.13;camera.updateProjectionMatrix();
+  if(directorMode)updateDirectorCamera(dt);
+  else{camera.position.copy(cameraBase);camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0}
 
-  camera.fov+=(targetFov-camera.fov)*.13;
-  camera.updateProjectionMatrix();
-
-  if(directorMode){
-    const usingXR=!!(xrSession&&xrFrame&&updateXRDirectorPose(xrFrame));
-    if(!usingXR)updateDirectorCamera(dt);
-  }else{
-    camera.position.copy(cameraBase);
-    camera.rotation.order="YXZ";
-    camera.rotation.y=yaw;
-    camera.rotation.x=pitch;
-    camera.rotation.z=0;
-  }
-
-  updateStatus();
+  const gyroOnlyRecording=directorMode&&recording&&trackingMethod==="none";
+  if(!gyroOnlyRecording)updateStatus();
   renderer.render(scene,camera);
-  controlRenderer.render(controlScene,controlCamera);
+  if(!recording)controlRenderer.render(controlScene,controlCamera);
 }
-
 function animate(now){
   normalRAF=0;
   if(xrSession)return;
-  renderFrame(now||performance.now(),null);
+  renderAppFrame(now||performance.now());
   normalRAF=requestAnimationFrame(animate);
 }
-
 function xrAnimationFrame(now,frame){
   if(!xrSession||frame.session!==xrSession)return;
   xrSession.requestAnimationFrame(xrAnimationFrame);
-
-  // The XR compositor itself stays transparent. ARCore is being used as a
-  // tracker; the visible image remains this Arctic Three.js canvas in the
-  // DOM overlay.
-  clearXRTrackingLayer();
-  renderFrame(now,frame);
+  processXRFrame(frame);clearXRLayer();renderAppFrame(now);
 }
-
 normalRAF=requestAnimationFrame(animate);
 
 /* RESIZE */
@@ -1561,7 +1550,7 @@ function resize(){
   updateInterfaceMode();
 
   if(!directorMode&&recording)stopRecording();
-  if(!directorMode&&xrSession)stopXRTracking();
+  if(!directorMode&&translationActive)stopTranslationTracker();
 }
 
 addEventListener("resize",resize);
@@ -1569,8 +1558,6 @@ screen.orientation?.addEventListener?.("change",resize);
 
 /* BOOT */
 renderWorldCards();
-setTrackingState("TRACKING OFF","off","Tap REC to start camera tracking");
-clearTrackingPreview("Tap REC to start camera tracking");
 await loadWorld(worlds[0]);
 </script>
 </body>
