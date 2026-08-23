@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Arctic Base 360 Editor</title>
+<title>Arctic Base 360 Editor · AprilTag Calibrated Camera Motion</title>
 <style>
 html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 #app{position:fixed;inset:0}
@@ -81,7 +81,19 @@ body.director #trackerPreviewLabel.show{display:block}
 .gyroSmoothingLabels{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:1px 0 4px;font-size:8px;line-height:1.15;text-align:center;opacity:.52}
 .gyroSmoothingLabels span:first-child{text-align:left}.gyroSmoothingLabels span:last-child{text-align:right}
 #gyroSmoothingHelp{min-height:28px}
-#mindFile{padding:7px 4px!important}
+
+
+/* APRILTAG METRIC CALIBRATION */
+#calibrateCameraBtn{width:100%;margin-top:9px;min-height:42px;border:1px solid rgba(255,255,255,.2);border-radius:9px;background:rgba(255,255,255,.14);color:#fff;font-weight:650}
+#calibrateCameraBtn:disabled{opacity:.5}
+#calibrationReadout{margin-top:7px;padding:7px 8px;border:1px solid rgba(255,255,255,.10);border-radius:8px;background:rgba(0,0,0,.22);font:10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-line}
+#calibrationOverlay{display:none;position:fixed;inset:0;z-index:160;background:rgba(0,0,0,.68);color:#fff;pointer-events:none}
+#calibrationOverlay.show{display:grid;place-items:center}
+#calibrationCard{width:min(620px,86vw);padding:22px;border:1px solid rgba(255,255,255,.24);border-radius:18px;background:rgba(8,8,8,.88);text-align:center;box-shadow:0 16px 50px rgba(0,0,0,.5);backdrop-filter:blur(12px)}
+#calibrationCountdown{font-size:44px;font-weight:760;line-height:1;margin:8px 0}
+#calibrationMessage{font-size:14px;line-height:1.45;opacity:.9}
+#calibrationTagState{margin-top:10px;font:12px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.78}
+#tagCalCanvas{display:none}
 
 </style>
 </head>
@@ -140,53 +152,30 @@ body.director #trackerPreviewLabel.show{display:block}
     <label for="trackingMethodSelect">Method</label>
     <select id="trackingMethodSelect">
       <option value="none" selected>None · Gyro only</option>
-      <option value="webxr">1 · WebXR / ARCore</option>
-      <option value="mindar">2 · MindAR natural image</option>
-      <option value="arjs">3 · AR.js NFT natural image</option>
-      <option value="hybrid">4 · Hybrid XR + step fallback</option>
+      <option value="optical">Camera Motion · Basic</option>
+      <option value="webxr">WebXR / ARCore · Experimental</option>
     </select>
 
     <div id="panel-none" class="trackerPanel active">
       <b>None · Gyro only</b>
-      <div class="trackerHelp">Maximum-performance recording mode. Only the proven quaternion gyro drives the Director camera. No WebXR session, no rear-camera tracker, no MindAR/AR.js processing, no translation filter, and no position-preview rendering.</div>
+      <div class="trackerHelp">Maximum-performance recording mode. Only the quaternion gyro drives the Director camera.</div>
+    </div>
+
+    <div id="panel-optical" class="trackerPanel">
+      <b>Camera Motion · Calibrated</b>
+      <div class="trackerHelp">Rear-camera optical flow handles forward/back movement; the working gyro still owns rotation. One optional 5-second AprilTag calibration gives the optical-flow tracker a real meter scale. No files need to be uploaded into this app.</div>
+      <button id="calibrateCameraBtn" type="button">Calibrate with 10 cm AprilTag</button>
+      <div id="calibrationReadout">Calibration: not run yet
+Basic motion fallback depth: 2.15 m</div>
     </div>
 
     <div id="panel-webxr" class="trackerPanel">
-      <b>WebXR / ARCore</b>
-      <div class="trackerHelp">Uses a room-scale <code>local</code> XR reference space for position only. Emulated poses are rejected. Tracking-loss recovery rebases at your current virtual position instead of accepting a teleport.</div>
+      <b>WebXR / ARCore · Experimental</b>
+      <div class="trackerHelp">Keeps the previous room-scale WebXR translation test for comparison. The basic camera-motion mode above is the one to test first.</div>
     </div>
 
-    <div id="panel-mindar" class="trackerPanel">
-      <b>MindAR image target</b>
-      <label for="mindFile">Compiled .mind target (optional)</label>
-      <input id="mindFile" type="file" accept=".mind,application/octet-stream">
-      <label for="mindUrl">Or .mind target URL</label>
-      <input id="mindUrl" value="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind">
-      <label for="mindWidthCm">Physical width of target image (cm)</label>
-      <input id="mindWidthCm" type="number" min="1" max="300" step="0.1" value="20">
-      <div class="trackerHelp">Mount the target upright on a wall/monitor. The default target is MindAR's card demo. <a href="https://hiukim.github.io/mind-ar-js-doc/tools/compile/" target="_blank" rel="noopener">MindAR target compiler</a> · <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">demo image</a></div>
-    </div>
-
-    <div id="panel-arjs" class="trackerPanel">
-      <b>AR.js NFT image target</b>
-      <label for="arjsBaseUrl">Descriptor base URL (no extension)</label>
-      <input id="arjsBaseUrl" value="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/data/dataNFT/pinball">
-      <label for="arjsWidthCm">Physical width of printed/displayed target (cm)</label>
-      <input id="arjsWidthCm" type="number" min="1" max="300" step="0.1" value="20">
-      <div class="trackerHelp">AR.js NFT needs the matching <code>.iset</code>, <code>.fset</code> and <code>.fset3</code> files at that base URL. <a href="https://carnaux.github.io/NFT-Marker-Creator/" target="_blank" rel="noopener">NFT descriptor creator</a> · <a href="https://ar-js-org.github.io/AR.js/aframe/examples/image-tracking/nft-video/pinball.jpg" target="_blank" rel="noopener">demo pinball image</a></div>
-    </div>
-
-    <div id="panel-hybrid" class="trackerPanel">
-      <b>Hybrid XR + step dead reckoning</b>
-      <label for="strideCm">Estimated stride length (cm)</label>
-      <input id="strideCm" type="number" min="20" max="150" step="1" value="62">
-      <label for="stepThreshold">Step sensitivity threshold</label>
-      <input id="stepThreshold" type="number" min="0.3" max="5" step="0.05" value="1.25">
-      <div class="trackerHelp">XR supplies absolute translation while healthy. If XR position becomes emulated/lost, camera Y freezes and detected walking steps continue horizontal movement. When XR returns it rebases to the current virtual location, avoiding snap-back.</div>
-    </div>
-
-    <label for="translationScale">Translation scale</label>
-    <div class="scaleLine"><input id="translationScale" type="range" min="0.1" max="4" step="0.05" value="1"><output id="translationScaleOut">1.00×</output></div>
+    <input id="translationScale" type="hidden" value="1">
+    <output id="translationScaleOut" style="display:none">1.00×</output>
 
     <div class="directorButtons">
       <button id="activateTrackerBtn" class="directorAction primary">Activate</button>
@@ -204,6 +193,15 @@ position: gyro only</div>
   <div id="trackerPreviewLabel">POSITION CAMERA</div>
 </div>
 
+<div id="calibrationOverlay">
+  <div id="calibrationCard">
+    <div style="font-size:12px;letter-spacing:.1em;opacity:.66">APRILTAG CAMERA CALIBRATION</div>
+    <div id="calibrationCountdown">5.0</div>
+    <div id="calibrationMessage">Keep AprilTag ID 0 visible on the laptop. Move the phone smoothly toward it and away from it for five seconds. A little natural side-to-side angle change helps estimate the phone camera focal length.</div>
+    <div id="calibrationTagState">loading detector…</div>
+  </div>
+</div>
+
 <div id="previewPanel">
   <video id="previewVideo" controls playsinline></video>
   <button id="closePreview">×</button>
@@ -214,10 +212,18 @@ position: gyro only</div>
   </div>
 </div>
 
-<canvas id="cameraFlowCanvas" width="96" height="54"></canvas>
+<canvas id="cameraFlowCanvas" width="320" height="180"></canvas>
+<canvas id="tagCalCanvas" width="640" height="360"></canvas>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsfeat/0.0.8/jsfeat-min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/comlink@4.4.2/dist/umd/comlink.js"></script>
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js","mindar-image-three":"https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js","threex":"https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/build/ar-threex.mjs"}}
+{
+  "imports":{
+    "three":"https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js",
+    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"
+  }
+}
 </script>
 
 <script type="module">
@@ -873,7 +879,7 @@ screen.orientation?.addEventListener?.("change",()=>{
 
    IMPORTANT ARCHITECTURE:
    - The proven quaternion gyro above is the ONLY source of rotation.
-   - Every tracker below produces translation only.
+   - Every tracker below produces translation only. Camera Motion is the zero-setup basic test.
    - All methods feed the same translationRaw -> translationFiltered pipeline.
    ========================================================= */
 const directorMenuBtn=$("directorMenuBtn"),directorMenu=$("directorMenu"),trackingMethodSelect=$("trackingMethodSelect");
@@ -989,6 +995,774 @@ function recenterTranslationCommon(){
   translationRaw.set(0,0,0);
   translationFiltered.set(0,0,0);
   translationDesired.set(0,0,0);
+}
+
+/* ---------- Camera Motion · Basic (rear-camera optical flow) ----------
+
+   This is intentionally much simpler than MindAR/AR.js/WebXR:
+   - no target image
+   - no upload
+   - no anchor
+   - no position from accelerometer
+   - gyro still owns rotation
+
+   We track natural corners from one real-camera frame to the next with
+   pyramidal Lucas-Kanade optical flow. A robust 2D similarity transform
+   separates ordinary image translation + in-plane rotation from SCALE.
+
+   Forward physical camera motion generally makes a static scene expand
+   (scale > 1). Backward motion makes it contract (scale < 1).
+
+   IMPORTANT: a monocular camera has no absolute metric scale without a
+   known real-world reference. BASIC_MOTION_DEPTH_METERS is therefore a
+   conservative scene-depth assumption used only to turn image expansion
+   into a useful approximate forward/back movement.
+*/
+let opticalStream=null;
+let opticalVideo=null;
+let opticalActive=false;
+let opticalInitialized=false;
+let opticalLastProcess=0;
+let opticalFrameCounter=0;
+let opticalPointCount=0;
+let opticalTrackedCount=0;
+let opticalDistance=0;
+let opticalSmoothedScale=1;
+let opticalLastScale=1;
+
+const OPTICAL_W=320;
+const OPTICAL_H=180;
+const OPTICAL_MAX_POINTS=220;
+const OPTICAL_MIN_POINTS=28;
+const OPTICAL_PROCESS_MS=66; // ~15 Hz CV while the viewer can still render at 60 Hz
+const BASIC_MOTION_DEPTH_METERS=2.15;
+let opticalMotionDepthMeters=BASIC_MOTION_DEPTH_METERS;
+const BASIC_SCALE_DEADZONE=.0016;
+const BASIC_MAX_STEP_METERS=.07;
+
+let opticalCtx=null;
+let opticalGray=null;
+let opticalPrevPyr=null;
+let opticalCurrPyr=null;
+let opticalCorners=null;
+let opticalPrevXY=null;
+let opticalCurrXY=null;
+let opticalStatus=null;
+const opticalForward=new THREE.Vector3();
+const opticalPrevGyroQ=new THREE.Quaternion();
+let opticalHaveGyroFrame=false;
+
+function median(values){
+  if(!values.length)return 0;
+  const a=values.slice().sort((x,y)=>x-y);
+  const m=a.length>>1;
+  return a.length&1?a[m]:(a[m-1]+a[m])*.5;
+}
+
+function initOpticalCV(){
+  if(opticalInitialized)return true;
+  if(!window.jsfeat){
+    setTranslationStatus("camera CV library failed to load","bad");
+    return false;
+  }
+
+  const J=window.jsfeat;
+  opticalCtx=cameraFlowCanvas.getContext("2d",{willReadFrequently:true});
+  opticalGray=new J.matrix_t(OPTICAL_W,OPTICAL_H,J.U8_t|J.C1_t);
+  opticalPrevPyr=new J.pyramid_t(3);
+  opticalCurrPyr=new J.pyramid_t(3);
+  opticalPrevPyr.allocate(OPTICAL_W,OPTICAL_H,J.U8_t|J.C1_t);
+  opticalCurrPyr.allocate(OPTICAL_W,OPTICAL_H,J.U8_t|J.C1_t);
+
+  // FAST detector writes into a caller-provided keypoint array.
+  opticalCorners=new Array(OPTICAL_W*OPTICAL_H);
+  for(let i=0;i<opticalCorners.length;i++)opticalCorners[i]=new J.keypoint_t(0,0,0,0);
+
+  opticalPrevXY=new Float32Array(OPTICAL_MAX_POINTS*2);
+  opticalCurrXY=new Float32Array(OPTICAL_MAX_POINTS*2);
+  opticalStatus=new Uint8Array(OPTICAL_MAX_POINTS);
+  J.fast_corners.set_threshold(22);
+  opticalInitialized=true;
+  return true;
+}
+
+function grabOpticalGray(){
+  if(!opticalVideo||opticalVideo.readyState<2)return false;
+  opticalCtx.drawImage(opticalVideo,0,0,OPTICAL_W,OPTICAL_H);
+  const image=opticalCtx.getImageData(0,0,OPTICAL_W,OPTICAL_H);
+  window.jsfeat.imgproc.grayscale(
+    image.data,OPTICAL_W,OPTICAL_H,opticalGray,window.jsfeat.COLOR_RGBA2GRAY
+  );
+  return true;
+}
+
+function detectOpticalFeatures(){
+  const J=window.jsfeat;
+  const count=J.fast_corners.detect(opticalGray,opticalCorners,5);
+  if(!count){opticalPointCount=0;return 0;}
+
+  // Keep strongest corners, but spread them across the whole picture.
+  const candidates=opticalCorners.slice(0,count).sort((a,b)=>b.score-a.score);
+  const picked=[];
+  const cellW=40,cellH=36;
+  const occupied=new Set();
+
+  for(const p of candidates){
+    if(p.x<10||p.x>OPTICAL_W-10||p.y<10||p.y>OPTICAL_H-10)continue;
+    const key=((p.y/cellH)|0)*16+((p.x/cellW)|0);
+    const used=occupied.has(key);
+    if(used&&picked.length<80)continue;
+    picked.push(p);
+    occupied.add(key);
+    if(picked.length>=OPTICAL_MAX_POINTS)break;
+  }
+
+  opticalPointCount=picked.length;
+  for(let i=0;i<opticalPointCount;i++){
+    opticalPrevXY[i*2]=picked[i].x;
+    opticalPrevXY[i*2+1]=picked[i].y;
+  }
+  return opticalPointCount;
+}
+
+function similarityScaleFromTracked(prevXY,currXY,status,count){
+  const pairs=[];
+  let pcx=0,pcy=0,qcx=0,qcy=0;
+
+  for(let i=0;i<count;i++){
+    if(!status[i])continue;
+    const px=prevXY[i*2],py=prevXY[i*2+1];
+    const qx=currXY[i*2],qy=currXY[i*2+1];
+    if(qx<3||qx>OPTICAL_W-3||qy<3||qy>OPTICAL_H-3)continue;
+    pairs.push([px,py,qx,qy]);
+    pcx+=px;pcy+=py;qcx+=qx;qcy+=qy;
+  }
+
+  if(pairs.length<OPTICAL_MIN_POINTS)return null;
+  const n=pairs.length;
+  pcx/=n;pcy/=n;qcx/=n;qcy/=n;
+
+  function fit(list){
+    let a=0,b=0,den=0;
+    let pxc=0,pyc=0,qxc=0,qyc=0;
+    for(const v of list){pxc+=v[0];pyc+=v[1];qxc+=v[2];qyc+=v[3];}
+    const nn=list.length;pxc/=nn;pyc/=nn;qxc/=nn;qyc/=nn;
+    for(const v of list){
+      const px=v[0]-pxc,py=v[1]-pyc,qx=v[2]-qxc,qy=v[3]-qyc;
+      a+=px*qx+py*qy;
+      b+=px*qy-py*qx;
+      den+=px*px+py*py;
+    }
+    if(den<1e-6)return null;
+    const scale=Math.hypot(a,b)/den;
+    const angle=Math.atan2(b,a);
+    const c=Math.cos(angle)*scale,s=Math.sin(angle)*scale;
+    const tx=qxc-(c*pxc-s*pyc);
+    const ty=qyc-(s*pxc+c*pyc);
+    return {scale,c,s,tx,ty};
+  }
+
+  let model=fit(pairs);
+  if(!model)return null;
+
+  // One robust residual pass rejects moving objects / bad tracks.
+  const residuals=[];
+  for(const v of pairs){
+    const ex=model.c*v[0]-model.s*v[1]+model.tx;
+    const ey=model.s*v[0]+model.c*v[1]+model.ty;
+    residuals.push(Math.hypot(v[2]-ex,v[3]-ey));
+  }
+  const med=median(residuals);
+  const cutoff=Math.max(2.2,med*2.4);
+  const inliers=pairs.filter((v,i)=>residuals[i]<=cutoff);
+  if(inliers.length<OPTICAL_MIN_POINTS)return null;
+  model=fit(inliers);
+  if(!model)return null;
+  model.inliers=inliers.length;
+  model.residual=med;
+  return model;
+}
+
+function resetOpticalTracking(keepPosition=false){
+  opticalPointCount=0;
+  opticalTrackedCount=0;
+  opticalFrameCounter=0;
+  opticalLastScale=1;
+  opticalSmoothedScale=1;
+  opticalHaveGyroFrame=false;
+  if(!keepPosition){
+    opticalDistance=0;
+    translationRaw.set(0,0,0);
+  }
+}
+
+
+/* ---------- One-tag metric calibration ----------
+
+   The calibration image supplied with this build is AprilTag 36h11 ID 0.
+   On a 14-inch 16:9 display, filling the entire 1920x1080 image across the
+   screen makes the OUTER AprilTag square exactly 0.100 m wide.
+
+   During the five-second calibration we collect:
+   - AprilTag corners in the real camera image.
+   - A planar homography for each good tag observation.
+   - Candidate focal lengths derived from the orthogonality/equal-length
+     constraints of the square's two physical axes.
+   - The optical-flow cumulative log-scale at the same moments.
+
+   Afterward we solve tag-camera Z in meters and fit the optical-flow scale
+   response to those metric Z changes. The tag detector is then shut down;
+   ordinary natural-feature optical flow continues without the tag.
+*/
+const APRILTAG_TAG_ID=0;
+const APRILTAG_SIZE_METERS=.100;
+const APRILTAG_BASE_URL="https://cdn.jsdelivr.net/gh/arenaxr/apriltag-js-standalone@master/html/";
+const APRILTAG_WRAPPER_URL=APRILTAG_BASE_URL+"apriltag.js";
+const APRILTAG_WASM_JS_URL=APRILTAG_BASE_URL+"apriltag_wasm.js";
+const APRILTAG_WASM_URL=APRILTAG_BASE_URL+"apriltag_wasm.wasm";
+const COMLINK_WORKER_URL="https://cdn.jsdelivr.net/npm/comlink@4.4.2/dist/umd/comlink.js";
+
+const calibrateCameraBtn=$("calibrateCameraBtn");
+const calibrationReadout=$("calibrationReadout");
+const calibrationOverlay=$("calibrationOverlay");
+const calibrationCountdown=$("calibrationCountdown");
+const calibrationMessage=$("calibrationMessage");
+const calibrationTagState=$("calibrationTagState");
+const tagCalCanvas=$("tagCalCanvas");
+const tagCalCtx=tagCalCanvas.getContext("2d",{willReadFrequently:true});
+
+let aprilWorker=null;
+let aprilWorkerURL=null;
+let aprilDetector=null;
+let aprilDetectorReady=false;
+let opticalCalibrationActive=false;
+let opticalCalibrationLogScale=0;
+let opticalCalibrationStart=0;
+let opticalCalibrationStop=0;
+let opticalCalibrationSamples=[];
+let opticalCalibrationFocals=[];
+let opticalCalibrationGoodDetections=0;
+let opticalCalibrationDetectBusy=false;
+let opticalCalibrationRAF=0;
+
+function updateCalibrationReadout(extra=""){
+  const saved=loadSavedOpticalCalibration();
+  if(saved){
+    calibrationReadout.textContent=
+      `Calibration: ready\n`+
+      `focal ≈ ${saved.focalPx.toFixed(0)} px @ 640×360\n`+
+      `motion depth = ${saved.motionDepth.toFixed(2)} m\n`+
+      `tag = ${(saved.tagSize*100).toFixed(1)} cm`+
+      (extra?`\n${extra}`:"");
+  }else{
+    calibrationReadout.textContent=
+      `Calibration: not run yet\n`+
+      `Basic motion fallback depth: ${opticalMotionDepthMeters.toFixed(2)} m`+
+      (extra?`\n${extra}`:"");
+  }
+}
+
+function loadSavedOpticalCalibration(){
+  try{
+    const raw=localStorage.getItem("arcticDirectorAprilCalibrationV1");
+    if(!raw)return null;
+    const c=JSON.parse(raw);
+    if(!Number.isFinite(c.focalPx)||!Number.isFinite(c.motionDepth))return null;
+    opticalMotionDepthMeters=THREE.MathUtils.clamp(c.motionDepth,.25,8);
+    return c;
+  }catch{return null;}
+}
+
+function saveOpticalCalibration(c){
+  try{localStorage.setItem("arcticDirectorAprilCalibrationV1",JSON.stringify(c));}catch{}
+  opticalMotionDepthMeters=THREE.MathUtils.clamp(c.motionDepth,.25,8);
+  updateCalibrationReadout();
+}
+
+loadSavedOpticalCalibration();
+queueMicrotask(()=>updateCalibrationReadout());
+
+async function createAprilTagDetector(){
+  if(aprilDetectorReady&&aprilDetector)return true;
+  if(!window.Comlink)throw new Error("Comlink library failed to load");
+
+  calibrationTagState.textContent="loading AprilTag detector…";
+
+  const [wrapperSource,wasmSource]=await Promise.all([
+    fetch(APRILTAG_WRAPPER_URL,{cache:"force-cache"}).then(r=>{if(!r.ok)throw new Error(`apriltag.js HTTP ${r.status}`);return r.text()}),
+    fetch(APRILTAG_WASM_JS_URL,{cache:"force-cache"}).then(r=>{if(!r.ok)throw new Error(`apriltag_wasm.js HTTP ${r.status}`);return r.text()})
+  ]);
+
+  /* The upstream wrapper was authored as a same-directory worker and uses
+     relative importScripts(). For GitHub Pages we build a tiny Blob worker
+     at runtime and replace ALL of those relative paths with absolute HTTPS
+     CDN paths, including the .wasm binary itself. */
+  const patchedWasm=wasmSource
+    .split("apriltag_wasm.wasm")
+    .join(APRILTAG_WASM_URL);
+
+  const patchedWrapper=wrapperSource
+    .replace(/importScripts\(['\"]apriltag_wasm\.js['\"]\);?/g,"")
+    .replace(/importScripts\(['\"]https:\/\/unpkg\.com\/comlink\/dist\/umd\/comlink\.js['\"]\);?/g,"");
+
+  const workerSource=
+    patchedWasm+"\n"+
+    `importScripts(${JSON.stringify(COMLINK_WORKER_URL)});\n`+
+    patchedWrapper;
+
+  aprilWorkerURL=URL.createObjectURL(new Blob([workerSource],{type:"text/javascript"}));
+  aprilWorker=new Worker(aprilWorkerURL);
+
+  const RemoteApriltag=Comlink.wrap(aprilWorker);
+  let readyResolve;
+  const readyPromise=new Promise(resolve=>{readyResolve=resolve});
+  aprilDetector=await new RemoteApriltag(Comlink.proxy(()=>readyResolve()));
+
+  await Promise.race([
+    readyPromise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error("AprilTag WASM load timeout")),15000))
+  ]);
+
+  await aprilDetector.set_return_pose(0);
+  await aprilDetector.set_return_solutions(0);
+  await aprilDetector.set_max_detections(1);
+  aprilDetectorReady=true;
+  calibrationTagState.textContent="AprilTag detector ready";
+  return true;
+}
+
+function destroyAprilTagDetector(){
+  try{aprilWorker?.terminate()}catch{}
+  if(aprilWorkerURL){try{URL.revokeObjectURL(aprilWorkerURL)}catch{}}
+  aprilWorker=null;
+  aprilWorkerURL=null;
+  aprilDetector=null;
+  aprilDetectorReady=false;
+}
+
+function solveLinearSystem(A,b){
+  const n=b.length;
+  const M=A.map((row,i)=>row.slice().concat([b[i]]));
+  for(let c=0;c<n;c++){
+    let pivot=c;
+    for(let r=c+1;r<n;r++)if(Math.abs(M[r][c])>Math.abs(M[pivot][c]))pivot=r;
+    if(Math.abs(M[pivot][c])<1e-10)return null;
+    [M[c],M[pivot]]=[M[pivot],M[c]];
+    const div=M[c][c];
+    for(let j=c;j<=n;j++)M[c][j]/=div;
+    for(let r=0;r<n;r++){
+      if(r===c)continue;
+      const f=M[r][c];
+      if(Math.abs(f)<1e-14)continue;
+      for(let j=c;j<=n;j++)M[r][j]-=f*M[c][j];
+    }
+  }
+  return M.map(row=>row[n]);
+}
+
+function homographyFromSquareCorners(corners,sizeMeters=APRILTAG_SIZE_METERS){
+  if(!corners||corners.length!==4)return null;
+  const h=sizeMeters*.5;
+  /* Any consistent cyclic corner assignment is acceptable. A rotation of
+     the square only rotates the recovered tag coordinate frame. */
+  const obj=[[-h,h],[h,h],[h,-h],[-h,-h]];
+  const A=[],b=[];
+  for(let i=0;i<4;i++){
+    const X=obj[i][0],Y=obj[i][1],u=corners[i].x,v=corners[i].y;
+    A.push([X,Y,1,0,0,0,-u*X,-u*Y]); b.push(u);
+    A.push([0,0,0,X,Y,1,-v*X,-v*Y]); b.push(v);
+  }
+  const x=solveLinearSystem(A,b);
+  if(!x)return null;
+  return [
+    [x[0],x[1],x[2]],
+    [x[3],x[4],x[5]],
+    [x[6],x[7],1]
+  ];
+}
+
+function focalCandidatesFromHomography(H,cx,cy){
+  if(!H)return [];
+  const h1=[H[0][0],H[1][0],H[2][0]];
+  const h2=[H[0][1],H[1][1],H[2][1]];
+  const a1=h1[0]-cx*h1[2], b1=h1[1]-cy*h1[2], c1=h1[2];
+  const a2=h2[0]-cx*h2[2], b2=h2[1]-cy*h2[2], c2=h2[2];
+  const out=[];
+
+  const den1=c1*c2;
+  if(Math.abs(den1)>1e-10){
+    const f2=-(a1*a2+b1*b2)/den1;
+    if(f2>0){const f=Math.sqrt(f2);if(f>180&&f<2600)out.push(f);}
+  }
+
+  const den2=c1*c1-c2*c2;
+  if(Math.abs(den2)>1e-10){
+    const f2=-((a1*a1+b1*b1)-(a2*a2+b2*b2))/den2;
+    if(f2>0){const f=Math.sqrt(f2);if(f>180&&f<2600)out.push(f);}
+  }
+  return out;
+}
+
+function cameraZFromHomography(H,f,cx,cy){
+  if(!H||!Number.isFinite(f)||f<=0)return NaN;
+  function kinvCol(col){
+    const x=H[0][col],y=H[1][col],z=H[2][col];
+    return [(x-cx*z)/f,(y-cy*z)/f,z];
+  }
+  const a=kinvCol(0),b=kinvCol(1),t0=kinvCol(2);
+  const na=Math.hypot(...a),nb=Math.hypot(...b);
+  if(na<1e-9||nb<1e-9)return NaN;
+  const lambda=2/(na+nb);
+  const z=t0[2]*lambda;
+  return Math.abs(z);
+}
+
+function robustMedian(values){
+  const v=values.filter(Number.isFinite).sort((a,b)=>a-b);
+  if(!v.length)return NaN;
+  if(v.length>=7){
+    const lo=Math.floor(v.length*.15),hi=Math.ceil(v.length*.85);
+    return median(v.slice(lo,hi));
+  }
+  return median(v);
+}
+
+async function detectCalibrationTagFrame(){
+  if(!opticalVideo||opticalVideo.readyState<2||!aprilDetectorReady||opticalCalibrationDetectBusy)return;
+  opticalCalibrationDetectBusy=true;
+  try{
+    const W=tagCalCanvas.width,H=tagCalCanvas.height;
+    tagCalCtx.drawImage(opticalVideo,0,0,W,H);
+    const rgba=tagCalCtx.getImageData(0,0,W,H).data;
+    const gray=new Uint8Array(W*H);
+    for(let i=0,j=0;i<rgba.length;i+=4,j++)gray[j]=(rgba[i]*3+rgba[i+1]*6+rgba[i+2])/10;
+
+    const detections=await aprilDetector.detect(Comlink.transfer(gray,[gray.buffer]),W,H);
+    const d=Array.isArray(detections)?detections.find(x=>Number(x.id)===APRILTAG_TAG_ID):null;
+    if(!d||!d.corners||d.corners.length!==4){
+      calibrationTagState.textContent=`tag not visible · ${opticalCalibrationGoodDetections} good frames`;
+      return;
+    }
+
+    const homography=homographyFromSquareCorners(d.corners,APRILTAG_SIZE_METERS);
+    if(!homography)return;
+    const focals=focalCandidatesFromHomography(homography,W*.5,H*.5);
+    opticalCalibrationFocals.push(...focals);
+    opticalCalibrationSamples.push({
+      t:performance.now(),
+      H:homography,
+      flowLog:opticalCalibrationLogScale,
+      cornerWidth:median([
+        Math.hypot(d.corners[1].x-d.corners[0].x,d.corners[1].y-d.corners[0].y),
+        Math.hypot(d.corners[2].x-d.corners[3].x,d.corners[2].y-d.corners[3].y)
+      ])
+    });
+    opticalCalibrationGoodDetections++;
+    calibrationTagState.textContent=`TAG 0 LOCKED · ${opticalCalibrationGoodDetections} good frames · focal candidates ${opticalCalibrationFocals.length}`;
+  }catch(err){
+    console.warn("AprilTag calibration frame",err);
+    calibrationTagState.textContent="tag detector frame error · keep moving smoothly";
+  }finally{
+    opticalCalibrationDetectBusy=false;
+  }
+}
+
+function finishOpticalCalibration(){
+  opticalCalibrationActive=false;
+  cancelAnimationFrame(opticalCalibrationRAF);
+
+  /* Multiple slightly oblique tag views constrain focal length. If the user
+     stayed almost perfectly fronto-parallel, fall back to a typical phone
+     wide-camera focal length at our 640px processing width (~65° HFOV). */
+  let focal=robustMedian(opticalCalibrationFocals);
+  let focalSource="measured";
+  if(!Number.isFinite(focal)){
+    focal=640/(2*Math.tan(THREE.MathUtils.degToRad(65)*.5));
+    focalSource="fallback 65° FOV";
+  }
+
+  const poseSamples=[];
+  for(const s of opticalCalibrationSamples){
+    const z=cameraZFromHomography(s.H,focal,320,180);
+    if(Number.isFinite(z)&&z>.12&&z<8)poseSamples.push({...s,z});
+  }
+
+  const kEst=[];
+  for(let i=1;i<poseSamples.length;i++){
+    const a=poseSamples[i-1],b=poseSamples[i];
+    const dlog=b.flowLog-a.flowLog;
+    const dz=a.z-b.z; // toward tag = positive, expansion log = positive
+    if(Math.abs(dlog)<.0012||Math.abs(dz)<.004)continue;
+    const k=dz/dlog;
+    if(Number.isFinite(k)&&k>.2&&k<10)kEst.push(k);
+  }
+
+  const zValues=poseSamples.map(s=>s.z);
+  const zMedian=robustMedian(zValues);
+  const fittedDepth=robustMedian(kEst);
+  let motionDepth=Number.isFinite(fittedDepth)?fittedDepth:zMedian;
+  if(!Number.isFinite(motionDepth))motionDepth=BASIC_MOTION_DEPTH_METERS;
+  motionDepth=THREE.MathUtils.clamp(motionDepth,.3,8);
+
+  const zSpan=zValues.length?Math.max(...zValues)-Math.min(...zValues):0;
+  const quality=(poseSamples.length>=8&&zSpan>=.12&&kEst.length>=3)?"good":(poseSamples.length>=4?"usable":"weak");
+
+  const calibration={
+    version:1,
+    tagId:APRILTAG_TAG_ID,
+    tagSize:APRILTAG_SIZE_METERS,
+    focalPx:focal,
+    focalSource,
+    motionDepth,
+    goodFrames:poseSamples.length,
+    fitIntervals:kEst.length,
+    zSpan,
+    quality,
+    savedAt:Date.now()
+  };
+
+  saveOpticalCalibration(calibration);
+  destroyAprilTagDetector();
+
+  calibrationCountdown.textContent="✓";
+  calibrationMessage.textContent=quality==="good"
+    ?"Calibration complete. The AprilTag is no longer required. Camera Motion now uses the learned meter scale."
+    :"Calibration finished, but the motion range/tag lock was limited. It will still be used; recalibrate later with a larger smooth in/out move for better metric accuracy.";
+  calibrationTagState.textContent=
+    `${quality.toUpperCase()} · focal ${focal.toFixed(0)} px (${focalSource}) · depth ${motionDepth.toFixed(2)} m · Z span ${zSpan.toFixed(2)} m`;
+
+  resetOpticalTracking(false);
+  setTranslationStatus(`camera motion · calibrated ${motionDepth.toFixed(2)} m scale`,quality==="weak"?"warn":"good");
+  setTimeout(()=>calibrationOverlay.classList.remove("show"),1800);
+  calibrateCameraBtn.disabled=false;
+}
+
+async function startOpticalCalibration(){
+  if(opticalCalibrationActive)return;
+  calibrateCameraBtn.disabled=true;
+  calibrationOverlay.classList.add("show");
+  calibrationCountdown.textContent="5.0";
+  calibrationMessage.textContent="Keep AprilTag ID 0 visible on the laptop. Move the phone smoothly toward it and away from it for five seconds. A little natural side-to-side angle change helps estimate the phone camera focal length.";
+  calibrationTagState.textContent="starting rear camera…";
+
+  try{
+    if(!opticalActive){
+      const ok=await startOpticalProvider();
+      if(!ok)throw new Error("rear camera could not start");
+    }
+    await createAprilTagDetector();
+
+    resetOpticalTracking(false);
+    opticalCalibrationLogScale=0;
+    opticalCalibrationSamples=[];
+    opticalCalibrationFocals=[];
+    opticalCalibrationGoodDetections=0;
+    opticalCalibrationStart=performance.now();
+    opticalCalibrationStop=opticalCalibrationStart+5000;
+    opticalCalibrationActive=true;
+
+    const tick=async()=>{
+      if(!opticalCalibrationActive)return;
+      const now=performance.now();
+      const remain=Math.max(0,(opticalCalibrationStop-now)/1000);
+      calibrationCountdown.textContent=remain.toFixed(1);
+      if(!opticalCalibrationDetectBusy)detectCalibrationTagFrame();
+      if(now>=opticalCalibrationStop){finishOpticalCalibration();return;}
+      opticalCalibrationRAF=requestAnimationFrame(tick);
+    };
+    opticalCalibrationRAF=requestAnimationFrame(tick);
+  }catch(err){
+    console.warn("Calibration failed",err);
+    opticalCalibrationActive=false;
+    destroyAprilTagDetector();
+    calibrationCountdown.textContent="!";
+    calibrationMessage.textContent="Calibration could not start.";
+    calibrationTagState.textContent=err?.message||String(err);
+    setTimeout(()=>calibrationOverlay.classList.remove("show"),2200);
+    calibrateCameraBtn.disabled=false;
+  }
+}
+
+calibrateCameraBtn.addEventListener("click",startOpticalCalibration);
+
+async function startOpticalProvider(){
+  if(opticalActive)return true;
+  if(!initOpticalCV())return false;
+  if(!navigator.mediaDevices?.getUserMedia){
+    setTranslationStatus("rear camera unavailable","bad");
+    return false;
+  }
+
+  clearTrackingHost();
+  try{
+    opticalStream=await navigator.mediaDevices.getUserMedia({
+      video:{
+        facingMode:{ideal:"environment"},
+        width:{ideal:640},
+        height:{ideal:360},
+        frameRate:{ideal:30,max:30}
+      },
+      audio:false
+    });
+
+    opticalVideo=document.createElement("video");
+    opticalVideo.playsInline=true;
+    opticalVideo.muted=true;
+    opticalVideo.autoplay=true;
+    opticalVideo.srcObject=opticalStream;
+    trackingEngineHost.appendChild(opticalVideo);
+    await opticalVideo.play();
+
+    resetOpticalTracking(false);
+    opticalActive=true;
+    opticalLastProcess=0;
+    setPreviewMode("CAMERA MOTION");
+    setTranslationStatus("camera motion · finding features","warn");
+    return true;
+  }catch(err){
+    console.warn("Basic camera-motion start failed",err);
+    try{opticalStream?.getTracks?.().forEach(t=>t.stop())}catch{}
+    opticalStream=null;opticalVideo=null;opticalActive=false;
+    clearTrackingHost();
+    setTranslationStatus("camera start failed: "+(err?.message||err),"bad");
+    return false;
+  }
+}
+
+async function stopOpticalProvider(){
+  if(opticalCalibrationActive){opticalCalibrationActive=false;cancelAnimationFrame(opticalCalibrationRAF);calibrationOverlay.classList.remove("show");calibrateCameraBtn.disabled=false;}
+  destroyAprilTagDetector();
+  try{opticalStream?.getTracks?.().forEach(t=>t.stop())}catch{}
+  opticalStream=null;
+  if(opticalVideo){opticalVideo.srcObject=null;opticalVideo.remove();}
+  opticalVideo=null;
+  opticalActive=false;
+  resetOpticalTracking(false);
+  clearTrackingHost();
+}
+
+function updateOpticalProvider(now){
+  if(!opticalActive||!opticalVideo)return;
+  if(now-opticalLastProcess<OPTICAL_PROCESS_MS)return;
+  opticalLastProcess=now;
+  if(!grabOpticalGray())return;
+
+  const J=window.jsfeat;
+
+  if(opticalPointCount<OPTICAL_MIN_POINTS){
+    opticalPrevPyr.build(opticalGray,false);
+    detectOpticalFeatures();
+    if(gyroHasReading){opticalPrevGyroQ.copy(gyroRawQ);opticalHaveGyroFrame=true;}
+    setTranslationStatus(
+      opticalPointCount>=OPTICAL_MIN_POINTS
+        ?`camera motion · ${opticalPointCount} features`
+        :"camera motion · need more room detail",
+      opticalPointCount>=OPTICAL_MIN_POINTS?"good":"warn"
+    );
+    return;
+  }
+
+  opticalCurrPyr.build(opticalGray,false);
+  opticalCurrXY.set(opticalPrevXY);
+  opticalStatus.fill(0);
+
+  J.optical_flow_lk.track(
+    opticalPrevPyr,
+    opticalCurrPyr,
+    opticalPrevXY,
+    opticalCurrXY,
+    opticalPointCount,
+    20,
+    30,
+    opticalStatus,
+    .01,
+    .0001
+  );
+
+  const model=similarityScaleFromTracked(
+    opticalPrevXY,opticalCurrXY,opticalStatus,opticalPointCount
+  );
+
+  let gyroFrameAngle=0;
+  if(gyroHasReading){
+    if(opticalHaveGyroFrame)gyroFrameAngle=opticalPrevGyroQ.angleTo(gyroRawQ);
+    opticalPrevGyroQ.copy(gyroRawQ);
+    opticalHaveGyroFrame=true;
+  }
+
+  let nextCount=0;
+  for(let i=0;i<opticalPointCount;i++){
+    if(!opticalStatus[i])continue;
+    opticalPrevXY[nextCount*2]=opticalCurrXY[i*2];
+    opticalPrevXY[nextCount*2+1]=opticalCurrXY[i*2+1];
+    nextCount++;
+  }
+  opticalTrackedCount=nextCount;
+  opticalPointCount=nextCount;
+
+  // Swap pyramids: current frame becomes the previous frame.
+  const temp=opticalPrevPyr;opticalPrevPyr=opticalCurrPyr;opticalCurrPyr=temp;
+  opticalFrameCounter++;
+
+  if(!model||model.inliers<OPTICAL_MIN_POINTS||model.residual>5.5){
+    if(opticalFrameCounter%2===0)opticalPointCount=0;
+    setTranslationStatus("camera motion · weak feature lock","warn");
+    return;
+  }
+
+  const rawScale=THREE.MathUtils.clamp(model.scale,.94,1.06);
+  opticalSmoothedScale=THREE.MathUtils.lerp(opticalSmoothedScale,rawScale,.55);
+  opticalLastScale=opticalSmoothedScale;
+
+  let scaleDelta=opticalSmoothedScale-1;
+  if(Math.abs(scaleDelta)<BASIC_SCALE_DEADZONE)scaleDelta=0;
+
+  // Ignore implausibly large frame-to-frame scale changes; they are usually
+  // tracking failures or a hand/object passing very close to the lens.
+  let dz=0;
+  const rotatingFast=gyroFrameAngle>THREE.MathUtils.degToRad(4.5);
+
+  /* During the five-second tag calibration, collect the same image-scale
+     signal but DO NOT move the virtual camera. This pairs natural-feature
+     expansion with the AprilTag's metric Z motion. */
+  if(opticalCalibrationActive&&!rotatingFast){
+    const calScale=THREE.MathUtils.clamp(rawScale,.96,1.04);
+    if(Math.abs(calScale-1)>.00035)opticalCalibrationLogScale+=Math.log(calScale);
+  }else if(scaleDelta!==0&&!rotatingFast){
+    dz=opticalMotionDepthMeters*(1-(1/opticalSmoothedScale));
+    dz=THREE.MathUtils.clamp(dz,-BASIC_MAX_STEP_METERS,BASIC_MAX_STEP_METERS);
+  }
+
+  if(Math.abs(dz)>.0005){
+    opticalForward.set(0,0,-1).applyQuaternion(camera.quaternion);
+    opticalForward.y=0;
+    if(opticalForward.lengthSq()>1e-8){
+      opticalForward.normalize();
+      translationRaw.addScaledVector(opticalForward,dz);
+      opticalDistance+=dz;
+    }
+  }
+
+  if(opticalFrameCounter%8===0||opticalPointCount<70){
+    // Redetect on the same current frame to replenish lost features.
+    detectOpticalFeatures();
+  }
+
+  if(opticalCalibrationActive){
+    setTranslationStatus(
+      rotatingFast
+        ?`CALIBRATING · hold rotation briefly · ${model.inliers} features`
+        :`CALIBRATING · ${model.inliers} features · tag frames ${opticalCalibrationGoodDetections}`,
+      rotatingFast?"warn":"good"
+    );
+  }else{
+    setTranslationStatus(
+      rotatingFast
+        ?`camera motion · rotation paused · ${model.inliers} features`
+        :`camera motion · ${model.inliers} features · ${opticalDistance>=0?"+":""}≈${opticalDistance.toFixed(2)} m`,
+      rotatingFast?"warn":"good"
+    );
+  }
 }
 
 /* ---------- WebXR position provider ---------- */
@@ -1117,204 +1891,11 @@ async function stopWebXRProvider(){
   resetXRState(false);
 }
 
-/* ---------- MindAR natural-image position provider ---------- */
-let mindarThree=null,mindAnchor=null,mindObjectURL=null,mindReady=false,mindHadTarget=false;
-const mindCamMatrix=new THREE.Matrix4(),mindCamPos=new THREE.Vector3(),mindCamQ=new THREE.Quaternion(),mindScaleScratch=new THREE.Vector3();
-const mindStartPos=new THREE.Vector3(),mindMapQ=new THREE.Quaternion(),mindDelta=new THREE.Vector3();
-
-async function startMindARProvider(){
-  try{
-    clearTrackingHost();
-    const {MindARThree}=await import("mindar-image-three");
-    const file=$("mindFile").files?.[0];
-    if(mindObjectURL){URL.revokeObjectURL(mindObjectURL);mindObjectURL=null}
-    const src=file?(mindObjectURL=URL.createObjectURL(file)):$("mindUrl").value.trim();
-    if(!src)throw new Error("Choose a .mind target or enter a URL");
-    mindarThree=new MindARThree({
-      container:trackingEngineHost,
-      imageTargetSrc:src,
-      filterMinCF:0.0005,
-      filterBeta:0.012,
-      warmupTolerance:4,
-      missTolerance:8
-    });
-    mindAnchor=mindarThree.addAnchor(0);
-    await mindarThree.start();
-    if(mindarThree.video&&!mindarThree.video.isConnected)trackingEngineHost.appendChild(mindarThree.video);
-    mindarThree.renderer.setAnimationLoop(()=>mindarThree.renderer.render(mindarThree.scene,mindarThree.camera));
-    mindReady=false;mindHadTarget=false;
-    setPreviewMode("MINDAR TARGET");
-    setTranslationStatus("MindAR · find target image","warn");
-    return true;
-  }catch(err){
-    console.warn("MindAR start failed",err);
-    if(mindarThree){
-      try{mindarThree.renderer?.setAnimationLoop?.(null)}catch{}
-      try{await mindarThree.stop?.()}catch{}
-      try{mindarThree.renderer?.dispose?.()}catch{}
-    }
-    mindarThree=null;mindAnchor=null;mindReady=false;mindHadTarget=false;
-    clearTrackingHost();
-    setTranslationStatus("MindAR failed: "+(err?.message||err),"bad");
-    return false;
-  }
-}
-
-async function stopMindARProvider(){
-  if(mindarThree){
-    try{mindarThree.renderer.setAnimationLoop(null)}catch{}
-    try{await mindarThree.stop()}catch{}
-    try{mindarThree.renderer.dispose()}catch{}
-  }
-  mindarThree=null;mindAnchor=null;mindReady=false;mindHadTarget=false;
-  if(mindObjectURL){URL.revokeObjectURL(mindObjectURL);mindObjectURL=null}
-  clearTrackingHost();
-}
-
-function updateMindARProvider(){
-  if(!mindarThree||!mindAnchor)return;
-  mindAnchor.group.updateMatrixWorld(true);
-  if(!mindAnchor.group.visible){
-    if(mindHadTarget)setTranslationStatus("MindAR target lost · frozen","warn");
-    else setTranslationStatus("MindAR · point camera at target","warn");
-    return;
-  }
-  mindHadTarget=true;
-  mindCamMatrix.copy(mindAnchor.group.matrixWorld).invert();
-  mindCamMatrix.decompose(mindCamPos,mindCamQ,mindScaleScratch);
-  const widthM=Math.max(.01,Number($("mindWidthCm").value)||20)/100;
-  if(!mindReady){
-    mindStartPos.copy(mindCamPos);
-    yawMapQuaternion(mindCamQ,camera.quaternion,mindMapQ);
-    mindReady=true;
-    setTranslationStatus("MindAR target locked · zeroed","good");
-    return;
-  }
-  mindDelta.copy(mindCamPos).sub(mindStartPos).applyQuaternion(mindMapQ).multiplyScalar(widthM);
-  translationRaw.copy(mindDelta);
-  setTranslationStatus("MindAR image tracking","good");
-}
-
-/* ---------- AR.js NFT natural-image position provider ---------- */
-let arjsSource=null,arjsContext=null,arjsCamera=null,arjsControls=null,arjsReady=false,arjsHadTarget=false;
-let arjsMetersPerUnit=.001,arjsInitListener=null;
-const arjsPos=new THREE.Vector3(),arjsQ=new THREE.Quaternion(),arjsScaleScratch=new THREE.Vector3(),arjsStartPos=new THREE.Vector3(),arjsMapQ=new THREE.Quaternion(),arjsDelta=new THREE.Vector3();
-
-async function startARJSProvider(){
-  try{
-    clearTrackingHost();
-    const {ArToolkitSource,ArToolkitContext,ArMarkerControls}=await import("threex");
-    ArToolkitContext.baseURL="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/";
-    const descriptorsUrl=$("arjsBaseUrl").value.trim();
-    if(!descriptorsUrl)throw new Error("Enter the NFT descriptor base URL");
-    arjsSource=new ArToolkitSource({sourceType:"webcam",sourceWidth:640,sourceHeight:480});
-    await new Promise((resolve,reject)=>{
-      let done=false;
-      const timer=setTimeout(()=>{if(!done)reject(new Error("camera startup timeout"))},12000);
-      arjsSource.init(()=>{done=true;clearTimeout(timer);resolve()});
-    });
-    if(arjsSource.domElement)trackingEngineHost.appendChild(arjsSource.domElement);
-    arjsContext=new ArToolkitContext({detectionMode:"mono",canvasWidth:640,canvasHeight:480},{sourceWidth:640,sourceHeight:480});
-    await new Promise(resolve=>arjsContext.init(resolve));
-    arjsCamera=new THREE.Camera();
-    arjsCamera.matrixAutoUpdate=false;
-    arjsControls=new ArMarkerControls(arjsContext,arjsCamera,{
-      type:"nft",
-      descriptorsUrl,
-      changeMatrixMode:"cameraTransformMatrix",
-      smooth:true,
-      smoothCount:7,
-      smoothTolerance:.01,
-      smoothThreshold:2
-    });
-    arjsReady=false;arjsHadTarget=false;arjsMetersPerUnit=.001;
-    arjsInitListener=e=>{
-      const d=e.detail||{};
-      const descriptorWidthM=(Number(d.width)>0&&Number(d.dpi)>0)?(Number(d.width)/Number(d.dpi))*0.0254:0;
-      const actualWidthM=Math.max(.01,Number($("arjsWidthCm").value)||20)/100;
-      // AR.js' own NFT Three example positions content using mm-like values.
-      // Correct that nominal scale by the actual physical display/print width.
-      if(descriptorWidthM>0)arjsMetersPerUnit=.001*(actualWidthM/descriptorWidthM);
-    };
-    addEventListener("arjs-nft-init-data",arjsInitListener);
-    setPreviewMode("AR.JS NFT TARGET");
-    setTranslationStatus("AR.js · loading NFT descriptors","warn");
-    return true;
-  }catch(err){
-    console.warn("AR.js start failed",err);
-    try{arjsSource?.domElement?.srcObject?.getTracks?.().forEach(t=>t.stop())}catch{}
-    arjsSource=null;arjsContext=null;arjsCamera=null;arjsControls=null;
-    arjsReady=false;arjsHadTarget=false;
-    clearTrackingHost();
-    setTranslationStatus("AR.js failed: "+(err?.message||err),"bad");
-    return false;
-  }
-}
-
-async function stopARJSProvider(){
-  if(arjsInitListener)removeEventListener("arjs-nft-init-data",arjsInitListener);
-  arjsInitListener=null;
-  try{arjsSource?.domElement?.srcObject?.getTracks?.().forEach(t=>t.stop())}catch{}
-  arjsSource=null;arjsContext=null;arjsCamera=null;arjsControls=null;arjsReady=false;arjsHadTarget=false;
-  clearTrackingHost();
-}
-
-function updateARJSProvider(){
-  if(!arjsSource||!arjsContext||!arjsCamera||!arjsSource.ready)return;
-  try{arjsContext.update(arjsSource.domElement)}catch(err){console.warn("AR.js update",err);return}
-  if(!arjsCamera.visible){
-    if(arjsHadTarget)setTranslationStatus("AR.js target lost · frozen","warn");
-    else setTranslationStatus("AR.js · point camera at NFT target","warn");
-    return;
-  }
-  arjsHadTarget=true;
-  arjsCamera.updateMatrixWorld(true);
-  arjsCamera.matrixWorld.decompose(arjsPos,arjsQ,arjsScaleScratch);
-  if(!arjsReady){
-    arjsStartPos.copy(arjsPos);
-    yawMapQuaternion(arjsQ,camera.quaternion,arjsMapQ);
-    arjsReady=true;
-    setTranslationStatus("AR.js target locked · zeroed","good");
-    return;
-  }
-  arjsDelta.copy(arjsPos).sub(arjsStartPos).applyQuaternion(arjsMapQ).multiplyScalar(arjsMetersPerUnit);
-  translationRaw.copy(arjsDelta);
-  setTranslationStatus("AR.js NFT tracking","good");
-}
-
-/* ---------- Hybrid: WebXR + step-based dead reckoning ---------- */
-let pdrGravityMag=9.81,pdrLastStep=0,pdrStepCount=0;
-const pdrForward=new THREE.Vector3();
-addEventListener("devicemotion",e=>{
-  if(!translationActive||trackingMethod!=="hybrid")return;
-  const a=e.accelerationIncludingGravity||e.acceleration;
-  if(!a)return;
-  const x=a.x||0,y=a.y||0,z=a.z||0;
-  const mag=Math.hypot(x,y,z);
-  pdrGravityMag=pdrGravityMag*.94+mag*.06;
-  const impulse=Math.abs(mag-pdrGravityMag);
-  const now=performance.now();
-  const threshold=Math.max(.3,Number($("stepThreshold").value)||1.25);
-  const xrFresh=xrGood&&now-xrLastGoodTime<300;
-  if(xrFresh)return;
-  if(impulse>threshold&&now-pdrLastStep>330){
-    pdrLastStep=now;pdrStepCount++;
-    pdrForward.set(0,0,-1).applyQuaternion(camera.quaternion);pdrForward.y=0;
-    if(pdrForward.lengthSq()<1e-8)return;
-    pdrForward.normalize();
-    const stride=Math.max(.2,Number($("strideCm").value)||62)/100;
-    translationRaw.addScaledVector(pdrForward,stride);
-    xrNeedsRebase=true;xrWasGood=false;xrGood=false;
-    setTranslationStatus(`HYBRID · XR lost · step ${pdrStepCount}`,"warn");
-  }
-},true);
-
-/* ---------- lifecycle ---------- */
 async function activateSelectedTracker(){
   if(translationActive)await stopTranslationTracker();
   trackingMethod=trackingMethodSelect.value;
   recenterTranslationCommon();
-  trackerStartTime=performance.now();pdrStepCount=0;pdrLastStep=0;
+  trackerStartTime=performance.now();
 
   if(trackingMethod==="none"){
     translationActive=false;
@@ -1327,12 +1908,14 @@ async function activateSelectedTracker(){
   }
 
   let ok=false;
-  if(trackingMethod==="webxr"||trackingMethod==="hybrid")ok=await startWebXRProvider();
-  else if(trackingMethod==="mindar")ok=await startMindARProvider();
-  else if(trackingMethod==="arjs")ok=await startARJSProvider();
+  if(trackingMethod==="optical")ok=await startOpticalProvider();
+  else if(trackingMethod==="webxr")ok=await startWebXRProvider();
+
   translationActive=!!ok;
-  if(!ok){trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: failed`;return false}
-  if(trackingMethod==="hybrid")setTranslationStatus("HYBRID · XR starting","warn");
+  if(!ok){
+    trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: failed`;
+    return false;
+  }
   trackingDiagnostics.textContent=`method: ${trackingMethod}\nposition: active`;
   return true;
 }
@@ -1340,12 +1923,12 @@ async function activateSelectedTracker(){
 async function stopTranslationTracker(){
   const old=trackingMethod;
   translationActive=false;
-  if(old==="webxr"||old==="hybrid")await stopWebXRProvider();
-  if(old==="mindar")await stopMindARProvider();
-  if(old==="arjs")await stopARJSProvider();
+  if(old==="optical")await stopOpticalProvider();
+  if(old==="webxr")await stopWebXRProvider();
   recenterTranslationCommon();
   clearTrackingHost();
-  trackingEngineHost.classList.remove("show");trackerPreviewLabel.classList.remove("show");
+  trackingEngineHost.classList.remove("show");
+  trackerPreviewLabel.classList.remove("show");
 
   if(old==="none"){
     setTranslationStatus("gyro only","good");
@@ -1362,13 +1945,12 @@ function recenterActiveTracker(){
     recenterDirectorGyro();
     setTranslationStatus("gyro recentered","good");
     trackingDiagnostics.textContent="method: none\nposition: disabled\nrotation: gyro recentered";
-  }else if(trackingMethod==="webxr"||trackingMethod==="hybrid"){
+  }else if(trackingMethod==="optical"){
+    resetOpticalTracking(false);
+    setTranslationStatus("camera motion · recentered","good");
+  }else if(trackingMethod==="webxr"){
     resetXRState(false);xrNeedsRebase=true;
     setTranslationStatus("XR recentering…","warn");
-  }else if(trackingMethod==="mindar"){
-    mindReady=false;setTranslationStatus("MindAR · recenter on target","warn");
-  }else if(trackingMethod==="arjs"){
-    arjsReady=false;setTranslationStatus("AR.js · recenter on target","warn");
   }
 }
 
@@ -1383,13 +1965,14 @@ function updateTranslationProvider(dt){
     translationFiltered.set(0,0,0);
     return;
   }
-  if(!translationActive){translationFiltered.multiplyScalar(Math.exp(-12*dt));return}
-  if(trackingMethod==="mindar")updateMindARProvider();
-  else if(trackingMethod==="arjs")updateARJSProvider();
+  if(!translationActive){
+    translationFiltered.multiplyScalar(Math.exp(-12*dt));
+    return;
+  }
 
-  const scale=Number(translationScale.value)||1;
-  translationDesired.copy(translationRaw).multiplyScalar(scale);
-  // Guard against a tracking provider ever trying to teleport the camera.
+  if(trackingMethod==="optical")updateOpticalProvider(performance.now());
+
+  translationDesired.copy(translationRaw);
   const maxRadius=4.5;
   if(translationDesired.length()>maxRadius)translationDesired.setLength(maxRadius);
   const follow=1-Math.exp(-11*dt);
