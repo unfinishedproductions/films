@@ -34,8 +34,6 @@ body.recording #arrowOverlay{display:none!important}
 #recordBtn:after{content:"";width:38px;height:38px;border-radius:50%;background:#ef3d43}
 #recordBtn.recording:after{width:27px;height:27px;border-radius:5px}
 #recordStatus{position:absolute;left:96px;bottom:max(41px,calc(env(safe-area-inset-bottom) + 22px));color:#fff;font-size:12px;text-shadow:0 1px 5px #000}
-#fullscreenHint{display:none;position:absolute;left:50%;bottom:max(16px,env(safe-area-inset-bottom));z-index:95;transform:translateX(-50%);padding:9px 13px;border:1px solid rgba(255,255,255,.28);border-radius:10px;background:rgba(0,0,0,.72);color:#fff;pointer-events:auto;white-space:nowrap}
-body.director #fullscreenHint.show{display:block}
 #previewPanel{position:fixed;inset:0;z-index:100;display:none;background:#000}
 #previewPanel.open{display:block}
 #previewVideo{width:100%;height:100%;object-fit:contain}
@@ -85,6 +83,7 @@ body.director #trackerPreviewLabel.show{display:block}
 .gyroSmoothingLabels span:first-child{text-align:left}.gyroSmoothingLabels span:last-child{text-align:right}
 .depthLabels{display:flex;justify-content:space-between;margin:1px 0 4px;font-size:8px;opacity:.52}
 #gyroSmoothingHelp{min-height:28px}
+#mindFile{padding:7px 4px!important}
 #calibrateAprilBtn{width:100%;margin-top:8px}
 
 </style>
@@ -146,8 +145,8 @@ body.director #trackerPreviewLabel.show{display:block}
       <option value="none">None · Gyro only</option>
       <option value="flow" selected>1 · Camera visual motion · no target</option>
       <option value="webxr">2 · WebXR / ARCore</option>
-      <option value="mindar">3 · MindAR · same AprilTag</option>
-      <option value="arjs">4 · AR.js pattern · same AprilTag</option>
+      <option value="mindar">3 · MindAR · requires image target</option>
+      <option value="arjs">4 · AR.js NFT · requires image target</option>
       <option value="apriltag">5 · AprilTag calibrated position</option>
       <option value="hybrid">6 · Hybrid XR + step fallback</option>
     </select>
@@ -168,13 +167,23 @@ body.director #trackerPreviewLabel.show{display:block}
     </div>
 
     <div id="panel-mindar" class="trackerPanel">
-      <b>MindAR · same AprilTag ID 0</b>
-      <div class="trackerHelp">Uses the exact same 10cm AprilTag already on the laptop. On first activation the page compiles that tag into MindAR's feature format in memory. No upload, URL, extra file, or second target is required.</div>
+      <b>MindAR image target</b>
+      <label for="mindFile">Compiled .mind target (optional)</label>
+      <input id="mindFile" type="file" accept=".mind,application/octet-stream">
+      <label for="mindUrl">Or .mind target URL</label>
+      <input id="mindUrl" value="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.mind">
+      <label for="mindWidthCm">Physical width of target image (cm)</label>
+      <input id="mindWidthCm" type="number" min="1" max="300" step="0.1" value="20">
+      <div class="trackerHelp">Mount the target upright on a wall/monitor. The default target is MindAR's card demo. <a href="https://hiukim.github.io/mind-ar-js-doc/tools/compile/" target="_blank" rel="noopener">MindAR target compiler</a> · <a href="https://cdn.jsdelivr.net/gh/hiukim/mind-ar-js@1.2.5/examples/image-tracking/assets/card-example/card.png" target="_blank" rel="noopener">demo image</a></div>
     </div>
 
     <div id="panel-arjs" class="trackerPanel">
-      <b>AR.js pattern · same AprilTag ID 0</b>
-      <div class="trackerHelp">Uses the same 10cm AprilTag as an embedded AR.js pattern marker. The pattern descriptor is generated inside this HTML, so there are no NFT files and no pinball target.</div>
+      <b>AR.js NFT image target</b>
+      <label for="arjsBaseUrl">Descriptor base URL (no extension)</label>
+      <input id="arjsBaseUrl" value="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.8/three.js/examples/data/dataNFT/pinball">
+      <label for="arjsWidthCm">Physical width of printed/displayed target (cm)</label>
+      <input id="arjsWidthCm" type="number" min="1" max="300" step="0.1" value="20">
+      <div class="trackerHelp">AR.js NFT needs the matching <code>.iset</code>, <code>.fset</code> and <code>.fset3</code> files at that base URL. <a href="https://carnaux.github.io/NFT-Marker-Creator/" target="_blank" rel="noopener">NFT descriptor creator</a> · <a href="https://ar-js-org.github.io/AR.js/aframe/examples/image-tracking/nft-video/pinball.jpg" target="_blank" rel="noopener">demo pinball image</a></div>
     </div>
 
     <div id="panel-apriltag" class="trackerPanel">
@@ -211,7 +220,6 @@ position: gyro only</div>
 
   <button id="recordBtn" aria-label="Record"></button>
   <div id="recordStatus">REC</div>
-  <button id="fullscreenHint">Tap once for fullscreen</button>
 
   <div id="trackingEngineHost"><div id="trackerPreviewMessage">POSITION TRACKER PREVIEW</div></div>
   <div id="trackerPreviewLabel">POSITION CAMERA</div>
@@ -712,36 +720,6 @@ controlRenderer.domElement.onpointercancel=releaseControl;
 /* DIRECTOR MODE */
 const PHONE_LIKE=matchMedia("(pointer: coarse)").matches||navigator.maxTouchPoints>0;
 let directorMode=false;
-const fullscreenHint=$("fullscreenHint");
-let fullscreenPending=false;
-
-async function enterDirectorFullscreen(showFallback=false){
-  if(!directorMode||document.fullscreenElement||document.webkitFullscreenElement)return true;
-  if(fullscreenPending)return false;
-  const root=document.documentElement;
-  const request=root.requestFullscreen||root.webkitRequestFullscreen;
-  if(!request){if(showFallback)fullscreenHint.classList.add("show");return false}
-  fullscreenPending=true;
-  try{
-    if(root.requestFullscreen)await root.requestFullscreen({navigationUI:"hide"});
-    else await root.webkitRequestFullscreen();
-    fullscreenHint.classList.remove("show");
-    return true;
-  }catch(err){
-    if(showFallback)fullscreenHint.classList.add("show");
-    console.debug("Automatic fullscreen was blocked until a tap.",err);
-    return false;
-  }finally{
-    fullscreenPending=false;
-  }
-}
-
-fullscreenHint.onclick=()=>enterDirectorFullscreen(true);
-addEventListener("pointerdown",()=>{
-  if(directorMode&&!document.fullscreenElement&&!document.webkitFullscreenElement)enterDirectorFullscreen(false);
-},{capture:true});
-addEventListener("fullscreenchange",()=>{if(document.fullscreenElement)fullscreenHint.classList.remove("show")});
-addEventListener("webkitfullscreenchange",()=>{if(document.webkitFullscreenElement)fullscreenHint.classList.remove("show")});
 
 /*
   PHONE-LOOK / 360 VIEWER ORIENTATION
@@ -849,7 +827,6 @@ function updateInterfaceMode(){
 
   if(directorMode&&!wasDirector){
     recenterDirectorGyro();
-    enterDirectorFullscreen(true);
     sensorStatus.textContent=gyroHasReading
       ?"GYRO · move phone to look around"
       :"GYRO · tap screen or REC to enable";
@@ -910,7 +887,6 @@ async function requestSensors(){
 /* Recalibrate after Android/iOS changes the screen coordinate system. */
 screen.orientation?.addEventListener?.("change",()=>{
   recenterDirectorGyro();
-  requestAnimationFrame(()=>{if(innerWidth>innerHeight)enterDirectorFullscreen(true)});
 });
 
 
@@ -1704,7 +1680,6 @@ function bestRecordingMime(){
 async function startRecording(){
   if(recording)return;
   if(!recorderSupported()){showError("Video recording is not supported by this browser. Try current Chrome or Edge on Android.");return}
-  enterDirectorFullscreen(true);
   await requestSensors();
   trackingMethod=trackingMethodSelect.value;
   if(trackingMethod!=="none"&&!translationActive){
