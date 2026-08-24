@@ -78,10 +78,8 @@ body.director #trackerPreviewLabel.show{display:block}
 #trackingDiagnostics{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.11);font:11px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;opacity:.82;white-space:pre-line}
 .scaleLine{display:flex;align-items:center;gap:8px}.scaleLine input{flex:1}.scaleLine output{width:42px;text-align:right;font-size:11px}
 #gyroSmoothingOut{width:96px}
-#environmentParallaxOut{width:104px}
 .gyroSmoothingLabels{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;margin:1px 0 4px;font-size:8px;line-height:1.15;text-align:center;opacity:.52}
 .gyroSmoothingLabels span:first-child{text-align:left}.gyroSmoothingLabels span:last-child{text-align:right}
-.depthLabels{display:flex;justify-content:space-between;margin:1px 0 4px;font-size:8px;opacity:.52}
 #gyroSmoothingHelp{min-height:28px}
 #mindFile{padding:7px 4px!important}
 #calibrateAprilBtn{width:100%;margin-top:8px}
@@ -203,11 +201,6 @@ body.director #trackerPreviewLabel.show{display:block}
 
     <label for="translationScale">Translation scale</label>
     <div class="scaleLine"><input id="translationScale" type="range" min="0.1" max="4" step="0.05" value="1"><output id="translationScaleOut">1.00×</output></div>
-
-    <label for="environmentParallax">360 background depth</label>
-    <div class="scaleLine"><input id="environmentParallax" type="range" min="0" max="100" step="1" value="50"><output id="environmentParallaxOut">Room · 3.0m</output></div>
-    <div class="depthLabels" aria-hidden="true"><span>0 · Outside</span><span>50 · Room</span><span>100 · Tight</span></div>
-    <div class="trackerHelp">Changes only the panorama's positional response. Outside keeps the original distant background. Room adds normal indoor parallax. Tight adds strong close-wall parallax.</div>
 
     <div class="directorButtons">
       <button id="activateTrackerBtn" class="directorAction primary">Activate</button>
@@ -902,10 +895,8 @@ const directorMenuBtn=$("directorMenuBtn"),directorMenu=$("directorMenu"),tracki
 const translationStatus=$("translationStatus"),trackingDiagnostics=$("trackingDiagnostics");
 const activateTrackerBtn=$("activateTrackerBtn"),recenterTrackerBtn=$("recenterTrackerBtn"),stopTrackerBtn=$("stopTrackerBtn");
 const translationScale=$("translationScale"),translationScaleOut=$("translationScaleOut");
-const environmentParallax=$("environmentParallax"),environmentParallaxOut=$("environmentParallaxOut");
 const trackingEngineHost=$("trackingEngineHost"),trackerPreviewMessage=$("trackerPreviewMessage"),trackerPreviewLabel=$("trackerPreviewLabel");
 const cameraFlowCanvas=$("cameraFlowCanvas");
-const environmentParallaxOffset=new THREE.Vector3();
 
 /* Five-stop gyro response control.
    Stop 1 intentionally preserves the exact previous Director behavior:
@@ -996,16 +987,6 @@ trackingMethodSelect.onchange=async()=>{
 directorMenuBtn.onclick=()=>directorMenu.classList.toggle("open");
 translationScale.oninput=()=>translationScaleOut.textContent=Number(translationScale.value).toFixed(2)+"×";
 translationScale.oninput();
-function updateEnvironmentParallaxUI(){
-  const amount=Number(environmentParallax.value)/100;
-  if(amount===0){environmentParallaxOut.textContent="Outside · fixed";return}
-  const radius=activeWorld.radius||12;
-  const depth=radius*Math.pow(.75/radius,amount);
-  const label=amount<.34?"Large":amount<.67?"Room":"Tight";
-  environmentParallaxOut.textContent=`${label} · ${depth.toFixed(1)}m`;
-}
-environmentParallax.oninput=updateEnvironmentParallaxUI;
-updateEnvironmentParallaxUI();
 updateTrackerPanels();
 
 function yawFromQuaternion(q){
@@ -1736,17 +1717,6 @@ function updateDirectorCamera(dt){
     camera.position.copy(cameraBase).add(translationFiltered);
   }
 
-  const parallaxAmount=Number(environmentParallax.value)/100;
-  if(parallaxAmount<=0){
-    environment.position.set(0,0,0);
-  }else{
-    const radius=activeWorld.radius||12;
-    const effectiveDepth=radius*Math.pow(.75/radius,parallaxAmount);
-    environmentParallaxOffset.copy(translationFiltered);
-    if(environmentParallaxOffset.length()>effectiveDepth*.75)environmentParallaxOffset.setLength(effectiveDepth*.75);
-    environment.position.copy(environmentParallaxOffset).multiplyScalar(1-radius/effectiveDepth);
-  }
-
   if(!gyroHasReading||!sensorPermissionGranted){
     camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0;return;
   }
@@ -1795,7 +1765,7 @@ function renderAppFrame(now=performance.now()){
   if(heldControl)performControl(heldControl);
   camera.fov+=(targetFov-camera.fov)*.13;camera.updateProjectionMatrix();
   if(directorMode)updateDirectorCamera(dt);
-  else{environment.position.set(0,0,0);camera.position.copy(cameraBase);camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0}
+  else{camera.position.copy(cameraBase);camera.rotation.order="YXZ";camera.rotation.y=yaw;camera.rotation.x=pitch;camera.rotation.z=0}
 
   const gyroOnlyRecording=directorMode&&recording&&trackingMethod==="none";
   if(!gyroOnlyRecording)updateStatus();
