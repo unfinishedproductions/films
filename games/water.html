@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta
+    name="viewport"
+    content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+>
+<title>Splash Zero-G Water — White Studio</title>
+
+<style>
+* {
+    box-sizing: border-box;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: #ffffff;
+    touch-action: none;
+    overscroll-behavior: none;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+#fluidCanvas {
+    position: fixed;
+    inset: 0;
+    display: block;
+    width: 100vw;
+    height: 100dvh;
+    background: #ffffff;
+    touch-action: none;
+}
+
+#loading {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    background: #ffffff;
+    color: #0b1723;
+    text-align: center;
+    transition: opacity .45s ease;
+}
+
+#loading.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#loadingInner {
+    max-width: 520px;
+}
+
+#loadingTitle {
+    margin-bottom: 8px;
+    font-size: 18px;
+    font-weight: 750;
+    letter-spacing: .05em;
+}
+
+#status {
+    color: rgba(11, 23, 35, .58);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#badge {
+    position: fixed;
+    top: max(10px, env(safe-area-inset-top));
+    left: 50%;
+    z-index: 30;
+    transform: translateX(-50%);
+    padding: 7px 12px;
+    border: 1px solid rgba(8, 26, 43, .10);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .72);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: rgba(8, 26, 43, .64);
+    font-size: 10px;
+    letter-spacing: .04em;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+#hint {
+    position: fixed;
+    left: 50%;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    z-index: 30;
+    transform: translateX(-50%);
+    padding: 9px 14px;
+    border: 1px solid rgba(8, 26, 43, .10);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, .78);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+    color: rgba(8, 26, 43, .72);
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity .6s ease;
+}
+
+#error {
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    top: max(8px, env(safe-area-inset-top));
+    z-index: 5000;
+    display: none;
+    max-height: 45vh;
+    overflow: auto;
+    padding: 10px;
+    border: 1px solid rgba(170, 0, 0, .22);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .96);
+    color: #9f1e1e;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-size: 10px;
+    line-height: 1.45;
+    white-space: pre-wrap;
+}
+
+#ui-container,
+#howto-container,
+#debug-info,
+.lil-gui {
+    display: none !important;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/typescript@5.7.2/lib/typescript.js"></script>
+</head>
+
+<body>
+<div id="loading">
+    <div id="loadingInner">
+        <div id="loadingTitle">SPLASH ZERO-G</div>
+        <div id="status">Loading original Splash WebGPU engine…</div>
+    </div>
+</div>
+
+<div id="badge">SPLASH MLS-MPM • ZERO-G WATER</div>
+<div id="hint">Touch and drag through the water</div>
+<div id="error"></div>
+
+<!-- Elements required by the original Splash main.ts. -->
+<div id="ui-container">
+    <label><input type="checkbox" id="particle"></label>
+    <div id="slider-container">
+        <input type="range" id="slider" min="0" max="100" value="100">
+        <span id="slider-value"></span>
+    </div>
+</div>
+<div id="howto-container"></div>
+<div id="debug-info"><span id="error-reason"></span></div>
+
+<canvas id="fluidCanvas"></canvas>
+
+<script type="module">
+/*
+ * Splash Zero-G — white studio presentation
+ *
+ * Original engine: https://github.com/matsuoka-601/Splash
+ *
+ * Simulation modifications retained from the working zero-G version:
+ *   1. A centered spherical initial particle distribution.
+ *   2. Splash's downward acceleration replaced by a center-directed field.
+ *   3. Slightly increased physical viscosity and small global drag.
+ *   4. Touch coordinates forwarded to Splash's original interaction system.
+ *
+ * Presentation-only modifications in this version:
+ *   - render/bgColor.wgsl is patched to output pure white.
+ *   - render/fluid.wgsl uses a neutral white-void lighting field instead of
+ *     showing the original sunset cubemap through reflection/refraction.
+ *   - Blue depth comes from the existing thickness/transmittance calculation
+ *     plus cool white-studio fill light. No simulation math is changed here.
+ */
+
+const REPO = "https://raw.githubusercontent.com/matsuoka-601/Splash/main";
+const TS = window.ts;
+
+const canvas = document.getElementById("fluidCanvas");
+const loading = document.getElementById("loading");
+const status = document.getElementById("status");
+const errorBox = document.getElementById("error");
+const hint = document.getElementById("hint");
+
+function fatal(error) {
+    console.error(error);
+    errorBox.style.display = "block";
+    errorBox.textContent = String(error?.stack || error?.message || error);
+    status.innerHTML = "<b>Failed to start WebGPU Splash.</b><br><br>" +
+        String(error?.message || error);
+}
+
+window.addEventListener("unhandledrejection", event => fatal(event.reason));
+window.addEventListener("error", event => {
+    if (event.error) fatal(event.error);
+});
+
+if (!navigator.gpu) {
+    throw new Error(
+        "WebGPU is unavailable. Use current Chrome/Edge on Android or another " +
+        "WebGPU-capable browser and serve this page over HTTPS."
+    );
+}
+
+async function getText(path) {
+    status.textContent = "Loading " + path + "…";
+    const response = await fetch(REPO + "/" + path, { cache: "no-store" });
+    if (!response.ok) {
+        throw new Error("Could not load " + path + " — HTTP " + response.status);
+    }
+    return await response.text();
+}
+
+function dirname(path) {
+    const index = path.lastIndexOf("/");
+    return index === -1 ? "" : path.substring(0, index + 1);
+}
+
+function normalizePath(path) {
+    const output = [];
+    for (const piece of path.split("/")) {
+        if (!piece || piece === ".") continue;
+        if (piece === "..") output.pop();
+        else output.push(piece);
+    }
+    return output.join("/");
+}
+
+function resolvePath(parent, relative) {
+    return normalizePath(dirname(parent) + relative);
+}
+
+function rewritePackages(source) {
+    return source
+        .replace(
+            /from\s+['"]wgpu-matrix['"]/g,
+            'from "https://cdn.jsdelivr.net/npm/wgpu-matrix@3.3.0/+esm"'
+        )
+        .replace(
+            /from\s+['"]lil-gui['"]/g,
+            'from "https://cdn.jsdelivr.net/npm/lil-gui@0.20.0/+esm"'
+        );
+}
+
+function compile(source, filename) {
+    const result = TS.transpileModule(source, {
+        fileName: filename,
+        compilerOptions: {
+            target: TS.ScriptTarget.ES2022,
+            module: TS.ModuleKind.ES2022,
+            moduleResolution: TS.ModuleResolutionKind.Bundler,
+            useDefineForClassFields: false,
+            strict: false
+        }
+    });
+
+    if (result.diagnostics?.length) {
+        console.warn("TypeScript diagnostics for " + filename, result.diagnostics);
+    }
+    return result.outputText;
+}
+
+function moduleURL(source) {
+    return URL.createObjectURL(new Blob([source], { type: "text/javascript" }));
+}
+
+function patchCentralGravity(shader) {
+    const gravityRegex =
+        /floatV\.y\s*\+\s*strength\s*\*\s*forceDir\.y\s*-\s*0\.40\s*\*\s*dt/g;
+
+    if (!gravityRegex.test(shader)) {
+        throw new Error(
+            "Could not find Splash's current '- 0.40 * dt' gravity expression " +
+            "in updateGrid.wgsl."
+        );
+    }
+    gravityRegex.lastIndex = 0;
+    shader = shader.replace(gravityRegex, "floatV.y + strength * forceDir.y");
+
+    const normalizationRegex =
+        /floatV\s*\/=\s*decodeFixedPoint\s*\(\s*cells\s*\[\s*id\.x\s*\]\.mass\s*\)\s*;/;
+    const match = shader.match(normalizationRegex);
+
+    if (!match) {
+        throw new Error("Could not locate Splash grid velocity normalization.");
+    }
+
+    const centralPhysics = `
+
+            /* Center-directed harmonic field: a = K(center - position). */
+            let gravityX: f32 = f32(
+                i32(id.x) / i32(initBoxSize.z) / i32(initBoxSize.y)
+            );
+            let gravityY: f32 = f32(
+                (i32(id.x) / i32(initBoxSize.z)) % i32(initBoxSize.y)
+            );
+            let gravityZ: f32 = f32(i32(id.x) % i32(initBoxSize.z));
+
+            let gravityPosition = vec3f(gravityX, gravityY, gravityZ);
+            let gravityCenter = initBoxSize * 0.5;
+            let toCenter = gravityCenter - gravityPosition;
+            let centralGravityStrength: f32 = 0.016;
+
+            floatV += toCenter * centralGravityStrength * dt;
+
+            /* Small velocity-proportional dissipation. */
+            let globalFluidDrag: f32 = 0.015;
+            floatV *= max(0.0, 1.0 - globalFluidDrag * dt);
+`;
+
+    shader = shader.replace(normalizationRegex, match[0] + centralPhysics);
+    console.log("✓ Splash gravity replaced with central field");
+    return shader;
+}
+
+/*
+ * Change only what is drawn behind the water.
+ *
+ * The bg shader still executes its original cubemap lookup, keeping its
+ * bindings/layout compatible with FluidRenderer. Its three output paths are
+ * replaced with white. The separate fluid shader remains untouched and keeps
+ * using the cubemap normally for the water itself.
+ */
+function patchWhiteBackground(shader) {
+    let replacements = 0;
+
+    shader = shader.replace(
+        /return\s+vec4f\(\s*bgColor\s*,\s*1\.\s*\)\s*;/g,
+        () => {
+            replacements++;
+            return "return vec4f(vec3f(1.0) + bgColor * 0.0, 1.0);";
+        }
+    );
+
+    shader = shader.replace(
+        /return\s+vec4f\(\s*finalColor\s*,\s*1\.\s*\)\s*;/g,
+        () => {
+            replacements++;
+            return "return vec4f(vec3f(1.0) + finalColor * 0.0, 1.0);";
+        }
+    );
+
+    if (replacements !== 3) {
+        throw new Error(
+            "Splash bgColor.wgsl changed upstream: expected three background " +
+            "output paths, patched " + replacements + "."
+        );
+    }
+
+    console.log("✓ Visible Splash background replaced with pure white");
+    return shader;
+}
+
+/*
+ * Remove the recognizable sunset and floor from the water optics.
+ *
+ * This changes only the final screen-space fluid shading. Pressure, density,
+ * viscosity, particle motion, gravity, collision and touch forces are not
+ * involved. The original cubemap is retained at an imperceptible weight so
+ * Splash's automatically generated WebGPU bind-group layout stays compatible.
+ */
+function patchWhiteVoidFluid(shader) {
+    const helperAnchor = "fn calcReflactedTexCoord";
+    if (!shader.includes(helperAnchor)) {
+        throw new Error("Could not locate Splash fluid shader helper anchor.");
+    }
+
+    const voidEnvironment = `
+fn whiteVoidEnvironment(direction: vec3f) -> vec3f {
+    let d = normalize(direction);
+
+    /*
+     * A broad, seamless studio field: no image, horizon, floor or scenery.
+     * It remains nearly white, with enough cool fill to define clear water
+     * against the white void. Fluid thickness supplies the deeper blue.
+     */
+    let sideKey = smoothstep(-1.0, 1.0, d.x);
+    let topKey = smoothstep(-1.0, 1.0, d.y);
+    let whiteAmount = clamp(0.55 + 0.32 * sideKey + 0.13 * topKey, 0.0, 1.0);
+    let coolFill = vec3f(0.78, 0.90, 1.0);
+    return mix(coolFill, vec3f(1.0), whiteAmount);
+}
+
+`;
+
+    shader = shader.replace(helperAnchor, voidEnvironment + helperAnchor);
+
+    const transmittedRegex =
+        /var\s+transmitted\s*=\s*pow\(textureSampleLevel\(envmapTexture,\s*textureSampler,\s*refractionDirWorld,\s*0\.0\)\.rgb,\s*vec3f\(2\.2\)\)\s*;/;
+    if (!transmittedRegex.test(shader)) {
+        throw new Error("Could not locate Splash refraction environment sample.");
+    }
+    shader = shader.replace(
+        transmittedRegex,
+`let legacyRefraction = pow(
+        textureSampleLevel(envmapTexture, textureSampler, refractionDirWorld, 0.0).rgb,
+        vec3f(2.2)
+    );
+    var transmitted = mix(
+        whiteVoidEnvironment(refractionDirWorld),
+        legacyRefraction,
+        0.00001
+    );`
+    );
+
+    const floorRefractionRegex =
+        /\s*if\s*\(refractionDirWorld\.y\s*<\s*0\.\)\s*\{[\s\S]*?transmitted\s*=\s*select\(transmitted,\s*invGamma\(floor\.rgb\),\s*floor\.w\s*>\s*0\.5\)\s*;\s*\}/;
+    if (!floorRefractionRegex.test(shader)) {
+        throw new Error("Could not locate Splash refracted floor block.");
+    }
+    shader = shader.replace(
+        floorRefractionRegex,
+        "\n    /* White void: no refracted floor or grid. */"
+    );
+
+    const reflectionRegex =
+        /var\s+reflectionColor:\s*vec3f\s*=\s*invGamma\(select\(textureSampleLevel\(envmapTexture,\s*textureSampler,\s*reflectionDirWorld,\s*0\.\)\.rgb,\s*vec3f\(0\.75\),\s*reflectionDirWorld\.y\s*<\s*0\.\)\)\s*;/;
+    if (!reflectionRegex.test(shader)) {
+        throw new Error("Could not locate Splash reflection environment sample.");
+    }
+    shader = shader.replace(
+        reflectionRegex,
+`let legacyReflection = invGamma(
+        textureSampleLevel(envmapTexture, textureSampler, reflectionDirWorld, 0.).rgb
+    );
+    var reflectionColor: vec3f = mix(
+        whiteVoidEnvironment(reflectionDirWorld),
+        legacyReflection,
+        0.00001
+    );`
+    );
+
+    const floorReflectionRegex =
+        /\s*fresnel\s*=\s*select\(fresnel,\s*0\.1\s*\*\s*fresnel,\s*reflectionDirWorld\.y\s*<\s*0\.\)\s*;\s*fresnelBiased\s*=\s*select\(fresnelBiased,\s*0\.1\s*\*\s*fresnelBiased,\s*reflectionDirWorld\.y\s*<\s*0\.\)\s*;/;
+    if (!floorReflectionRegex.test(shader)) {
+        throw new Error("Could not locate Splash floor-reflection attenuation.");
+    }
+    shader = shader.replace(
+        floorReflectionRegex,
+        "\n    /* White void: reflection is continuous in every direction. */"
+    );
+
+    console.log("✓ Sunset and floor removed from fluid optics");
+    return shader;
+}
+
+async function inlineWGSL(source, modulePath) {
+    const regex =
+        /import\s+([A-Za-z_$][\w$]*)\s+from\s+['"]([^'"]+\.wgsl)['"]\s*;?/g;
+    const imports = [...source.matchAll(regex)];
+
+    for (const match of imports) {
+        const fullImport = match[0];
+        const variableName = match[1];
+        const shaderPath = resolvePath(modulePath, match[2]);
+        let shaderSource = await getText(shaderPath);
+
+        if (shaderPath === "mls-mpm/updateGrid.wgsl") {
+            shaderSource = patchCentralGravity(shaderSource);
+        }
+
+        if (shaderPath === "render/bgColor.wgsl") {
+            shaderSource = patchWhiteBackground(shaderSource);
+        }
+
+        if (shaderPath === "render/fluid.wgsl") {
+            shaderSource = patchWhiteVoidFluid(shaderSource);
+        }
+
+        source = source.replace(
+            fullImport,
+            `const ${variableName} = ${JSON.stringify(shaderSource)};`
+        );
+    }
+
+    return source;
+}
+
+async function buildCamera() {
+    let source = rewritePackages(await getText("camera.ts"));
+    const assignmentRegex = /this\.canvas\s*=\s*canvas\s*;/;
+
+    if (!assignmentRegex.test(source)) {
+        throw new Error("Could not locate Camera canvas assignment.");
+    }
+
+    source = source.replace(
+        assignmentRegex,
+`this.canvas = canvas;
+        this.prevHoverX = canvas.clientWidth * 0.5;
+        this.prevHoverY = canvas.clientHeight * 0.5;
+        this.currentHoverX = canvas.clientWidth * 0.5;
+        this.currentHoverY = canvas.clientHeight * 0.5;`
+    );
+
+    return moduleURL(compile(source, "camera.ts"));
+}
+
+function patchInitialBlob(source) {
+    const start = source.indexOf("    initDambreak(");
+    if (start === -1) {
+        throw new Error("Could not locate initDambreak() in current mls-mpm.ts.");
+    }
+
+    const end = source.indexOf("    reset(", start);
+    if (end === -1) {
+        throw new Error("Could not locate reset() after initDambreak().");
+    }
+
+    const replacement = `
+    initDambreak(initBoxSize: number[], numParticles: number) {
+        const particlesBuf = new ArrayBuffer(
+            mlsmpmParticleStructSize * this.maxParticleCount
+        );
+        const spacing = 0.90;
+        const centerX = initBoxSize[0] * 0.5;
+        const centerY = initBoxSize[1] * 0.5;
+        const centerZ = initBoxSize[2] * 0.5;
+
+        /* This radius is only the frame-zero particle distribution. */
+        const approximateRadius = Math.cbrt(
+            numParticles * spacing * spacing * spacing * (3 / (4 * Math.PI))
+        ) * 1.075;
+        const boxLimit = Math.min(...initBoxSize) * 0.5 - 4.5;
+        const radius = Math.min(approximateRadius, boxLimit);
+        const radiusSquared = radius * radius;
+
+        const candidates: { x: number, y: number, z: number, d2: number }[] = [];
+
+        for (let x = centerX - radius; x <= centerX + radius; x += spacing) {
+            for (let y = centerY - radius; y <= centerY + radius; y += spacing) {
+                for (let z = centerZ - radius; z <= centerZ + radius; z += spacing) {
+                    const dx = x - centerX;
+                    const dy = y - centerY;
+                    const dz = z - centerZ;
+                    const d2 = dx * dx + dy * dy + dz * dz;
+                    if (d2 <= radiusSquared) candidates.push({ x, y, z, d2 });
+                }
+            }
+        }
+
+        /* Radial ordering avoids creating a chopped sphere when capped at N. */
+        candidates.sort((a, b) => a.d2 - b.d2);
+
+        const actualCount = Math.min(
+            numParticles,
+            this.maxParticleCount,
+            candidates.length
+        );
+
+        for (let n = 0; n < actualCount; n++) {
+            const point = candidates[n];
+            const offset = mlsmpmParticleStructSize * n;
+            const particleViews = {
+                position: new Float32Array(particlesBuf, offset, 3),
+                v: new Float32Array(particlesBuf, offset + 16, 3),
+                C: new Float32Array(particlesBuf, offset + 32, 12)
+            };
+
+            const jitter = 0.055;
+            particleViews.position.set([
+                point.x + (Math.random() - 0.5) * jitter,
+                point.y + (Math.random() - 0.5) * jitter,
+                point.z + (Math.random() - 0.5) * jitter
+            ]);
+            particleViews.v.set([0, 0, 0]);
+            particleViews.C.fill(0);
+        }
+
+        this.numParticles = actualCount;
+        console.log("Zero-G initial particle count:", actualCount);
+
+        return particlesBuf.slice(0, mlsmpmParticleStructSize * actualCount);
+    }
+
+`;
+
+    console.log("✓ Splash initial state replaced with centered water blob");
+    return source.substring(0, start) + replacement + source.substring(end);
+}
+
+async function buildMLSMPM() {
+    let source = await getText("mls-mpm/mls-mpm.ts");
+
+    const viscosityRegex = /dynamicViscosity\s*:\s*0\.1\s*,/;
+    if (!viscosityRegex.test(source)) {
+        throw new Error("Could not locate Splash dynamicViscosity constant.");
+    }
+    source = source.replace(viscosityRegex, "dynamicViscosity: 0.16,");
+    source = patchInitialBlob(source);
+    source = await inlineWGSL(source, "mls-mpm/mls-mpm.ts");
+    return moduleURL(compile(source, "mls-mpm/mls-mpm.ts"));
+}
+
+async function buildFluidRenderer() {
+    let source = await getText("render/fluidRender.ts");
+    source = await inlineWGSL(source, "render/fluidRender.ts");
+    return moduleURL(compile(source, "render/fluidRender.ts"));
+}
+
+function replaceExactly(source, regex, replacement, label) {
+    if (!regex.test(source)) {
+        throw new Error("Could not patch " + label + " in current Splash main.ts.");
+    }
+    regex.lastIndex = 0;
+    return source.replace(regex, replacement);
+}
+
+async function buildMain(cameraURL, mpmURL, rendererURL) {
+    let source = await getText("main.ts");
+
+    source = replaceExactly(
+        source,
+        /from\s+['"]\.\/camera['"]/g,
+        `from ${JSON.stringify(cameraURL)}`,
+        "camera import"
+    );
+    source = replaceExactly(
+        source,
+        /from\s+['"]\.\/mls-mpm\/mls-mpm['"]/g,
+        `from ${JSON.stringify(mpmURL)}`,
+        "MLS-MPM import"
+    );
+    source = replaceExactly(
+        source,
+        /from\s+['"]\.\/render\/fluidRender['"]/g,
+        `from ${JSON.stringify(rendererURL)}`,
+        "fluid renderer import"
+    );
+    source = rewritePackages(source);
+
+    for (const name of ["posx", "negx", "posy", "negy", "posz", "negz"]) {
+        const regex = new RegExp(`(["'])cubemap\\/${name}\\.png\\1`, "g");
+        source = replaceExactly(
+            source,
+            regex,
+            JSON.stringify(`${REPO}/public/cubemap/${name}.png`),
+            "cubemap path " + name
+        );
+    }
+
+    const simulationReplacements = [
+        {
+            count: 40000,
+            text: `{ particleCount: 40000, initBoxSize: [60, 60, 60], initDistance: 64, mouseRadius: 13, cameraTargetY: 30, guiText: 'Small (40,000 particles)' }`
+        },
+        {
+            count: 70000,
+            text: `{ particleCount: 70000, initBoxSize: [70, 70, 70], initDistance: 73, mouseRadius: 14, cameraTargetY: 35, guiText: 'Medium (70,000 particles)' }`
+        },
+        {
+            count: 100000,
+            text: `{ particleCount: 100000, initBoxSize: [80, 80, 80], initDistance: 82, mouseRadius: 15, cameraTargetY: 40, guiText: 'Large (100,000 particles)' }`
+        },
+        {
+            count: 180000,
+            text: `{ particleCount: 180000, initBoxSize: [92, 92, 92], initDistance: 94, mouseRadius: 17, cameraTargetY: 46, guiText: 'Very Large (180,000 particles)' }`
+        }
+    ];
+
+    for (const item of simulationReplacements) {
+        source = replaceExactly(
+            source,
+            new RegExp(`\\{\\s*particleCount:\\s*${item.count}[^}]+\\}`),
+            item.text,
+            "simulation preset " + item.count
+        );
+    }
+
+    source = replaceExactly(
+        source,
+        /camera\.reset\s*\(\s*simulationParam\.initDistance\s*,\s*\[\s*initBoxSize\[0\]\s*\/\s*2\s*,\s*simulationParam\.cameraTargetY\s*,\s*initBoxSize\[2\]\s*\/\s*2\s*\]\s*,\s*mlsmpmFov\s*,\s*mlsmpmZoomRate\s*\)/,
+`camera.reset(
+                simulationParam.initDistance,
+                [
+                    initBoxSize[0] / 2,
+                    initBoxSize[1] / 2,
+                    initBoxSize[2] / 2
+                ],
+                mlsmpmFov,
+                mlsmpmZoomRate
+            )`,
+        "centered camera target"
+    );
+
+    source = replaceExactly(
+        source,
+        /realBoxSize\[2\]\s*=\s*initBoxSize\[2\]\s*\*\s*boxWidthRatio\s*;?/g,
+        "realBoxSize[2] = initBoxSize[2]",
+        "static simulation box"
+    );
+
+    return moduleURL(compile(source, "main.ts"));
+}
+
+function installTouchBridge() {
+    let pointerID = null;
+    let hiddenHint = false;
+
+    function dispatchMouseMove(x, y) {
+        canvas.dispatchEvent(new MouseEvent("mousemove", {
+            bubbles: false,
+            cancelable: false,
+            view: window,
+            clientX: x,
+            clientY: y,
+            screenX: x,
+            screenY: y,
+            buttons: 0
+        }));
+    }
+
+    canvas.addEventListener("pointerdown", event => {
+        if (event.pointerType !== "touch") return;
+        event.preventDefault();
+        if (pointerID !== null) return;
+
+        pointerID = event.pointerId;
+        try { canvas.setPointerCapture(pointerID); } catch (_) {}
+        dispatchMouseMove(event.clientX, event.clientY);
+
+        if (!hiddenHint) {
+            hiddenHint = true;
+            hint.style.opacity = "0";
+        }
+        if (navigator.vibrate) navigator.vibrate(4);
+    }, { passive: false });
+
+    canvas.addEventListener("pointermove", event => {
+        if (event.pointerType !== "touch" || event.pointerId !== pointerID) return;
+        event.preventDefault();
+        dispatchMouseMove(event.clientX, event.clientY);
+    }, { passive: false });
+
+    function releasePointer(event) {
+        if (event.pointerId !== pointerID) return;
+        pointerID = null;
+        dispatchMouseMove(-10000, -10000);
+    }
+
+    canvas.addEventListener("pointerup", releasePointer);
+    canvas.addEventListener("pointercancel", releasePointer);
+}
+
+async function start() {
+    try {
+        installTouchBridge();
+
+        status.textContent = "Loading Splash camera…";
+        const cameraURL = await buildCamera();
+
+        status.textContent = "Loading original MLS-MPM solver…";
+        const mpmURL = await buildMLSMPM();
+
+        status.textContent = "Loading original Splash fluid renderer…";
+        const rendererURL = await buildFluidRenderer();
+
+        status.textContent = "Starting zero-G WebGPU simulation…";
+        const mainURL = await buildMain(cameraURL, mpmURL, rendererURL);
+        await import(mainURL);
+
+        setTimeout(() => loading.classList.add("hidden"), 1000);
+    } catch (error) {
+        fatal(error);
+    }
+}
+
+start();
+</script>
+</body>
+</html>
