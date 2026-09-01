@@ -1,0 +1,3454 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#071015">
+<title>Stress Orbs — Water, Snow, Sand, Slime & Cloud</title>
+<meta name="description" content="Five tactile zero-gravity stress materials in a motion-controlled 360-degree space.">
+<style>
+:root{color-scheme:dark;--glass:rgba(3,9,12,.46);--line:rgba(255,255,255,.13);--text:rgba(255,255,255,.94);--muted:rgba(255,255,255,.58);--accent:#8cdcf0}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#020609;touch-action:none;overscroll-behavior:none;font-family:Inter,ui-rounded,"SF Pro Rounded",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+canvas{display:block}
+#panoCanvas,#fluidCanvas,#snowCanvas,#debrisCanvas{position:fixed;inset:0;width:100vw;height:100dvh}
+#panoCanvas{z-index:0;filter:saturate(.82) brightness(.72)}
+#vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(circle at 50% 47%,transparent 20%,rgba(0,5,9,.08) 52%,rgba(0,3,6,.54) 112%),linear-gradient(to bottom,rgba(0,4,8,.24),transparent 28%,transparent 68%,rgba(0,3,5,.58))}
+#fluidStage{position:fixed;inset:0;z-index:4;pointer-events:none;will-change:transform,opacity}
+#fluidCanvas{position:absolute;z-index:4;pointer-events:auto;touch-action:none;transition:opacity .18s ease}
+#snowCanvas{position:absolute;z-index:5;opacity:0;pointer-events:none;transition:opacity .18s ease}
+#debrisCanvas{z-index:7;pointer-events:none}
+#chrome{position:fixed;inset:0;z-index:30;pointer-events:none}
+.glass{border:1px solid var(--line);background:var(--glass);box-shadow:0 10px 40px rgba(0,0,0,.18),inset 0 1px 0 rgba(255,255,255,.055);-webkit-backdrop-filter:blur(16px) saturate(1.1);backdrop-filter:blur(16px) saturate(1.1)}
+#materialBadge{position:absolute;top:max(12px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);min-width:112px;padding:8px 14px 7px;border-radius:999px;text-align:center;color:var(--text);transition:border-color .3s ease,background .3s ease}
+#materialName{display:block;font-size:11px;line-height:1;font-weight:760;letter-spacing:.16em;text-transform:uppercase}
+#materialFeel{display:block;margin-top:4px;color:var(--muted);font-size:8px;line-height:1;font-weight:650;letter-spacing:.09em;text-transform:uppercase}
+#topControls{position:absolute;top:max(11px,env(safe-area-inset-top));right:10px;display:flex;gap:7px;pointer-events:auto}
+.iconButton{height:34px;min-width:42px;padding:0 10px;border:1px solid var(--line);border-radius:999px;background:var(--glass);color:rgba(255,255,255,.82);font:inherit;font-size:9px;font-weight:760;letter-spacing:.1em;text-transform:uppercase;-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);cursor:pointer}
+.iconButton:active{transform:scale(.95)}
+.iconButton.active{border-color:color-mix(in srgb,var(--accent) 58%,white 10%);color:#fff;box-shadow:0 0 24px color-mix(in srgb,var(--accent) 22%,transparent)}
+#panoButton{position:absolute;top:max(11px,env(safe-area-inset-top));left:10px;pointer-events:auto}
+#cameraButton{position:absolute;top:max(11px,env(safe-area-inset-top));left:63px;pointer-events:auto}
+#liveVideo{position:fixed;inset:0;width:100vw;height:100dvh;z-index:0;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .22s ease;background:#020609}
+#panoCanvas{transition:opacity .22s ease}
+#snowSettings{position:absolute;top:max(56px,calc(env(safe-area-inset-top) + 45px));left:50%;transform:translateX(-50%);display:none;width:min(78vw,310px);padding:9px 12px 10px;border-radius:16px;pointer-events:auto}
+#snowSettings.visible{display:block}
+#snowSettings .snowSettingTop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:7px;color:rgba(255,255,255,.78);font-size:8px;font-weight:760;letter-spacing:.09em;text-transform:uppercase}
+#snowSensitivity{width:100%;accent-color:var(--accent);touch-action:pan-x}
+#snowSensitivityValue{color:#fff;font-variant-numeric:tabular-nums}
+#hint{position:absolute;left:50%;bottom:calc(113px + env(safe-area-inset-bottom));transform:translateX(-50%);max-width:min(78vw,360px);padding:8px 13px;border-radius:999px;color:rgba(255,255,255,.76);font-size:10px;line-height:1.2;font-weight:620;letter-spacing:.025em;text-align:center;white-space:nowrap;transition:opacity .55s ease,transform .55s ease}
+#hint.used{opacity:0;transform:translate(-50%,5px)}
+#orbDock{position:absolute;left:50%;bottom:max(10px,env(safe-area-inset-bottom));transform:translateX(-50%);width:min(86vw,332px);height:91px;padding:8px 9px;border-radius:28px;pointer-events:auto}
+#orbScroller{position:relative;width:100%;height:100%;display:flex;gap:8px;padding:0 27px 0 0;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;scrollbar-width:none;touch-action:pan-x;overscroll-behavior-inline:contain}
+#orbScroller::-webkit-scrollbar{display:none}
+.orbChoice{flex:0 0 67px;height:73px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:3px;border:0;border-radius:21px;background:transparent;color:rgba(255,255,255,.48);font:inherit;cursor:pointer;scroll-snap-align:center;transition:color .25s ease,background .25s ease,transform .25s ease}
+.orbChoice:active{transform:scale(.94)}
+.orbChoice[aria-selected="true"]{background:rgba(255,255,255,.075);color:rgba(255,255,255,.96)}
+.miniOrb{position:relative;overflow:hidden;border-radius:50%;box-shadow:inset -10px -12px 18px rgba(0,0,0,.22),inset 7px 8px 12px rgba(255,255,255,.19),0 7px 18px rgba(0,0,0,.28)}
+.miniOrb{width:43px;height:43px;border:1px solid rgba(255,255,255,.21);transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease}
+.orbChoice[aria-selected="true"] .miniOrb{transform:translateY(-2px) scale(1.08);box-shadow:inset -10px -12px 18px rgba(0,0,0,.19),inset 7px 8px 12px rgba(255,255,255,.25),0 8px 25px color-mix(in srgb,var(--orb-color) 31%,transparent)}
+.miniOrb::after{content:"";position:absolute;width:46%;height:23%;left:18%;top:11%;border-radius:50%;background:rgba(255,255,255,.48);filter:blur(5px);transform:rotate(-18deg);opacity:var(--shine,.66)}
+.water{--orb-color:#55badb;--shine:.8;background:radial-gradient(circle at 35% 28%,rgba(255,255,255,.8),transparent 14%),radial-gradient(circle at 64% 70%,#0a5377,transparent 58%),linear-gradient(145deg,rgba(183,242,255,.86),rgba(35,152,201,.8) 48%,rgba(3,50,81,.91));opacity:.93}
+.snow{--orb-color:#e8f4f7;--shine:.34;background:radial-gradient(circle at 29% 25%,#fff,transparent 18%),radial-gradient(circle at 38% 67%,rgba(166,192,202,.28) 0 2%,transparent 3%),radial-gradient(circle at 65% 42%,rgba(150,177,189,.22) 0 1.5%,transparent 2.5%),linear-gradient(145deg,#fff,#e4edf0 55%,#a8bdc5)}
+.sand{--orb-color:#d3a569;--shine:.27;background:radial-gradient(circle at 34% 30%,#f0d6a7,transparent 17%),repeating-radial-gradient(circle at 58% 63%,rgba(74,42,19,.22) 0 1px,transparent 1px 4px),linear-gradient(145deg,#dfbd80,#b47d43 58%,#754424)}
+.slime{--orb-color:#5aea3f;--shine:.88;background:radial-gradient(circle at 31% 26%,rgba(242,255,223,.92),transparent 13%),radial-gradient(circle at 65% 67%,#14701c,transparent 62%),linear-gradient(145deg,#a2fb69,#38d52e 48%,#087419)}
+.cloud{--orb-color:#e8f0f3;--shine:.2;background:radial-gradient(circle at 27% 40%,#fff 0 25%,transparent 26%),radial-gradient(circle at 49% 27%,#f8fbfc 0 31%,transparent 32%),radial-gradient(circle at 73% 48%,#eef5f8 0 28%,transparent 29%),radial-gradient(circle at 48% 69%,#d7e5eb 0 39%,transparent 40%),#bdced6}
+.orbLabel{font-size:8px;line-height:1;font-weight:740;letter-spacing:.105em;text-transform:uppercase}
+#moreCue{position:absolute;top:0;right:0;bottom:0;width:48px;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;border-radius:0 28px 28px 0;background:linear-gradient(to right,transparent,rgba(4,10,13,.83) 58%);color:rgba(255,255,255,.48);pointer-events:none;transition:opacity .25s ease}
+#moreCue.hidden{opacity:0}
+#moreCue::before{content:"";width:25px;height:25px;border-radius:50%;background:radial-gradient(circle at 33% 30%,#fff,#c9d8dd 58%,#889ca5);opacity:.36;filter:blur(.15px);box-shadow:inset -5px -6px 8px rgba(0,0,0,.24)}
+#moreCue::after{content:"›";margin-left:-3px;font-size:20px;font-weight:500}
+#loading{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:32px;background:radial-gradient(circle at center,rgba(19,35,43,.96),rgba(3,8,11,.98) 62%,#010304);color:#fff;text-align:center;transition:opacity .48s ease,visibility .48s ease}
+#loading.hidden{opacity:0;visibility:hidden;pointer-events:none}
+#loaderOrb{width:64px;height:64px;margin:0 auto 19px;border-radius:50%;background:radial-gradient(circle at 32% 25%,#fff,transparent 12%),linear-gradient(145deg,#9fe9f5,#178fb9 54%,#06415e);box-shadow:inset -10px -12px 18px rgba(0,0,0,.25),0 12px 38px rgba(50,187,226,.25);animation:breathe 1.75s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(.94);filter:brightness(.92)}50%{transform:scale(1.04);filter:brightness(1.08)}}
+#loadingTitle{font-size:13px;font-weight:800;letter-spacing:.17em;text-transform:uppercase}
+#status{margin-top:8px;max-width:360px;color:rgba(255,255,255,.58);font-size:10px;line-height:1.55}
+#error{position:fixed;left:10px;right:10px;top:max(54px,calc(env(safe-area-inset-top) + 48px));z-index:5000;display:none;max-height:42vh;overflow:auto;padding:12px;border:1px solid rgba(255,120,120,.3);border-radius:15px;background:rgba(18,3,4,.88);color:#ffd1d1;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:10px;line-height:1.45;white-space:pre-wrap;-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px)}
+#ui-container,#howto-container,#debug-info,.lil-gui{display:none!important}
+@media(max-width:420px){#materialBadge{min-width:103px;padding-inline:11px}#orbDock{width:min(88vw,322px)}.orbChoice{flex-basis:64px}#hint{bottom:calc(111px + env(safe-area-inset-bottom))}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/typescript@5.7.2/lib/typescript.js"></script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.179.1/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.179.1/examples/jsm/"
+  }
+}
+</script>
+</head>
+<body>
+<video id="liveVideo" autoplay playsinline muted aria-hidden="true"></video>
+<canvas id="panoCanvas" aria-hidden="true"></canvas>
+<div id="vignette" aria-hidden="true"></div>
+<div id="fluidStage"><canvas id="fluidCanvas" aria-label="Interactive selected stress material"></canvas><canvas id="snowCanvas" aria-hidden="true"></canvas></div>
+<canvas id="debrisCanvas" aria-hidden="true"></canvas>
+<div id="chrome">
+  <button id="panoButton" class="iconButton" type="button" aria-label="Choose a 360-degree panorama">360°</button>
+  <button id="cameraButton" class="iconButton" type="button" aria-label="Use live device camera as the environment">Live</button>
+  <input id="panoInput" type="file" accept="image/*" hidden>
+  <div id="materialBadge" class="glass" aria-live="polite"><span id="materialName">Water</span><span id="materialFeel">fluid • self-leveling</span></div>
+  <div id="snowSettings" class="glass" aria-label="Snow settings"><div class="snowSettingTop"><span>Finger sensitivity</span><span id="snowSensitivityValue">1.15×</span></div><input id="snowSensitivity" type="range" min="0.65" max="2.20" step="0.05" value="1.15" aria-label="Snow finger sensitivity"></div>
+  <div id="topControls"><button id="resetButton" class="iconButton" type="button" aria-label="Reset selected material">Reset</button><button id="gyroButton" class="iconButton" type="button" aria-label="Enable phone motion">Gyro</button></div>
+  <div id="hint" class="glass">Drag through the water</div>
+  <nav id="orbDock" class="glass" aria-label="Stress material selector"><div id="orbScroller"></div><div id="moreCue" aria-hidden="true"></div></nav>
+</div>
+<div id="loading"><div><div id="loaderOrb"></div><div id="loadingTitle">Stress Orbs</div><div id="status">Preparing the 360° space and original Splash water solver…</div></div></div>
+<div id="error"></div>
+<div id="ui-container"><label><input type="checkbox" id="particle"></label><div id="slider-container"><input type="range" id="slider" min="0" max="100" value="100"><span id="slider-value"></span></div></div>
+<div id="howto-container"></div><div id="debug-info"><span id="error-reason"></span></div>
+<script type="module">
+import * as THREE from "three";
+import { MarchingCubes } from "three/addons/objects/MarchingCubes.js";
+
+const MATERIALS = [
+  {
+    id: "water", name: "Water", feel: "fluid • self-leveling",
+    hint: "Drag through the water", color: [140, 220, 240],
+    density: 0.7, mouseRadius: 14, speed: 0.8, renderMode: "surface",
+    // These are the current water build's values. They stay unchanged.
+    params: [
+      50, 3, 0.16, 0,
+      0.016, 0.015, 1, 1,
+      999, 0, 0, 0,
+      0, 0, 1, 1.333,
+      0, 0, 0, 1
+    ]
+  },
+  {
+    id: "snow", name: "Snow", feel: "elastoplastic • locally awake",
+    hint: "Press softly • scrub to dig through • flick to throw", color: [252, 254, 255],
+    density: 5.6, mouseRadius: 8.4, speed: 0.42, renderMode: "surface",
+    params: [
+      72, 0.20, 0.025, 0.0075,
+      0.0072, 0.022, 7.8, 0.997,
+      10, 10.5, 0.042, 0.986,
+      0.985, 0.94, 0.13, 1.31,
+      0.12, 0.018, 1, 1
+    ]
+  },
+  {
+    id: "sand", name: "Sand", feel: "granular • yielding",
+    hint: "Flick to carve; release to let it cave in", color: [205, 157, 96],
+    density: 1.08, mouseRadius: 7.4, speed: 0.60, renderMode: "surface",
+    params: [
+      52, 3.35, 0.11, 0,
+      0.012, 0.026, 4.7, 0.988,
+      0.28, 0.072, 0.018, -0.010,
+      0.995, 0.93, 0.025, 1.48,
+      0.085, 0.080, 2, 1
+    ]
+  },
+  {
+    id: "slime", name: "Slime", feel: "sticky • shape-holding",
+    hint: "Drag, stretch or pinch • slowly pulls back", color: [68, 229, 49],
+    density: 1.18, mouseRadius: 14.6, speed: 0.57, renderMode: "surface",
+    params: [
+      30, 3.05, 1.58, -1.55,
+      0.0050, 0.055, 1.34, 0.987,
+      0.46, 0.84, 0.00018, 0,
+      0.88, 0.11, 3.35, 1.39,
+      0.115, 0.008, 3, 1
+    ]
+  },
+  {
+    id: "cloud", name: "Cloud", feel: "puffy • buoyant",
+    hint: "Brush it and watch the vapor drift", color: [255, 255, 255],
+    density: 0.72, mouseRadius: 18.5, speed: 0.48, renderMode: "volume",
+    params: [
+      5.2, 1.15, 0.22, -0.08,
+      0.0010, 0.012, 0.64, 0.997,
+      1.9, 0.028, 0.070, 0.024,
+      0.84, 0.99, 0.025, 1.0,
+      0.028, 0, 4, 0.62
+    ]
+  }
+];
+
+const state = {
+  selected: 0,
+  version: 1,
+  transitioning: false,
+  pointerDown: false,
+  gyroActive: false,
+  gyroSeen: false
+};
+
+window.__stressLabPointerDown = false;
+window.__stressLabOrientation = { yaw: 0, pitch: 0, roll: 0 };
+window.__stressLabSlimePinch = { active: false, flip: false, a: null, b: null };
+window.__stressLabCloudBrushes = new Float32Array(32);
+window.__stressLabMaterial = Object.assign({}, MATERIALS[0], { version: state.version });
+
+const loading = document.getElementById("loading");
+const status = document.getElementById("status");
+const errorBox = document.getElementById("error");
+const hint = document.getElementById("hint");
+const materialName = document.getElementById("materialName");
+const materialFeel = document.getElementById("materialFeel");
+const materialBadge = document.getElementById("materialBadge");
+const fluidStage = document.getElementById("fluidStage");
+const fluidCanvas = document.getElementById("fluidCanvas");
+const snowCanvas = document.getElementById("snowCanvas");
+const orbScroller = document.getElementById("orbScroller");
+const moreCue = document.getElementById("moreCue");
+const resetButton = document.getElementById("resetButton");
+const gyroButton = document.getElementById("gyroButton");
+const panoButton = document.getElementById("panoButton");
+const cameraButton = document.getElementById("cameraButton");
+const panoInput = document.getElementById("panoInput");
+const liveVideo = document.getElementById("liveVideo");
+const snowSettings = document.getElementById("snowSettings");
+const snowSensitivity = document.getElementById("snowSensitivity");
+const snowSensitivityValue = document.getElementById("snowSensitivityValue");
+let snowSystem = null;
+
+function fatal(error) {
+  console.error(error);
+  errorBox.style.display = "block";
+  errorBox.textContent = String((error && (error.stack || error.message)) || error);
+  status.innerHTML = "<b>Could not start the fluid solver.</b><br><br>" +
+    String((error && error.message) || error);
+}
+
+window.addEventListener("unhandledrejection", function (event) { fatal(event.reason); });
+window.addEventListener("error", function (event) { if (event.error) fatal(event.error); });
+
+function rgb(color) {
+  return "rgb(" + color[0] + " " + color[1] + " " + color[2] + ")";
+}
+
+function buildSelector() {
+  MATERIALS.forEach(function (material, index) {
+    const button = document.createElement("button");
+    button.className = "orbChoice";
+    button.type = "button";
+    button.dataset.index = String(index);
+    button.setAttribute("aria-label", "Select " + material.name);
+    button.setAttribute("aria-selected", String(index === state.selected));
+    button.innerHTML =
+      '<span class="miniOrb ' + material.id + '" style="--orb-color:' +
+      rgb(material.color) + '"></span><span class="orbLabel">' +
+      material.name + "</span>";
+    button.addEventListener("click", function () { selectMaterial(index); });
+    orbScroller.appendChild(button);
+
+  });
+}
+
+function updateCue() {
+  const atEnd =
+    orbScroller.scrollLeft + orbScroller.clientWidth >= orbScroller.scrollWidth - 5;
+  moreCue.classList.toggle("hidden", atEnd);
+}
+
+function updateLabels(material) {
+  materialName.textContent = material.name;
+  materialFeel.textContent = material.feel;
+  hint.textContent = material.hint;
+  hint.classList.remove("used");
+  document.documentElement.style.setProperty("--accent", rgb(material.color));
+  materialBadge.style.borderColor =
+    "color-mix(in srgb," + rgb(material.color) + " 25%,rgba(255,255,255,.13))";
+  const isSnow = material.id === "snow";
+  snowSettings.classList.toggle("visible", isSnow);
+  fluidCanvas.style.filter = material.id === "cloud"
+    ? "grayscale(1) brightness(1.72) contrast(.76) blur(7.2px)"
+    : "none";
+  fluidCanvas.style.opacity = isSnow ? "0" : "1";
+  snowCanvas.style.opacity = isSnow ? "1" : "0";
+  if (isSnow) {
+    ensureSnowSystem().setVisible(true);
+  } else if (snowSystem) {
+    snowSystem.setVisible(false);
+  }
+  Array.from(orbScroller.children).forEach(function (button, index) {
+    button.setAttribute("aria-selected", String(index === state.selected));
+  });
+}
+
+function commitMaterial(index, forceReset) {
+  clearDebris();
+  clearCloudBrushes();
+  state.selected = index;
+  state.version += 1;
+  const material = MATERIALS[index];
+  window.__stressLabMaterial = Object.assign({}, material, {
+    version: state.version,
+    forceReset: Boolean(forceReset)
+  });
+  if (material.id === "snow") ensureSnowSystem().reset();
+  updateLabels(material);
+}
+
+function selectMaterial(index) {
+  if (index === state.selected || state.transitioning) return;
+  state.transitioning = true;
+  const target = index;
+
+  function slideOneStep() {
+    if (state.selected === target) {
+      fluidStage.style.transition = "";
+      fluidStage.style.transform = "translate3d(0,0,0)";
+      fluidStage.style.opacity = "1";
+      state.transitioning = false;
+      return;
+    }
+
+    const direction = Math.sign(target - state.selected);
+    const next = state.selected + direction;
+    fluidStage.style.transition =
+      "transform 250ms cubic-bezier(.38,.02,.7,1),opacity 190ms ease";
+    fluidStage.style.transform =
+      "translate3d(" + (-direction * 112) + "vw,0,0)";
+    fluidStage.style.opacity = "0";
+
+    window.setTimeout(function () {
+      commitMaterial(next, false);
+      const selectedButton =
+        orbScroller.querySelector('[data-index="' + next + '"]');
+      if (selectedButton) {
+        selectedButton.scrollIntoView({
+          behavior: "smooth", inline: "center", block: "nearest"
+        });
+      }
+      updateCue();
+
+      // The live WebGPU sphere resets while it is offscreen.
+      fluidStage.style.transition = "none";
+      fluidStage.style.transform =
+        "translate3d(" + (direction * 112) + "vw,0,0)";
+
+      window.setTimeout(function () {
+        fluidStage.style.transition =
+          "transform 285ms cubic-bezier(.2,.78,.2,1),opacity 220ms ease";
+        fluidStage.style.transform = "translate3d(0,0,0)";
+        fluidStage.style.opacity = "1";
+        window.setTimeout(slideOneStep, 310);
+      }, 75);
+    }, 255);
+  }
+
+  slideOneStep();
+}
+
+buildSelector();
+updateLabels(MATERIALS[0]);
+orbScroller.addEventListener("scroll", updateCue, { passive: true });
+requestAnimationFrame(updateCue);
+
+resetButton.addEventListener("click", function () {
+  commitMaterial(state.selected, true);
+  resetButton.classList.add("active");
+  window.setTimeout(function () { resetButton.classList.remove("active"); }, 260);
+});
+
+panoButton.addEventListener("click", function () {
+  stopLiveCamera();
+  panoInput.click();
+});
+
+const panoCanvas = document.getElementById("panoCanvas");
+const panoRenderer = new THREE.WebGLRenderer({
+  canvas: panoCanvas,
+  antialias: true,
+  powerPreference: "high-performance"
+});
+panoRenderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+panoRenderer.outputColorSpace = THREE.SRGBColorSpace;
+const panoScene = new THREE.Scene();
+const panoCamera = new THREE.PerspectiveCamera(72, 1, 0.1, 10);
+const textureLoader = new THREE.TextureLoader();
+textureLoader.setCrossOrigin("anonymous");
+const DEFAULT_PANORAMA =
+  "https://threejs.org/examples/textures/2294472375_24a3b8ef46_o.jpg";
+
+let liveStream = null;
+let liveEnvironmentTimer = 0;
+let environmentSyncToken = 0;
+
+function sourceSize(source) {
+  return {
+    width: source.videoWidth || source.naturalWidth || source.width || 0,
+    height: source.videoHeight || source.naturalHeight || source.height || 0
+  };
+}
+
+function cubeDirection(face, u, v) {
+  switch (face) {
+    case 0: return [1, -v, -u];
+    case 1: return [-1, -v, u];
+    case 2: return [u, 1, v];
+    case 3: return [u, -1, -v];
+    case 4: return [u, -v, 1];
+    default: return [-u, -v, -1];
+  }
+}
+
+async function equirectangularFaces(source, faceSize, token) {
+  const dims = sourceSize(source);
+  if (!dims.width || !dims.height) return null;
+  const srcCanvas = document.createElement("canvas");
+  srcCanvas.width = dims.width;
+  srcCanvas.height = dims.height;
+  const srcCtx = srcCanvas.getContext("2d", { willReadFrequently: true });
+  srcCtx.drawImage(source, 0, 0, dims.width, dims.height);
+  const srcData = srcCtx.getImageData(0, 0, dims.width, dims.height).data;
+  const faces = [];
+  for (let face = 0; face < 6; face += 1) {
+    if (token !== environmentSyncToken) return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = faceSize;
+    canvas.height = faceSize;
+    const ctx = canvas.getContext("2d");
+    const image = ctx.createImageData(faceSize, faceSize);
+    const dst = image.data;
+    for (let y = 0; y < faceSize; y += 1) {
+      const v = 2 * (y + .5) / faceSize - 1;
+      for (let x = 0; x < faceSize; x += 1) {
+        const u = 2 * (x + .5) / faceSize - 1;
+        let [dx, dy, dz] = cubeDirection(face, u, v);
+        const inv = 1 / Math.hypot(dx, dy, dz);
+        dx *= inv; dy *= inv; dz *= inv;
+        const lon = Math.atan2(dz, dx);
+        const lat = Math.asin(Math.max(-1, Math.min(1, dy)));
+        let sx = Math.floor((lon / (Math.PI * 2) + .5) * dims.width);
+        let sy = Math.floor((.5 - lat / Math.PI) * dims.height);
+        sx = ((sx % dims.width) + dims.width) % dims.width;
+        sy = Math.max(0, Math.min(dims.height - 1, sy));
+        const si = (sy * dims.width + sx) * 4;
+        const di = (y * faceSize + x) * 4;
+        dst[di] = srcData[si];
+        dst[di + 1] = srcData[si + 1];
+        dst[di + 2] = srcData[si + 2];
+        dst[di + 3] = 255;
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+    faces.push(canvas);
+    await new Promise(requestAnimationFrame);
+  }
+  return faces;
+}
+
+function liveCameraFaces(source, faceSize) {
+  const dims = sourceSize(source);
+  if (!dims.width || !dims.height) return null;
+  const side = Math.min(dims.width, dims.height);
+  const sx = (dims.width - side) * .5;
+  const sy = (dims.height - side) * .5;
+  const faces = [];
+  for (let face = 0; face < 6; face += 1) {
+    const canvas = document.createElement("canvas");
+    canvas.width = faceSize;
+    canvas.height = faceSize;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(source, sx, sy, side, side, 0, 0, faceSize, faceSize);
+    faces.push(canvas);
+  }
+  return faces;
+}
+
+async function syncGpuEnvironment(source, mode) {
+  const env = window.__stressLabGpuEnvironment;
+  if (!env || !env.device || !env.texture) {
+    window.__stressLabPendingEnvironmentSource = { source, mode };
+    return;
+  }
+  const token = ++environmentSyncToken;
+  try {
+    const faces = mode === "live"
+      ? liveCameraFaces(source, env.faceSize)
+      : await equirectangularFaces(source, env.faceSize, token);
+    if (!faces || token !== environmentSyncToken) return;
+    for (let i = 0; i < 6; i += 1) {
+      env.device.queue.copyExternalImageToTexture(
+        { source: faces[i] },
+        { texture: env.texture, origin: [0, 0, i] },
+        [env.faceSize, env.faceSize]
+      );
+    }
+  } catch (error) {
+    console.warn("Environment cubemap sync failed", error);
+  }
+}
+
+window.__stressLabApplyPendingEnvironment = function () {
+  const pending = window.__stressLabPendingEnvironmentSource;
+  if (!pending) return;
+  window.__stressLabPendingEnvironmentSource = null;
+  syncGpuEnvironment(pending.source, pending.mode);
+};
+
+function stopLiveCamera() {
+  if (liveEnvironmentTimer) {
+    clearInterval(liveEnvironmentTimer);
+    liveEnvironmentTimer = 0;
+  }
+  if (liveStream) {
+    liveStream.getTracks().forEach(function (track) { track.stop(); });
+    liveStream = null;
+  }
+  liveVideo.srcObject = null;
+  liveVideo.style.opacity = "0";
+  panoCanvas.style.opacity = "1";
+  cameraButton.classList.remove("active");
+  cameraButton.textContent = "Live";
+  environmentSyncToken += 1;
+  if (panoScene.background && panoScene.background.image) {
+    syncGpuEnvironment(panoScene.background.image, "panorama");
+  }
+}
+
+async function startLiveCamera() {
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    throw new Error("Live camera requires HTTPS and camera permission.");
+  }
+  liveStream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: { ideal: "environment" } },
+    audio: false
+  });
+  liveVideo.srcObject = liveStream;
+  await liveVideo.play();
+  if (!liveVideo.videoWidth) {
+    await new Promise(function (resolve) {
+      liveVideo.addEventListener("loadedmetadata", resolve, { once: true });
+    });
+  }
+  liveVideo.style.opacity = "1";
+  panoCanvas.style.opacity = "0";
+  cameraButton.classList.add("active");
+  cameraButton.textContent = "Cam";
+  syncGpuEnvironment(liveVideo, "live");
+  liveEnvironmentTimer = window.setInterval(function () {
+    if (liveStream && liveVideo.readyState >= 2) {
+      syncGpuEnvironment(liveVideo, "live");
+    }
+  }, 180);
+}
+
+cameraButton.addEventListener("click", async function () {
+  try {
+    if (liveStream) stopLiveCamera();
+    else await startLiveCamera();
+  } catch (error) {
+    console.error(error);
+    errorBox.style.display = "block";
+    errorBox.textContent = String(error && (error.message || error));
+  }
+});
+
+async function setPanorama(url, revokeAfter) {
+  try {
+    const texture = await textureLoader.loadAsync(url);
+    texture.colorSpace = THREE.SRGBColorSpace;
+    texture.mapping = THREE.EquirectangularReflectionMapping;
+    const old = panoScene.background;
+    panoScene.background = texture;
+    await syncGpuEnvironment(texture.image, "panorama");
+    if (old && old.isTexture) old.dispose();
+    if (revokeAfter) URL.revokeObjectURL(url);
+  } catch (error) {
+    console.warn("Panorama failed to load", error);
+  }
+}
+
+setPanorama(DEFAULT_PANORAMA, false);
+panoInput.addEventListener("change", function () {
+  const file = panoInput.files && panoInput.files[0];
+  if (!file) return;
+  setPanorama(URL.createObjectURL(file), true);
+  panoInput.value = "";
+});
+
+snowSensitivity.addEventListener("input", function () {
+  const value = Number(snowSensitivity.value) || 1.15;
+  snowSensitivityValue.textContent = value.toFixed(2) + "×";
+  if (snowSystem) snowSystem.sensitivity = value;
+});
+
+/* =========================================================
+   SNOW — PERSISTENT SPHERICAL SURFACE + LOCAL AIRBORNE PHASE
+
+   Resting snow is a compact 256x128 radial displacement field.
+   Only touched 8x8 tiles are processed. A slow contact compacts
+   the field; a drag carves a continuous furrow; only a fast swipe
+   converts displaced mass into dynamic, centrally-gravitating
+   particles. Landed particles are written back into the field.
+   ========================================================= */
+
+
+/* =========================================================
+   SNOW CONTACT SOLVER
+
+   The visible snow is not a recolored liquid.  It has two
+   physically separate phases:
+
+   1. Resting snow: a persistent volumetric sleeping-mass field.
+      Density, compaction and fracture live in 3-D bricks.  Only
+      touched bricks wake, so an excavated tunnel can pass through
+      the entire ball without simulating untouched snow every frame.
+
+   2. Airborne snow: detached cohesive clumps.  These receive
+      central gravity, orbit, collide with the displaced resting
+      surface, and are deposited back into it.
+
+   Contact uses a real elliptical 3-D capsule.  Pointer contact width
+   and height drive its whole footprint where the device reports them.
+   A stationary finger compacts locally; repetitive scrubbing grows an
+   uncapped tunnel through the volume; only a gated fast wipe throws.
+   ========================================================= */
+
+class SparseSnowSphere {
+  constructor(canvas) {
+    this.canvas = canvas;
+
+    /* Sleeping snow is stored as a sparse-awake 3-D mass lattice. */
+    this.resolution = 56;
+    this.extent = 2.82;
+    this.ballRadius = 2.5;
+    this.isolation = .50;
+    this.voxelSize = this.extent * 2 / (this.resolution - 1);
+    this.cellCount =
+      this.resolution * this.resolution * this.resolution;
+    this.density = new Float32Array(this.cellCount);
+    this.compaction = new Float32Array(this.cellCount);
+    this.damage = new Float32Array(this.cellCount);
+    this.collapseCooldown = new Float32Array(this.cellCount);
+    this.brickSize = 7;
+    this.bricksPerAxis = Math.ceil(this.resolution / this.brickSize);
+    this.activeBricks = new Map();
+    this.surfaceDirty = true;
+    this.lastSurfaceUpdate = -1e9;
+    this.collapseAccumulator = 0;
+    this.collapseBudget = 0;
+
+    /* No detached snow particles. Excavated/collapsing snow remains in the
+       sparse volumetric density field and locally slumps/deposits there. */
+    this.particles = [];
+
+    this.visible = false;
+    this.contact = null;
+    this.sensitivity = Number(snowSensitivity.value) || 1.15;
+    this.pressSpeed = 76;
+    this.strikeSpeed = 1220;
+    this.strikeTravel = 22;
+    this.lastTime = performance.now();
+
+    this.renderer = new THREE.WebGLRenderer({
+      canvas: canvas,
+      alpha: true,
+      antialias: true,
+      premultipliedAlpha: true,
+      powerPreference: "high-performance"
+    });
+    this.renderer.setClearColor(0x000000, 0);
+    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+    this.scene = new THREE.Scene();
+    this.camera = new THREE.PerspectiveCamera(44, 1, .1, 80);
+    this.cameraEuler = new THREE.Euler(0, 0, 0, "YXZ");
+    this.cameraQuaternion = new THREE.Quaternion();
+    this.pointerNdc = new THREE.Vector2();
+    this.raycaster = new THREE.Raycaster();
+
+    this.surfaceMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf8fcff,
+      roughness: .93,
+      metalness: 0,
+      envMapIntensity: .18
+    });
+    this.surfaceMaterial.onBeforeCompile = function (shader) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <output_fragment>",
+        [
+          "float snowFacing=clamp(dot(normal,normalize(vec3(-.45,.72,1.0))),0.0,1.0);",
+          "outgoingLight*=.86+.14*snowFacing;",
+          "#include <output_fragment>"
+        ].join("\n")
+      );
+    };
+
+    this.surface = new MarchingCubes(
+      this.resolution,
+      this.surfaceMaterial,
+      false,
+      false,
+      90000
+    );
+    this.surface.isolation = this.isolation;
+    this.surface.scale.setScalar(this.extent);
+    this.surface.castShadow = true;
+    this.surface.receiveShadow = true;
+    this.surface.frustumCulled = false;
+    this.scene.add(this.surface);
+
+
+    const hemisphere = new THREE.HemisphereLight(
+      0xeefaff,
+      0x26343d,
+      1.12
+    );
+    this.scene.add(hemisphere);
+
+    this.keyLight = new THREE.DirectionalLight(0xffffff, 3.2);
+    this.keyLight.position.set(-4.6, 6.8, 7.4);
+    this.keyLight.castShadow = true;
+    this.keyLight.shadow.mapSize.set(1024, 1024);
+    this.keyLight.shadow.camera.near = 1;
+    this.keyLight.shadow.camera.far = 24;
+    this.keyLight.shadow.camera.left = -4.2;
+    this.keyLight.shadow.camera.right = 4.2;
+    this.keyLight.shadow.camera.top = 4.2;
+    this.keyLight.shadow.camera.bottom = -4.2;
+    this.keyLight.shadow.bias = -.00045;
+    this.keyLight.shadow.normalBias = .018;
+    this.scene.add(this.keyLight);
+
+    const fill = new THREE.DirectionalLight(0xbbe9ff, .52);
+    fill.position.set(5, -1.5, 3);
+    this.scene.add(fill);
+
+    this.reset();
+    this.resize();
+  }
+
+  smoothstep(edge0, edge1, value) {
+    const t = THREE.MathUtils.clamp(
+      (value - edge0) / Math.max(1e-9, edge1 - edge0),
+      0,
+      1
+    );
+    return t * t * (3 - 2 * t);
+  }
+
+  index(x, y, z) {
+    return (z * this.resolution + y) * this.resolution + x;
+  }
+
+  valid(x, y, z) {
+    return (
+      x >= 0 && y >= 0 && z >= 0 &&
+      x < this.resolution &&
+      y < this.resolution &&
+      z < this.resolution
+    );
+  }
+
+  cellWorld(x, y, z, target) {
+    const scale = this.extent * 2 / (this.resolution - 1);
+    return target.set(
+      -this.extent + x * scale,
+      -this.extent + y * scale,
+      -this.extent + z * scale
+    );
+  }
+
+  gridCoordinate(value) {
+    return (value + this.extent) /
+      (this.extent * 2) * (this.resolution - 1);
+  }
+
+  reset() {
+    const point = new THREE.Vector3();
+    const boundaryWidth = this.voxelSize * 1.45;
+    for (let z = 0; z < this.resolution; z += 1) {
+      for (let y = 0; y < this.resolution; y += 1) {
+        for (let x = 0; x < this.resolution; x += 1) {
+          const index = this.index(x, y, z);
+          this.cellWorld(x, y, z, point);
+          const direction = point.clone().normalize();
+          const noise =
+            Math.sin(x * .73 + y * .19) * .017 +
+            Math.sin(y * .47 - z * .61) * .013 +
+            Math.cos(z * .39 + x * .31) * .011;
+          const signedDistance =
+            this.ballRadius + noise - point.length();
+          this.density[index] = this.smoothstep(
+            -boundaryWidth,
+            boundaryWidth,
+            signedDistance
+          );
+          this.compaction[index] = .025;
+          this.damage[index] = 0;
+          this.collapseCooldown[index] = 0;
+        }
+      }
+    }
+    this.activeBricks.clear();
+    this.particles.length = 0;
+    this.contact = null;
+    this.collapseAccumulator = 0;
+    this.surfaceDirty = true;
+    this.rebuildSurface(true);
+    this.updateParticleBuffers();
+  }
+
+  setVisible(value) {
+    this.visible = Boolean(value);
+    if (!this.visible) this.endContact();
+    this.lastTime = performance.now();
+  }
+
+  resize() {
+    const width = Math.max(1, window.innerWidth);
+    const height = Math.max(1, window.innerHeight);
+    const ratio = Math.min(window.devicePixelRatio || 1, 1.4);
+    this.renderer.setPixelRatio(ratio);
+    this.renderer.setSize(width, height, false);
+    this.camera.aspect = width / height;
+    const tangent = Math.tan(
+      THREE.MathUtils.degToRad(this.camera.fov * .5)
+    );
+    const limiting = Math.min(tangent, tangent * this.camera.aspect);
+    this.cameraDistance =
+      this.ballRadius / Math.max(.08, limiting * .72);
+    this.camera.updateProjectionMatrix();
+  }
+
+  updateCamera() {
+    const orientation =
+      window.__stressLabOrientation || { yaw: 0, pitch: 0 };
+    this.cameraEuler.set(
+      orientation.pitch || 0,
+      orientation.yaw || 0,
+      0,
+      "YXZ"
+    );
+    this.cameraQuaternion.setFromEuler(this.cameraEuler);
+    this.camera.position.set(0, 0, this.cameraDistance)
+      .applyQuaternion(this.cameraQuaternion);
+    this.camera.up.set(0, 1, 0)
+      .applyQuaternion(this.cameraQuaternion);
+    this.camera.lookAt(0, 0, 0);
+    this.camera.updateMatrixWorld(true);
+  }
+
+  sampleDensity(position) {
+    const gx = this.gridCoordinate(position.x);
+    const gy = this.gridCoordinate(position.y);
+    const gz = this.gridCoordinate(position.z);
+    if (
+      gx < 0 || gy < 0 || gz < 0 ||
+      gx > this.resolution - 1 ||
+      gy > this.resolution - 1 ||
+      gz > this.resolution - 1
+    ) return 0;
+
+    const x0 = Math.floor(gx);
+    const y0 = Math.floor(gy);
+    const z0 = Math.floor(gz);
+    const x1 = Math.min(this.resolution - 1, x0 + 1);
+    const y1 = Math.min(this.resolution - 1, y0 + 1);
+    const z1 = Math.min(this.resolution - 1, z0 + 1);
+    const tx = gx - x0;
+    const ty = gy - y0;
+    const tz = gz - z0;
+
+    const x00 = THREE.MathUtils.lerp(
+      this.density[this.index(x0, y0, z0)],
+      this.density[this.index(x1, y0, z0)],
+      tx
+    );
+    const x10 = THREE.MathUtils.lerp(
+      this.density[this.index(x0, y1, z0)],
+      this.density[this.index(x1, y1, z0)],
+      tx
+    );
+    const x01 = THREE.MathUtils.lerp(
+      this.density[this.index(x0, y0, z1)],
+      this.density[this.index(x1, y0, z1)],
+      tx
+    );
+    const x11 = THREE.MathUtils.lerp(
+      this.density[this.index(x0, y1, z1)],
+      this.density[this.index(x1, y1, z1)],
+      tx
+    );
+    return THREE.MathUtils.lerp(
+      THREE.MathUtils.lerp(x00, x10, ty),
+      THREE.MathUtils.lerp(x01, x11, ty),
+      tz
+    );
+  }
+
+  densityNormal(position, target) {
+    const step = this.voxelSize * .72;
+    target.set(
+      this.sampleDensity(
+        new THREE.Vector3(position.x - step, position.y, position.z)
+      ) - this.sampleDensity(
+        new THREE.Vector3(position.x + step, position.y, position.z)
+      ),
+      this.sampleDensity(
+        new THREE.Vector3(position.x, position.y - step, position.z)
+      ) - this.sampleDensity(
+        new THREE.Vector3(position.x, position.y + step, position.z)
+      ),
+      this.sampleDensity(
+        new THREE.Vector3(position.x, position.y, position.z - step)
+      ) - this.sampleDensity(
+        new THREE.Vector3(position.x, position.y, position.z + step)
+      )
+    );
+    if (target.lengthSq() < 1e-8) target.copy(position).normalize();
+    else target.normalize();
+    return target;
+  }
+
+  raySphereRange(origin, direction, radius) {
+    const projection = origin.dot(direction);
+    const c = origin.lengthSq() - radius * radius;
+    const discriminant = projection * projection - c;
+    if (discriminant < 0) return null;
+    const root = Math.sqrt(discriminant);
+    return [
+      Math.max(0, -projection - root),
+      -projection + root
+    ];
+  }
+
+  hitAt(clientX, clientY) {
+    this.pointerNdc.set(
+      clientX / Math.max(1, window.innerWidth) * 2 - 1,
+      1 - clientY / Math.max(1, window.innerHeight) * 2
+    );
+    this.raycaster.setFromCamera(this.pointerNdc, this.camera);
+    const origin = this.raycaster.ray.origin.clone();
+    const direction = this.raycaster.ray.direction.clone();
+    const range = this.raySphereRange(
+      origin,
+      direction,
+      this.extent * 1.02
+    );
+    if (!range) return null;
+
+    const step = this.voxelSize * .42;
+    let previousT = range[0];
+    let previousDensity = this.sampleDensity(
+      origin.clone().addScaledVector(direction, previousT)
+    );
+    for (
+      let distance = range[0] + step;
+      distance <= range[1] + step;
+      distance += step
+    ) {
+      const point = origin.clone().addScaledVector(direction, distance);
+      const value = this.sampleDensity(point);
+      if (
+        previousDensity < this.isolation &&
+        value >= this.isolation
+      ) {
+        let low = previousT;
+        let high = distance;
+        for (let iteration = 0; iteration < 6; iteration += 1) {
+          const middle = (low + high) * .5;
+          const middlePoint =
+            origin.clone().addScaledVector(direction, middle);
+          if (this.sampleDensity(middlePoint) >= this.isolation) {
+            high = middle;
+          } else {
+            low = middle;
+          }
+        }
+        const hitDistance = (low + high) * .5;
+        const hitPoint =
+          origin.clone().addScaledVector(direction, hitDistance);
+        const normal = this.densityNormal(
+          hitPoint,
+          new THREE.Vector3()
+        );
+        return {
+          point: hitPoint,
+          normal: normal,
+          rayOrigin: origin,
+          rayDirection: direction,
+          distance: hitDistance
+        };
+      }
+      previousT = distance;
+      previousDensity = value;
+    }
+    return null;
+  }
+
+  contactShape(width, height, pressure) {
+    const worldPerPixel =
+      2 * this.cameraDistance *
+      Math.tan(THREE.MathUtils.degToRad(this.camera.fov * .5)) /
+      Math.max(1, window.innerHeight);
+    /*
+       PointerEvent.width/height are the capacitive contact ellipse.
+       Android devices that report a 1 px placeholder get a physical
+       thumb-pad fallback instead of a stylus-sized collider.
+    */
+    const fallback = THREE.MathUtils.clamp(
+      Math.min(window.innerWidth, window.innerHeight) * .086,
+      46,
+      78
+    );
+    const hasContactEllipse = width > 3 || height > 3;
+    const measuredWidth = hasContactEllipse
+      ? Math.max(width * 1.72, fallback * .72)
+      : fallback;
+    const measuredHeight = hasContactEllipse
+      ? Math.max(height * 1.72, fallback * .62)
+      : fallback * .80;
+    const pressureScale =
+      .96 + THREE.MathUtils.clamp(pressure, 0, 1) * .22;
+    const rx = THREE.MathUtils.clamp(
+      measuredWidth * .5 * worldPerPixel * pressureScale,
+      .22,
+      .68
+    );
+    const ry = THREE.MathUtils.clamp(
+      measuredHeight * .5 * worldPerPixel * pressureScale,
+      .18,
+      .62
+    );
+    return {
+      rx: rx,
+      ry: ry,
+      average: (rx + ry) * .5,
+      label: Math.max(rx, ry) > .40
+        ? "thumb"
+        : Math.max(rx, ry) < .25
+          ? "pinky"
+          : "finger"
+    };
+  }
+
+  colliderBasis(axis) {
+    const right =
+      new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0);
+    right.addScaledVector(axis, -right.dot(axis));
+    if (right.lengthSq() < 1e-8) right.set(1, 0, 0);
+    right.normalize();
+    const up = new THREE.Vector3().crossVectors(axis, right).normalize();
+    return { right: right, up: up };
+  }
+
+  makePressCollider(hit, penetration, shape) {
+    const axis = hit.rayDirection.clone().normalize();
+    const basis = this.colliderBasis(axis);
+    /* Ray direction points into the sphere. The contact volume now occupies
+       the snow beneath the actual finger instead of extending back toward
+       the camera from a single surface point. */
+    const pad = Math.max(this.voxelSize * .7, shape.average * .22);
+    const a = hit.point.clone().addScaledVector(axis, -pad);
+    const b = hit.point.clone().addScaledVector(axis, Math.max(.012, penetration));
+    return {
+      a: a,
+      b: b,
+      axis: axis,
+      right: basis.right,
+      up: basis.up,
+      rx: shape.rx,
+      ry: shape.ry,
+      center: hit.point.clone().addScaledVector(axis, penetration * .5)
+    };
+  }
+
+  makeDigCollider(hit, depth, shape) {
+    const axis = hit.rayDirection.clone().normalize();
+    const basis = this.colliderBasis(axis);
+    return {
+      a: hit.point.clone().addScaledVector(axis, -.08),
+      b: hit.point.clone().addScaledVector(axis, depth),
+      axis: axis,
+      right: basis.right,
+      up: basis.up,
+      rx: shape.rx,
+      ry: shape.ry,
+      center: hit.point.clone().addScaledVector(axis, depth * .5)
+    };
+  }
+
+  markActiveCell(x, y, z, lifetime) {
+    const bx = Math.floor(x / this.brickSize);
+    const by = Math.floor(y / this.brickSize);
+    const bz = Math.floor(z / this.brickSize);
+    if (
+      bx < 0 || by < 0 || bz < 0 ||
+      bx >= this.bricksPerAxis ||
+      by >= this.bricksPerAxis ||
+      bz >= this.bricksPerAxis
+    ) return;
+    const key =
+      (bz * this.bricksPerAxis + by) * this.bricksPerAxis + bx;
+    this.activeBricks.set(
+      key,
+      Math.max(lifetime, this.activeBricks.get(key) || 0)
+    );
+  }
+
+  markDamageNeighbors(x, y, z, amount) {
+    const neighbors = [
+      [x - 1, y, z], [x + 1, y, z],
+      [x, y - 1, z], [x, y + 1, z],
+      [x, y, z - 1], [x, y, z + 1]
+    ];
+    for (const neighbor of neighbors) {
+      if (!this.valid(neighbor[0], neighbor[1], neighbor[2])) continue;
+      const index = this.index(neighbor[0], neighbor[1], neighbor[2]);
+      this.damage[index] = Math.min(
+        1,
+        this.damage[index] + amount
+      );
+      this.markActiveCell(
+        neighbor[0],
+        neighbor[1],
+        neighbor[2],
+        4.2
+      );
+    }
+  }
+
+  addDensityAt(position, worldMass, radius) {
+    if (worldMass <= 0) return;
+    const gx = this.gridCoordinate(position.x);
+    const gy = this.gridCoordinate(position.y);
+    const gz = this.gridCoordinate(position.z);
+    const cells = Math.max(1.2, radius / this.voxelSize);
+    const extent = Math.ceil(cells * 1.35);
+    const entries = [];
+    let weightSum = 0;
+    for (let dz = -extent; dz <= extent; dz += 1) {
+      const z = Math.floor(gz + dz);
+      if (z < 1 || z >= this.resolution - 1) continue;
+      for (let dy = -extent; dy <= extent; dy += 1) {
+        const y = Math.floor(gy + dy);
+        if (y < 1 || y >= this.resolution - 1) continue;
+        for (let dx = -extent; dx <= extent; dx += 1) {
+          const x = Math.floor(gx + dx);
+          if (x < 1 || x >= this.resolution - 1) continue;
+          const d2 =
+            (dx * dx + dy * dy + dz * dz) / (cells * cells);
+          if (d2 >= 1) continue;
+          const weight = Math.pow(1 - d2, 2);
+          entries.push({ x: x, y: y, z: z, weight: weight });
+          weightSum += weight;
+        }
+      }
+    }
+    if (weightSum <= 0) return;
+    const voxelVolume = Math.pow(this.voxelSize, 3);
+    const densityMass = worldMass / voxelVolume;
+    for (const entry of entries) {
+      const index = this.index(entry.x, entry.y, entry.z);
+      this.density[index] = Math.min(
+        1.18,
+        this.density[index] +
+          densityMass * entry.weight / weightSum
+      );
+      this.compaction[index] = Math.min(
+        1,
+        this.compaction[index] + .025 * entry.weight
+      );
+      this.markActiveCell(entry.x, entry.y, entry.z, 3.2);
+    }
+    this.surfaceDirty = true;
+  }
+
+  removeWithCollider(collider, strength, mode) {
+    const radius = Math.max(collider.rx, collider.ry);
+    const minimum = new THREE.Vector3(
+      Math.min(collider.a.x, collider.b.x) - radius,
+      Math.min(collider.a.y, collider.b.y) - radius,
+      Math.min(collider.a.z, collider.b.z) - radius
+    );
+    const maximum = new THREE.Vector3(
+      Math.max(collider.a.x, collider.b.x) + radius,
+      Math.max(collider.a.y, collider.b.y) + radius,
+      Math.max(collider.a.z, collider.b.z) + radius
+    );
+    const minX = THREE.MathUtils.clamp(
+      Math.floor(this.gridCoordinate(minimum.x)),
+      1,
+      this.resolution - 2
+    );
+    const minY = THREE.MathUtils.clamp(
+      Math.floor(this.gridCoordinate(minimum.y)),
+      1,
+      this.resolution - 2
+    );
+    const minZ = THREE.MathUtils.clamp(
+      Math.floor(this.gridCoordinate(minimum.z)),
+      1,
+      this.resolution - 2
+    );
+    const maxX = THREE.MathUtils.clamp(
+      Math.ceil(this.gridCoordinate(maximum.x)),
+      1,
+      this.resolution - 2
+    );
+    const maxY = THREE.MathUtils.clamp(
+      Math.ceil(this.gridCoordinate(maximum.y)),
+      1,
+      this.resolution - 2
+    );
+    const maxZ = THREE.MathUtils.clamp(
+      Math.ceil(this.gridCoordinate(maximum.z)),
+      1,
+      this.resolution - 2
+    );
+
+    const segment = collider.b.clone().sub(collider.a);
+    const segmentLength2 = Math.max(1e-8, segment.lengthSq());
+    const point = new THREE.Vector3();
+    const closest = new THREE.Vector3();
+    const delta = new THREE.Vector3();
+    const removedCenter = new THREE.Vector3();
+    const deposits = [];
+    let removedDensity = 0;
+    let removedCells = 0;
+
+    for (let z = minZ; z <= maxZ; z += 1) {
+      for (let y = minY; y <= maxY; y += 1) {
+        for (let x = minX; x <= maxX; x += 1) {
+          const index = this.index(x, y, z);
+          if (this.density[index] <= .001) continue;
+          this.cellWorld(x, y, z, point);
+          const t = THREE.MathUtils.clamp(
+            point.clone().sub(collider.a).dot(segment) /
+              segmentLength2,
+            0,
+            1
+          );
+          closest.copy(collider.a).addScaledVector(segment, t);
+          delta.copy(point).sub(closest);
+          const ellipseX = delta.dot(collider.right) / collider.rx;
+          const ellipseY = delta.dot(collider.up) / collider.ry;
+          const ellipseZ =
+            delta.dot(collider.axis) /
+            Math.max(.001, (collider.rx + collider.ry) * .5);
+          const distance2 =
+            ellipseX * ellipseX +
+            ellipseY * ellipseY +
+            ellipseZ * ellipseZ;
+          if (distance2 >= 1) continue;
+
+          const kernel = Math.pow(1 - distance2, 2);
+          const packed = this.compaction[index];
+          const hardness = 1.25 + packed * 1.8;
+          const removal = Math.min(
+            this.density[index],
+            strength * kernel / hardness
+          );
+          if (removal <= .0005) continue;
+          this.density[index] -= removal;
+          this.compaction[index] = Math.min(
+            1,
+            packed + removal * (mode === "press" ? .26 : .12)
+          );
+          this.damage[index] = Math.min(
+            1,
+            this.damage[index] +
+              removal * (mode === "dig" ? .9 : mode === "strike" ? 1.2 : .34)
+          );
+          removedDensity += removal;
+          removedCenter.addScaledVector(point, removal);
+          removedCells += 1;
+          this.markDamageNeighbors(
+            x,
+            y,
+            z,
+            removal * (mode === "dig" ? .48 : .22)
+          );
+          this.markActiveCell(x, y, z, 4.5);
+
+          if (
+            deposits.length < 180 &&
+            removedCells % 3 === 0 &&
+            delta.lengthSq() > 1e-8
+          ) {
+            const outward = delta.clone().normalize();
+            deposits.push({
+              position: point.clone().addScaledVector(
+                outward,
+                radius * (1.02 + Math.random() * .22)
+              ),
+              density: removal
+            });
+          }
+        }
+      }
+    }
+
+    if (removedDensity <= 0) {
+      return {
+        volume: 0,
+        center: collider.center.clone()
+      };
+    }
+
+    removedCenter.multiplyScalar(1 / removedDensity);
+    const voxelVolume = Math.pow(this.voxelSize, 3);
+    const depositFraction =
+      mode === "press" ? .52 :
+        mode === "drag" ? .38 :
+          mode === "dig" ? .10 : .05;
+    if (depositFraction > 0 && deposits.length) {
+      const totalDeposit =
+        removedDensity * voxelVolume * depositFraction;
+      const perDeposit = totalDeposit / deposits.length;
+      for (const deposit of deposits) {
+        this.addDensityAt(
+          deposit.position,
+          perDeposit,
+          radius * .62
+        );
+      }
+    }
+    this.surfaceDirty = true;
+    return {
+      volume:
+        removedDensity * voxelVolume * (1 - depositFraction),
+      center: removedCenter
+    };
+  }
+
+  interpolateHit(a, b, t) {
+    return {
+      point: a.point.clone().lerp(b.point, t),
+      normal: a.normal.clone().lerp(b.normal, t).normalize(),
+      rayOrigin: a.rayOrigin.clone().lerp(b.rayOrigin, t),
+      rayDirection:
+        a.rayDirection.clone().lerp(b.rayDirection, t).normalize()
+    };
+  }
+
+  sweepDrag(previousHit, hit, penetration, shape) {
+    const distance = previousHit.point.distanceTo(hit.point);
+    const samples = Math.min(
+      28,
+      Math.max(1, Math.ceil(
+        distance / Math.max(this.voxelSize * .65, shape.average * .20)
+      ))
+    );
+    let combinedVolume = 0;
+    const center = new THREE.Vector3();
+    for (let sample = 1; sample <= samples; sample += 1) {
+      const current = this.interpolateHit(
+        previousHit,
+        hit,
+        sample / samples
+      );
+      const result = this.removeWithCollider(
+        this.makePressCollider(current, penetration, shape),
+        .34,
+        "drag"
+      );
+      center.addScaledVector(result.center, result.volume);
+      combinedVolume += result.volume;
+    }
+    if (combinedVolume > 0) center.multiplyScalar(1 / combinedVolume);
+    return { volume: combinedVolume, center: center };
+  }
+
+  updateGesture(contact, now, dx, dy, speed) {
+    contact.history.push({
+      time: now,
+      x: contact.x,
+      y: contact.y,
+      dx: dx,
+      dy: dy,
+      speed: speed
+    });
+    while (
+      contact.history.length &&
+      now - contact.history[0].time > 720
+    ) {
+      contact.history.shift();
+    }
+    let path = 0;
+    let speedSum = 0;
+    let reversals = 0;
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+    let previousDirection = null;
+    for (const sample of contact.history) {
+      const length = Math.hypot(sample.dx, sample.dy);
+      path += length;
+      speedSum += sample.speed;
+      minX = Math.min(minX, sample.x);
+      maxX = Math.max(maxX, sample.x);
+      minY = Math.min(minY, sample.y);
+      maxY = Math.max(maxY, sample.y);
+      if (length > 2) {
+        const direction = {
+          x: sample.dx / length,
+          y: sample.dy / length
+        };
+        if (
+          previousDirection &&
+          direction.x * previousDirection.x +
+            direction.y * previousDirection.y < -.22
+        ) {
+          reversals += 1;
+        }
+        previousDirection = direction;
+      }
+    }
+    const spread = Math.hypot(maxX - minX, maxY - minY);
+    const meanSpeed =
+      contact.history.length ? speedSum / contact.history.length : 0;
+    return {
+      path: path,
+      spread: Number.isFinite(spread) ? spread : 0,
+      reversals: reversals,
+      meanSpeed: meanSpeed,
+      digging:
+        path > 42 / this.sensitivity &&
+        spread > 11 / Math.sqrt(this.sensitivity) &&
+        meanSpeed > 38 / this.sensitivity &&
+        meanSpeed < this.strikeSpeed * .82,
+      digAmount: THREE.MathUtils.clamp(
+        (path - 24 / this.sensitivity) / (118 / this.sensitivity),
+        0,
+        1
+      ) * THREE.MathUtils.clamp(
+        (meanSpeed - 24 / this.sensitivity) / 260,
+        0.18,
+        1
+      )
+    };
+  }
+
+  beginContact(clientX, clientY, pressure, width, height) {
+    if (!this.visible) return false;
+    this.updateCamera();
+    const hit = this.hitAt(clientX, clientY);
+    if (!hit) return false;
+    const now = performance.now();
+    const shape = this.contactShape(width, height, pressure || .5);
+    this.contact = {
+      down: true,
+      state: "press",
+      x: clientX,
+      y: clientY,
+      startX: clientX,
+      startY: clientY,
+      lastX: clientX,
+      lastY: clientY,
+      startTime: now,
+      lastTime: now,
+      lastMoveTime: now,
+      lastStrikeTime: -1e9,
+      filteredSpeed: 0,
+      pressure: pressure > 0 ? pressure : .5,
+      shape: shape,
+      hit: hit,
+      previousHit: hit,
+      entryHit: {
+        point: hit.point.clone(),
+        normal: hit.normal.clone(),
+        rayOrigin: hit.rayOrigin.clone(),
+        rayDirection: hit.rayDirection.clone(),
+        distance: hit.distance
+      },
+      penetration: .028,
+      pressStartTime: now,
+      digDepth: .06,
+      digLatchUntil: 0,
+      history: []
+    };
+    this.removeWithCollider(
+      this.makePressCollider(hit, .028, shape),
+      .20,
+      "press"
+    );
+    return true;
+  }
+
+  moveContact(clientX, clientY, pressure, width, height) {
+    const contact = this.contact;
+    if (!contact || !contact.down) return;
+    const now = performance.now();
+    const dt = THREE.MathUtils.clamp(
+      (now - contact.lastTime) / 1000,
+      .006,
+      .075
+    );
+    const dx = clientX - contact.lastX;
+    const dy = clientY - contact.lastY;
+    const travel = Math.hypot(dx, dy);
+    const velocityX = dx / dt;
+    const velocityY = dy / dt;
+    const rawSpeed = Math.hypot(velocityX, velocityY);
+
+    contact.filteredSpeed = THREE.MathUtils.lerp(
+      contact.filteredSpeed,
+      rawSpeed,
+      rawSpeed > contact.filteredSpeed ? .52 : .22
+    );
+    contact.pressure = pressure > 0 ? pressure : contact.pressure;
+    contact.shape = this.contactShape(width, height, contact.pressure);
+    contact.x = clientX;
+    contact.y = clientY;
+
+    const hit = this.hitAt(clientX, clientY);
+    if (hit) {
+      const worldPerPixel =
+        2 * this.cameraDistance *
+        Math.tan(THREE.MathUtils.degToRad(this.camera.fov * .5)) /
+        Math.max(1, window.innerHeight);
+      const worldTravel = travel * worldPerPixel;
+
+      /* Snow now follows the finger exactly like the water brush: every
+         sampled point under the moving finger is the only awake/deformed
+         region.  No old entry point is reused, so the tool cannot lock onto
+         one hole while the finger moves elsewhere. */
+      if (travel > 1.25) {
+        contact.state = "drag";
+        contact.pressStartTime = now;
+
+        const speedFactor = THREE.MathUtils.clamp(rawSpeed / 760, 0, 1);
+        const pressureFactor = THREE.MathUtils.clamp(contact.pressure, 0, 1);
+        /* Slow/heavy movement bites deeper while a quick swipe skims. */
+        const motionDepth =
+          contact.shape.average * (.44 + pressureFactor * .30) *
+          (1.0 - speedFactor * .38);
+        const penetration = THREE.MathUtils.clamp(
+          Math.max(contact.penetration * .70, motionDepth),
+          .10,
+          .62
+        );
+
+        const result = this.sweepDrag(
+          contact.previousHit || hit,
+          hit,
+          penetration,
+          contact.shape
+        );
+
+        /* Repeated passes naturally dig deeper because each sweep removes
+           only a moderate layer from the actual path instead of drilling a
+           long capsule from the first contact point. */
+        if (result.volume > .00012 && rawSpeed > 105) {
+          this.spawnRemovedSnow(
+            result,
+            hit,
+            velocityX,
+            velocityY,
+            .18 + Math.min(.42, rawSpeed / 1700),
+            "dig"
+          );
+        }
+        contact.penetration = THREE.MathUtils.damp(
+          contact.penetration,
+          penetration,
+          8.0,
+          dt
+        );
+      } else {
+        contact.state = "press";
+      }
+
+      contact.previousHit = hit;
+      contact.hit = hit;
+    }
+
+    contact.lastX = clientX;
+    contact.lastY = clientY;
+    contact.lastTime = now;
+    contact.lastMoveTime = now;
+  }
+
+  updateHeldPress(dt, now) {
+    const contact = this.contact;
+    if (!contact || !contact.down || !contact.hit) return;
+    contact.filteredSpeed *= Math.exp(-dt * 12);
+    if (now - contact.lastMoveTime < 42 || contact.filteredSpeed > 62) return;
+
+    contact.state = "press";
+    const held = Math.max(0, (now - contact.pressStartTime) / 1000);
+    const pressure = THREE.MathUtils.clamp(contact.pressure, 0, 1);
+
+    /* A held finger compresses a thumb-sized pocket gradually.  The curve
+       has no sudden soft->tunnel transition: the first few tenths leave a
+       visible print, then sustained pressure slowly deepens it. */
+    const initialCompression =
+      (1 - Math.exp(-held * 2.0)) *
+      (contact.shape.average * (.34 + .24 * pressure));
+    const sustainedDig =
+      Math.max(0, held - .22) *
+      (.34 + .22 * pressure) * this.sensitivity;
+    const target = THREE.MathUtils.clamp(
+      .028 + initialCompression + sustainedDig,
+      .028,
+      this.ballRadius * 2.06
+    );
+    const previous = contact.penetration;
+    contact.penetration = THREE.MathUtils.damp(
+      contact.penetration,
+      target,
+      4.2,
+      dt
+    );
+    const increment = contact.penetration - previous;
+    if (increment <= .000025) return;
+
+    this.removeWithCollider(
+      this.makePressCollider(contact.hit, contact.penetration, contact.shape),
+      THREE.MathUtils.clamp(
+        .16 + increment / this.voxelSize * .42,
+        .16,
+        .48
+      ),
+      "press"
+    );
+  }
+
+  spawnRemovedSnow(
+    result,
+    hit,
+    velocityX,
+    velocityY,
+    energy,
+    kind
+  ) {
+    // No detached particle phase: all snow interaction stays in the compact
+    // volumetric field. This removes the expensive/fake-looking particle spray.
+    return;
+    if (!result || result.volume <= .00008) return;
+    const count = THREE.MathUtils.clamp(
+      Math.round(result.volume / .0028),
+      kind === "dig" ? 1 : 2,
+      kind === "dig" ? 7 : 14
+    );
+    const right =
+      new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 0);
+    const up =
+      new THREE.Vector3().setFromMatrixColumn(this.camera.matrixWorld, 1);
+    const tangent = right.multiplyScalar(velocityX)
+      .add(up.multiplyScalar(-velocityY));
+    tangent.addScaledVector(hit.normal, -tangent.dot(hit.normal));
+    if (tangent.lengthSq() < 1e-8) {
+      tangent.crossVectors(hit.normal, new THREE.Vector3(0, 1, 0));
+    }
+    tangent.normalize();
+    const perParticleMass = result.volume / count;
+    const radius = THREE.MathUtils.clamp(
+      Math.cbrt(perParticleMass) * .78,
+      .060,
+      .145
+    );
+    const clumpBase = this.nextClump;
+    this.nextClump += Math.ceil(count / 3);
+
+    for (let index = 0; index < count; index += 1) {
+      if (this.particles.length >= this.maxParticles) {
+        const settled = this.particles.shift();
+        this.addDensityAt(
+          settled.position,
+          settled.mass,
+          settled.radius * 2.1
+        );
+      }
+      const position = result.center.clone()
+        .addScaledVector(right, (Math.random() - .5) * radius * 3)
+        .addScaledVector(up, (Math.random() - .5) * radius * 3)
+        .addScaledVector(hit.normal, radius * .7);
+      const tangentialSpeed =
+        kind === "dig"
+          ? .24 + energy * .48
+          : .65 + energy * 1.28;
+      const velocity = tangent.clone().multiplyScalar(
+        tangentialSpeed * (.72 + Math.random() * .46)
+      ).addScaledVector(
+        hit.normal,
+        kind === "dig"
+          ? .10 + Math.random() * .18
+          : .42 + energy * .72 + Math.random() * .36
+      );
+      velocity.add(new THREE.Vector3(
+        (Math.random() - .5) * .22,
+        (Math.random() - .5) * .22,
+        (Math.random() - .5) * .22
+      ));
+      this.particles.push({
+        kind: kind,
+        position: position,
+        velocity: velocity,
+        radius: radius * (.75 + Math.random() * .65),
+        mass: perParticleMass,
+        clump: clumpBase + Math.floor(index / 3),
+        age: 0,
+        life: kind === "dig" ? 1.8 + Math.random() * .7 : 3.8 + Math.random() * 1.2,
+        restTime: 0,
+        shade: .87 + Math.random() * .12,
+        alpha: .78 + Math.random() * .18
+      });
+    }
+  }
+
+  spawnCollapseCell(x, y, z, index, amount) {
+    /* Local cave-in: loose snow moves through the density field instead of
+       becoming a separate rendered particle. */
+    const position = this.cellWorld(x, y, z, new THREE.Vector3());
+    const radial = position.lengthSq() > 1e-8
+      ? position.clone().normalize()
+      : new THREE.Vector3(0, 0, 1);
+    const inward = position.clone().addScaledVector(
+      radial,
+      -this.voxelSize * (1.2 + Math.random() * .7)
+    );
+    inward.add(new THREE.Vector3(
+      Math.random() - .5,
+      Math.random() - .5,
+      Math.random() - .5
+    ).multiplyScalar(this.voxelSize * .38));
+    this.addDensityAt(
+      inward,
+      amount * Math.pow(this.voxelSize, 3) * .94,
+      this.voxelSize * 1.35
+    );
+  }
+
+  inspectCrumbleCell(x, y, z, dt) {
+    if (this.collapseBudget <= 0) return;
+    const index = this.index(x, y, z);
+    this.collapseCooldown[index] = Math.max(
+      0,
+      this.collapseCooldown[index] - dt
+    );
+    this.damage[index] *= Math.exp(-dt * .10);
+    if (
+      this.collapseCooldown[index] > 0 ||
+      this.damage[index] < .11 ||
+      this.density[index] < .56
+    ) return;
+
+    const neighbors = [
+      [x - 1, y, z], [x + 1, y, z],
+      [x, y - 1, z], [x, y + 1, z],
+      [x, y, z - 1], [x, y, z + 1]
+    ];
+    let solid = 0;
+    let voids = 0;
+    for (const neighbor of neighbors) {
+      if (!this.valid(neighbor[0], neighbor[1], neighbor[2])) {
+        voids += 1;
+        continue;
+      }
+      const value =
+        this.density[this.index(neighbor[0], neighbor[1], neighbor[2])];
+      if (value >= .48) solid += 1;
+      else voids += 1;
+    }
+    if (voids < 2 || solid > 4) return;
+
+    const point = this.cellWorld(x, y, z, new THREE.Vector3());
+    const radial = point.clone().normalize();
+    const inwardPoint = point.clone().addScaledVector(
+      radial,
+      -this.voxelSize * 1.25
+    );
+    const inwardSupport = this.sampleDensity(inwardPoint);
+    if (solid >= 4 && inwardSupport > .38) return;
+
+    const amount = Math.min(
+      .22,
+      Math.max(.07, (this.density[index] - .42) * .38)
+    );
+    this.density[index] -= amount;
+    this.damage[index] *= .54;
+    this.collapseCooldown[index] = .16 + Math.random() * .14;
+    this.collapseBudget -= 1;
+    this.spawnCollapseCell(x, y, z, index, amount);
+    this.markDamageNeighbors(x, y, z, .06);
+    this.markActiveCell(x, y, z, 3.4);
+    this.surfaceDirty = true;
+  }
+
+  updateActiveBricks(dt) {
+    if (!this.activeBricks.size) return;
+    this.collapseAccumulator += dt;
+    if (this.collapseAccumulator >= .055) {
+      this.collapseAccumulator %= .055;
+      this.collapseBudget = 9;
+      this.nextClump += 1;
+    } else {
+      this.collapseBudget = 0;
+    }
+
+    const entries = Array.from(this.activeBricks.entries());
+    for (const entry of entries) {
+      const key = entry[0];
+      const bz = Math.floor(
+        key / (this.bricksPerAxis * this.bricksPerAxis)
+      );
+      const remainder =
+        key - bz * this.bricksPerAxis * this.bricksPerAxis;
+      const by = Math.floor(remainder / this.bricksPerAxis);
+      const bx = remainder - by * this.bricksPerAxis;
+      const startX = bx * this.brickSize;
+      const startY = by * this.brickSize;
+      const startZ = bz * this.brickSize;
+      for (
+        let z = startZ;
+        z < Math.min(this.resolution - 1, startZ + this.brickSize);
+        z += 1
+      ) {
+        for (
+          let y = startY;
+          y < Math.min(this.resolution - 1, startY + this.brickSize);
+          y += 1
+        ) {
+          for (
+            let x = startX;
+            x < Math.min(this.resolution - 1, startX + this.brickSize);
+            x += 1
+          ) {
+            this.inspectCrumbleCell(x, y, z, dt);
+          }
+        }
+      }
+      const next = entry[1] - dt;
+      if (next <= 0) this.activeBricks.delete(key);
+      else this.activeBricks.set(key, next);
+    }
+  }
+
+  updateParticles(dt) {
+    // No detached particle phase.
+  }
+
+  updateParticleBuffers() {
+    // No point-sprite buffers.
+  }
+
+  rebuildSurface(force) {
+    const now = performance.now();
+    if (
+      !force &&
+      (!this.surfaceDirty || now - this.lastSurfaceUpdate < 32)
+    ) return;
+    this.surface.field.set(this.density);
+    this.surface.update();
+    const surfacePositions =
+      this.surface.geometry.getAttribute("position");
+    if (surfacePositions && surfacePositions.count) {
+      this.surface.geometry.computeBoundingSphere();
+    }
+    this.surfaceDirty = false;
+    this.lastSurfaceUpdate = now;
+  }
+
+  endContact() {
+    if (this.contact) this.contact.down = false;
+    this.contact = null;
+  }
+
+  render(now) {
+    if (!this.visible) return;
+    const dt = THREE.MathUtils.clamp(
+      (now - this.lastTime) / 1000,
+      .001,
+      .034
+    );
+    this.lastTime = now;
+    this.updateCamera();
+    this.updateHeldPress(dt, now);
+    this.updateActiveBricks(dt);
+    this.updateParticles(dt);
+    this.rebuildSurface(false);
+    this.renderer.render(this.scene, this.camera);
+  }
+}
+
+function ensureSnowSystem() {
+  if (!snowSystem) {
+    snowSystem = new SparseSnowSphere(snowCanvas);
+    window.__snowSystem = snowSystem;
+  }
+  return snowSystem;
+}
+
+window.__snowSystem = null;
+
+/* Motion-adaptive debris: idle materials add no work. Fast snow/sand
+   regions alone receive a small high-detail particle budget. */
+const debrisCanvas = document.getElementById("debrisCanvas");
+const debrisRenderer = new THREE.WebGLRenderer({
+  canvas: debrisCanvas,
+  alpha: true,
+  antialias: false,
+  premultipliedAlpha: true,
+  powerPreference: "high-performance"
+});
+debrisRenderer.setPixelRatio(1);
+debrisRenderer.setClearColor(0x000000, 0);
+const debrisScene = new THREE.Scene();
+const debrisCamera = new THREE.OrthographicCamera(0, 1, 1, 0, -1000, 1000);
+debrisCamera.position.z = 10;
+
+const MAX_DEBRIS = 720;
+const debrisPositions = new Float32Array(MAX_DEBRIS * 3);
+const debrisColors = new Float32Array(MAX_DEBRIS * 3);
+const debrisSizes = new Float32Array(MAX_DEBRIS);
+const debrisAlphas = new Float32Array(MAX_DEBRIS);
+const debrisKinds = new Float32Array(MAX_DEBRIS);
+const debrisGeometry = new THREE.BufferGeometry();
+debrisGeometry.setAttribute(
+  "position", new THREE.BufferAttribute(debrisPositions, 3)
+);
+debrisGeometry.setAttribute(
+  "aColor", new THREE.BufferAttribute(debrisColors, 3)
+);
+debrisGeometry.setAttribute(
+  "aSize", new THREE.BufferAttribute(debrisSizes, 1)
+);
+debrisGeometry.setAttribute(
+  "aAlpha", new THREE.BufferAttribute(debrisAlphas, 1)
+);
+debrisGeometry.setAttribute(
+  "aKind", new THREE.BufferAttribute(debrisKinds, 1)
+);
+debrisGeometry.setDrawRange(0, 0);
+
+const debrisMaterial = new THREE.ShaderMaterial({
+  transparent: true,
+  premultipliedAlpha: true,
+  depthTest: false,
+  depthWrite: false,
+  vertexColors: true,
+  blending: THREE.NormalBlending,
+  vertexShader: [
+    "attribute vec3 aColor;",
+    "attribute float aSize;",
+    "attribute float aAlpha;",
+    "attribute float aKind;",
+    "varying vec3 vColor;",
+    "varying float vAlpha;",
+    "varying float vKind;",
+    "void main(){",
+    "  vColor=aColor; vAlpha=aAlpha; vKind=aKind;",
+    "  gl_PointSize=aSize;",
+    "  gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);",
+    "}"
+  ].join("\n"),
+  fragmentShader: [
+    "precision highp float;",
+    "varying vec3 vColor;",
+    "varying float vAlpha;",
+    "varying float vKind;",
+    "void main(){",
+    "  vec2 p=gl_PointCoord-vec2(.5);",
+    "  float d=length(p)*2.0;",
+    "  float edge=1.0-smoothstep(mix(.78,.36,vKind),1.0,d);",
+    "  if(edge<=.002) discard;",
+    "  float light=mix(.63,1.18,clamp(1.0-length(p-vec2(-.16,.17))*1.7,0.0,1.0));",
+    "  float alpha=vAlpha*edge;",
+    "  gl_FragColor=vec4(vColor*light*alpha,alpha);",
+    "}"
+  ].join("\n")
+});
+const debrisPoints = new THREE.Points(debrisGeometry, debrisMaterial);
+debrisScene.add(debrisPoints);
+const debrisParticles = [];
+let debrisPreviousTime = performance.now();
+
+function clearDebris() {
+  debrisParticles.length = 0;
+  debrisGeometry.setDrawRange(0, 0);
+}
+
+function clearCloudBrushes() {
+  window.__stressLabCloudBrushes.fill(0);
+  cloudBrushCursor = 0;
+}
+
+let cloudBrushCursor = 0;
+function addCloudBrush(clientX, clientY, speed) {
+  if (MATERIALS[state.selected].id !== "cloud") return;
+  const brushes = window.__stressLabCloudBrushes;
+  const offset = cloudBrushCursor * 4;
+  brushes[offset] = clientX / Math.max(1, window.innerWidth);
+  brushes[offset + 1] = clientY / Math.max(1, window.innerHeight);
+  brushes[offset + 2] = Math.min(.19, .06 + speed / 10500);
+  brushes[offset + 3] = Math.min(1, .72 + speed / 2400);
+  cloudBrushCursor = (cloudBrushCursor + 1) % 8;
+}
+
+function spawnDebris(clientX, clientY, velocityX, velocityY, speed) {
+  return;
+  const material = MATERIALS[state.selected];
+  // Snow fragments are now the actual MLS-MPM particles. Keep the old
+  // screen-space grains only for Sand until its separate rebuild.
+  if (material.id !== "sand") return;
+  if (speed < 135) return;
+
+  const snow = material.id === "snow";
+  const energy = Math.min(1.8, Math.max(.3, speed / 720));
+  const count = Math.min(
+    snow ? 16 : 27,
+    Math.round((snow ? 5 : 9) + energy * (snow ? 5 : 10))
+  );
+  const centerX = window.innerWidth * .5;
+  const centerY = window.innerHeight * .5;
+  let radialX = clientX - centerX;
+  let radialY = clientY - centerY;
+  const radialLength = Math.hypot(radialX, radialY) || 1;
+  radialX /= radialLength;
+  radialY /= radialLength;
+  const sharedVX = velocityX * (snow ? .56 : .68);
+  const sharedVY = velocityY * (snow ? .56 : .68);
+
+  for (let index = 0; index < count; index += 1) {
+    if (debrisParticles.length >= MAX_DEBRIS) debrisParticles.shift();
+    const clump = snow ? Math.floor(index / 3) : index;
+    const angleNoise = Math.sin(clump * 12.9898 + performance.now() * .001);
+    const spread = snow ? 11 : 18;
+    const grain = snow ? 4.0 + Math.random() * 5.8 : 1.35 + Math.random() * 2.45;
+    const colorNoise = snow ? .9 + Math.random() * .1 : .82 + Math.random() * .24;
+    const baseColor = snow ? [0.91, 0.965, 0.99] : [0.82, 0.59, 0.33];
+    debrisParticles.push({
+      x: clientX + (Math.random() - .5) * spread,
+      y: clientY + (Math.random() - .5) * spread,
+      z: (Math.random() - .5) * 72,
+      vx: sharedVX + radialX * (72 + 78 * energy) + angleNoise * 44 + (Math.random() - .5) * 74,
+      vy: sharedVY + radialY * (72 + 78 * energy) - angleNoise * 44 + (Math.random() - .5) * 74,
+      vz: (Math.random() - .5) * (snow ? 155 : 220),
+      size: grain,
+      color: baseColor.map(function (value) { return value * colorNoise; }),
+      kind: snow ? 1 : 0,
+      age: 0,
+      life: (snow ? 5.1 : 6.6) + Math.random() * 2.2,
+      escaped: radialLength > Math.min(window.innerWidth, window.innerHeight) * .285
+    });
+  }
+}
+
+function updateTransientParticles(now) {
+  const dt = Math.min(.034, Math.max(.001, (now - debrisPreviousTime) / 1000));
+  debrisPreviousTime = now;
+  const centerX = window.innerWidth * .5;
+  const centerY = window.innerHeight * .5;
+  const coreRadius = Math.min(window.innerWidth, window.innerHeight) * .285;
+
+  for (let index = debrisParticles.length - 1; index >= 0; index -= 1) {
+    const particle = debrisParticles[index];
+    particle.age += dt;
+    const dx = particle.x - centerX;
+    const dy = particle.y - centerY;
+    const centralStrength = particle.kind ? 1.33 : 1.58;
+    particle.vx += -dx * centralStrength * dt;
+    particle.vy += -dy * centralStrength * dt;
+    particle.vz += -particle.z * centralStrength * dt;
+    const drag = Math.exp(-(particle.kind ? .12 : .055) * dt);
+    particle.vx *= drag;
+    particle.vy *= drag;
+    particle.vz *= drag;
+    particle.x += particle.vx * dt;
+    particle.y += particle.vy * dt;
+    particle.z += particle.vz * dt;
+
+    const radius = Math.hypot(
+      particle.x - centerX, particle.y - centerY, particle.z * .42
+    );
+    const inward =
+      (particle.x - centerX) * particle.vx +
+      (particle.y - centerY) * particle.vy + particle.z * particle.vz * .18;
+    if (radius > coreRadius * 1.05) particle.escaped = true;
+    if (particle.age > particle.life ||
+        (particle.escaped && particle.age > .38 &&
+         radius < coreRadius * .95 && inward < 0)) {
+      debrisParticles.splice(index, 1);
+    }
+  }
+
+  for (let index = 0; index < debrisParticles.length; index += 1) {
+    const particle = debrisParticles[index];
+    const offset = index * 3;
+    const lifeFade = Math.min(1, (particle.life - particle.age) * 1.8);
+    const depthScale = THREE.MathUtils.clamp(1 + particle.z / 420, .58, 1.5);
+    debrisPositions[offset] = particle.x;
+    debrisPositions[offset + 1] = window.innerHeight - particle.y;
+    debrisPositions[offset + 2] = particle.z * .01;
+    debrisColors[offset] = particle.color[0];
+    debrisColors[offset + 1] = particle.color[1];
+    debrisColors[offset + 2] = particle.color[2];
+    debrisSizes[index] = particle.size * depthScale;
+    debrisAlphas[index] = Math.max(0, lifeFade) * (particle.kind ? .9 : .96);
+    debrisKinds[index] = particle.kind;
+  }
+  debrisGeometry.setDrawRange(0, debrisParticles.length);
+  Object.keys(debrisGeometry.attributes).forEach(function (name) {
+    debrisGeometry.attributes[name].needsUpdate = true;
+  });
+
+  const brushes = window.__stressLabCloudBrushes;
+  const decay = Math.pow(.997, dt * 60);
+  for (let offset = 0; offset < brushes.length; offset += 4) {
+    if (brushes[offset + 3] <= .004) continue;
+    brushes[offset + 2] = Math.min(.24, brushes[offset + 2] + .009 * dt);
+    brushes[offset + 3] *= decay;
+  }
+}
+
+const orientationEuler = new THREE.Euler();
+const orientationQuaternion = new THREE.Quaternion();
+const screenQuaternion = new THREE.Quaternion();
+const correctionQuaternion =
+  new THREE.Quaternion(-Math.sqrt(.5), 0, 0, Math.sqrt(.5));
+const zee = new THREE.Vector3(0, 0, 1);
+let orientationBaseline = null;
+
+function screenOrientationRadians() {
+  const angle =
+    (screen.orientation && screen.orientation.angle) || window.orientation || 0;
+  return THREE.MathUtils.degToRad(Number(angle) || 0);
+}
+
+function deviceQuaternion(alpha, beta, gamma, orient) {
+  orientationEuler.set(beta, alpha, -gamma, "YXZ");
+  orientationQuaternion.setFromEuler(orientationEuler);
+  orientationQuaternion.multiply(correctionQuaternion);
+  orientationQuaternion.multiply(
+    screenQuaternion.setFromAxisAngle(zee, -orient)
+  );
+  return orientationQuaternion;
+}
+
+function onDeviceOrientation(event) {
+  if (event.alpha == null) return;
+  const alpha = THREE.MathUtils.degToRad(event.alpha || 0);
+  const beta = THREE.MathUtils.degToRad(event.beta || 0);
+  const gamma = THREE.MathUtils.degToRad(event.gamma || 0);
+  const raw =
+    deviceQuaternion(alpha, beta, gamma, screenOrientationRadians()).clone();
+  if (!orientationBaseline) orientationBaseline = raw.clone().invert();
+  const relative = orientationBaseline.clone().multiply(raw);
+  panoCamera.quaternion.slerp(relative, .26);
+
+  const relativeEuler = new THREE.Euler().setFromQuaternion(relative, "YXZ");
+  window.__stressLabOrientation.yaw = -relativeEuler.y;
+  window.__stressLabOrientation.pitch =
+    THREE.MathUtils.clamp(relativeEuler.x, -.7, .7);
+  window.__stressLabOrientation.roll = relativeEuler.z;
+
+  if (!state.gyroSeen) {
+    state.gyroSeen = true;
+    state.gyroActive = true;
+    gyroButton.textContent = "Center";
+    gyroButton.classList.add("active");
+  }
+}
+
+async function enableGyro() {
+  try {
+    if (typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function") {
+      const permission = await DeviceOrientationEvent.requestPermission();
+      if (permission !== "granted") return;
+    }
+    window.removeEventListener("deviceorientation", onDeviceOrientation);
+    window.addEventListener("deviceorientation", onDeviceOrientation, true);
+    state.gyroActive = true;
+    orientationBaseline = null;
+    gyroButton.classList.add("active");
+    gyroButton.textContent = "Center";
+  } catch (error) {
+    console.warn("Motion permission unavailable", error);
+  }
+}
+
+gyroButton.addEventListener("click", async function () {
+  if (!state.gyroActive) {
+    await enableGyro();
+  } else {
+    orientationBaseline = null;
+    window.__stressLabOrientation.yaw = 0;
+    window.__stressLabOrientation.pitch = 0;
+    window.__stressLabOrientation.roll = 0;
+  }
+});
+
+if (typeof DeviceOrientationEvent !== "undefined" &&
+    typeof DeviceOrientationEvent.requestPermission !== "function") {
+  enableGyro();
+}
+
+function resizePanorama() {
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  panoRenderer.setSize(width, height, false);
+  panoCamera.aspect = width / Math.max(1, height);
+  panoCamera.updateProjectionMatrix();
+  debrisRenderer.setSize(width, height, false);
+  debrisCamera.left = 0;
+  debrisCamera.right = width;
+  debrisCamera.top = height;
+  debrisCamera.bottom = 0;
+  debrisCamera.updateProjectionMatrix();
+  if (snowSystem) snowSystem.resize();
+}
+window.addEventListener("resize", resizePanorama, { passive: true });
+resizePanorama();
+
+function renderPanorama(now) {
+  updateTransientParticles(now || performance.now());
+  panoRenderer.render(panoScene, panoCamera);
+  if (snowSystem) snowSystem.render(now || performance.now());
+  debrisRenderer.render(debrisScene, debrisCamera);
+  requestAnimationFrame(renderPanorama);
+}
+renderPanorama();
+
+const REPO = "https://cdn.jsdelivr.net/gh/matsuoka-601/Splash@main";
+// The standalone build replaces this with Splash's six original cubemap PNGs.
+// Keeping a null fallback makes source/app.js usable during local development.
+const CUBEMAP_DATA_URLS = [
+  REPO + "/public/cubemap/posx.png",
+  REPO + "/public/cubemap/negx.png",
+  REPO + "/public/cubemap/posy.png",
+  REPO + "/public/cubemap/negy.png",
+  REPO + "/public/cubemap/posz.png",
+  REPO + "/public/cubemap/negz.png"
+];
+window.__stressLabCubemapData = CUBEMAP_DATA_URLS;
+const TS = window.ts;
+
+if (!navigator.gpu) {
+  throw new Error(
+    "WebGPU is unavailable. Use current Chrome or Edge on Android/desktop " +
+    "and serve this page over HTTPS."
+  );
+}
+
+function block(lines) {
+  return lines.join("\n");
+}
+
+async function getText(path) {
+  status.textContent = "Loading Splash • " + path;
+  const urls = [
+    REPO + "/" + path,
+    "https://raw.githubusercontent.com/matsuoka-601/Splash/main/" + path,
+    "https://raw.githack.com/matsuoka-601/Splash/main/" + path
+  ];
+  let lastError = null;
+  for (const url of urls) {
+    try {
+      const response = await fetch(url, { cache: "no-store", mode: "cors" });
+      if (response.ok) return await response.text();
+      lastError = new Error("HTTP " + response.status + " from " + url);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw new Error(
+    "Could not load Splash source " + path + ". " +
+    "Tried GitHub, jsDelivr and githack. " +
+    String(lastError?.message || lastError || "Network request failed")
+  );
+}
+
+function dirname(path) {
+  const index = path.lastIndexOf("/");
+  return index === -1 ? "" : path.substring(0, index + 1);
+}
+
+function normalizePath(path) {
+  const output = [];
+  path.split("/").forEach(function (piece) {
+    if (!piece || piece === ".") return;
+    if (piece === "..") output.pop();
+    else output.push(piece);
+  });
+  return output.join("/");
+}
+
+function resolvePath(parent, relative) {
+  return normalizePath(dirname(parent) + relative);
+}
+
+function rewritePackages(source) {
+  return source
+    .replace(
+      /from\s+['"]wgpu-matrix['"]/g,
+      'from "https://cdn.jsdelivr.net/npm/wgpu-matrix@3.3.0/+esm"'
+    )
+    .replace(
+      /from\s+['"]lil-gui['"]/g,
+      'from "https://cdn.jsdelivr.net/npm/lil-gui@0.20.0/+esm"'
+    );
+}
+
+function compile(source, filename) {
+  const result = TS.transpileModule(source, {
+    fileName: filename,
+    compilerOptions: {
+      target: TS.ScriptTarget.ES2022,
+      module: TS.ModuleKind.ES2022,
+      moduleResolution: TS.ModuleResolutionKind.Bundler,
+      useDefineForClassFields: false,
+      strict: false
+    }
+  });
+  if (result.diagnostics && result.diagnostics.length) {
+    console.warn("TypeScript diagnostics for " + filename, result.diagnostics);
+  }
+  return result.outputText;
+}
+
+function moduleURL(source) {
+  return URL.createObjectURL(
+    new Blob([source], { type: "text/javascript" })
+  );
+}
+
+const MATERIAL_STRUCT_WGSL = block([
+  "struct MaterialParams {",
+  "  physical: vec4f,",
+  "  motion: vec4f,",
+  "  behavior: vec4f,",
+  "  surface: vec4f,",
+  "  interaction: vec4f,",
+  "  cloudBrush0: vec4f,",
+  "  cloudBrush1: vec4f,",
+  "  cloudBrush2: vec4f,",
+  "  cloudBrush3: vec4f,",
+  "  cloudBrush4: vec4f,",
+  "  cloudBrush5: vec4f,",
+  "  cloudBrush6: vec4f,",
+  "  cloudBrush7: vec4f,",
+  "}"
+]);
+
+function patchP2GMaterial(shader) {
+  shader = shader.replace(
+    "struct Particle {",
+    MATERIAL_STRUCT_WGSL + "\nstruct Particle {"
+  );
+  shader = shader.replace(
+    "@group(0) @binding(5) var<uniform> dt: f32;",
+    block([
+      "@group(0) @binding(5) var<uniform> dt: f32;",
+      "@group(0) @binding(6) var<uniform> material: MaterialParams;"
+    ])
+  );
+
+  const constitutiveRegex =
+    /\s*let volume:\s*f32\s*=\s*1\.0\s*\/\s*density;[^\n]*\n\s*densities\[id\.x\]\s*=\s*density;[\s\S]*?stress\s*\+=\s*dynamicViscosity\s*\*\s*strain;/;
+  const originalConstitutive = shader.match(constitutiveRegex);
+  if (!originalConstitutive) {
+    throw new Error("Could not install material constitutive response.");
+  }
+  const variantConstitutive = block([
+    "",
+    "        // Water has already run Splash's original equations above.",
+    "        // Only non-water materials replace the resulting stress.",
+    "        if (material.interaction.z > 0.5) {",
+    "            var variantPressure = max(",
+    "                material.physical.w,",
+    "                material.physical.x *",
+    "                (pow(density / material.physical.y, 1.0) - 1.0)",
+    "            );",
+    "            let strainMagnitude = sqrt(",
+    "                dot(strain[0],strain[0]) +",
+    "                dot(strain[1],strain[1]) +",
+    "                dot(strain[2],strain[2])",
+    "            );",
+    "            let shear = smoothstep(",
+    "                material.behavior.x * 0.18,",
+    "                max(material.behavior.x, 0.0001),",
+    "                strainMagnitude",
+    "            );",
+    "            if (material.interaction.z < 2.5) {",
+    "                variantPressure *= mix(1.0, 0.34, shear);",
+    "            }",
+    "            stress = mat3x3f(",
+    "                -variantPressure,0.0,0.0,",
+    "                0.0,-variantPressure,0.0,",
+    "                0.0,0.0,-variantPressure",
+    "            );",
+    "            var variantViscosity = material.physical.z;",
+    "            if (material.interaction.z < 2.5) {",
+    "                variantViscosity = mix(",
+    "                    material.physical.z,",
+    "                    material.physical.z * 0.075,",
+    "                    shear",
+    "                );",
+    "            }",
+    "            stress += variantViscosity * strain;",
+    "        }"
+  ]);
+  shader = shader.replace(
+    constitutiveRegex,
+    originalConstitutive[0] + variantConstitutive
+  );
+  return shader;
+}
+
+function patchGridMaterial(shader) {
+  shader = shader.replace(
+    "struct MouseInfo {",
+    MATERIAL_STRUCT_WGSL + "\nstruct MouseInfo {"
+  );
+  shader = shader.replace(
+    "@group(0) @binding(6) var<uniform> dt: f32;",
+    block([
+      "@group(0) @binding(6) var<uniform> dt: f32;",
+      "@group(0) @binding(7) var<uniform> material: MaterialParams;"
+    ])
+  );
+
+  const gravityRegex =
+    /floatV\.y\s*\+\s*strength\s*\*\s*forceDir\.y\s*-\s*0\.40\s*\*\s*dt/g;
+  if (!gravityRegex.test(shader)) {
+    throw new Error("Could not locate Splash downward gravity.");
+  }
+  gravityRegex.lastIndex = 0;
+  shader = shader.replace(
+    gravityRegex,
+    "floatV.y + strength * forceDir.y"
+  );
+
+  const normalizationRegex =
+    /floatV\s*\/=\s*decodeFixedPoint\s*\(\s*cells\s*\[\s*id\.x\s*\]\.mass\s*\)\s*;/;
+  const match = shader.match(normalizationRegex);
+  if (!match) throw new Error("Could not locate Splash grid normalization.");
+
+  const materialMotion = block([
+    "",
+    "            let gridX=f32(i32(id.x)/i32(initBoxSize.z)/i32(initBoxSize.y));",
+    "            let gridY=f32((i32(id.x)/i32(initBoxSize.z))%i32(initBoxSize.y));",
+    "            let gridZ=f32(i32(id.x)%i32(initBoxSize.z));",
+    "            let gridPosition=vec3f(gridX,gridY,gridZ);",
+    "            let toCenter=initBoxSize*0.5-gridPosition;",
+    "            // Exact zero-G water field from the first build.",
+    "            floatV += toCenter * 0.016 * dt;",
+    "            floatV *= max(0.0, 1.0 - 0.015 * dt);",
+    "            if (material.interaction.z > 0.5) {",
+    "                floatV += toCenter * (material.motion.x - 0.016) * dt;",
+    "                let flowSpeed=length(floatV);",
+    "                if (flowSpeed>0.0001) {",
+    "                    floatV *= max(0.0,1.0-material.interaction.y*dt/flowSpeed);",
+    "                }",
+    "                let phase=gridX*.37+gridY*.23+gridZ*.31;",
+    "                let drift=vec3f(",
+    "                    sin(phase+gridY*.11),",
+    "                    cos(phase*.83+gridZ*.09),",
+    "                    sin(phase*1.17+gridX*.07)",
+    "                );",
+    "                floatV += drift * material.behavior.z * dt;",
+    "                floatV.y += material.behavior.w * dt;",
+    "                floatV *= max(",
+    "                    0.0,",
+    "                    1.0 - max(0.0, material.motion.y - 0.015) * dt",
+    "                );",
+    "            }",
+    ""
+  ]);
+  shader = shader.replace(normalizationRegex, match[0] + materialMotion);
+  shader = shader.replace(
+    /let strength = smoothstep\(r\*r,\s*0\.,\s*cellSquareDistToMouse\) \* 0\.2;/,
+    block([
+      "var strength=smoothstep(r*r,0.,cellSquareDistToMouse)*0.2;",
+      "            if(material.interaction.z>0.5){",
+      "                strength*=material.motion.z;",
+      "            }"
+    ])
+  );
+  return shader;
+}
+
+function patchG2PMaterial(shader) {
+  shader = shader.replace(
+    "struct Particle {",
+    MATERIAL_STRUCT_WGSL + "\nstruct Particle {"
+  );
+  shader = shader.replace(
+    "@group(0) @binding(5) var<uniform> dt: f32;",
+    block([
+      "@group(0) @binding(5) var<uniform> dt: f32;",
+      "@group(0) @binding(6) var<uniform> material: MaterialParams;"
+    ])
+  );
+  shader = shader.replace(
+    "particles[id.x].C = B * 4.0f;",
+    block([
+      "particles[id.x].C = B * 4.0f;",
+      "        // Preserve Splash verbatim for Water; alter only variants.",
+      "        if(material.interaction.z>0.5){",
+      "            var updatedC=particles[id.x].C;",
+      "            let cNorm=sqrt(",
+      "                dot(updatedC[0],updatedC[0])+",
+      "                dot(updatedC[1],updatedC[1])+",
+      "                dot(updatedC[2],updatedC[2])",
+      "            );",
+      "            let movement=smoothstep(.08,1.8,length(particles[id.x].v));",
+      "            var yieldLimit=material.behavior.x;",
+      "            if(material.interaction.z<2.5){",
+      "                yieldLimit=mix(yieldLimit,yieldLimit*5.0,movement);",
+      "            }",
+      "            if(cNorm>yieldLimit){",
+      "                updatedC*=yieldLimit/max(cNorm,.0001);",
+      "            }",
+      "            var damping=material.behavior.y;",
+      "            var retention=material.motion.w;",
+      "            if(material.interaction.z<2.5){",
+      "                damping=mix(damping,damping*.06,movement);",
+      "                retention=mix(retention,1.0,movement);",
+      "                let p=particles[id.x].position;",
+      "                let phase=p.x*.73+p.y*1.11+p.z*.47;",
+      "                let scatter=vec3f(",
+      "                    sin(phase*1.7),",
+      "                    cos(phase*1.3),",
+      "                    sin(phase*2.1+.8)",
+      "                );",
+      "                particles[id.x].v+=",
+      "                    scatter*material.behavior.z*movement;",
+      "            }",
+      "            updatedC*=max(0.0,1.0-damping);",
+      "            particles[id.x].C=updatedC;",
+      "            particles[id.x].v*=retention;",
+      "        }"
+    ])
+  );
+  return shader;
+}
+
+function patchFluidSurface(shader) {
+  shader = shader.replace(
+    "@group(0) @binding(0) var textureSampler: sampler;",
+    MATERIAL_STRUCT_WGSL +
+      "\n@group(0) @binding(0) var textureSampler: sampler;"
+  );
+  shader = shader.replace(
+    "@group(0) @binding(7) var<uniform> density: f32;",
+    block([
+      "@group(0) @binding(7) var<uniform> density: f32;",
+      "@group(0) @binding(8) var<uniform> material: MaterialParams;"
+    ])
+  );
+  shader = shader.replace(
+    /if \(depth >= 1e4\) \{\s*let bgColor:[\s\S]*?return vec4f\(bgColor, 0\.\);\s*\}/,
+    block([
+      "if (depth >= 1e4) {",
+      "        return vec4f(0.);",
+      "    }"
+    ])
+  );
+  // Splash's stock shader contains a hard-coded grey tiled floor.
+  // Refraction now samples the synchronized background texture directly,
+  // while reflection uses only the synchronized cubemap in every direction.
+  shader = shader.replace(
+    "var transmitted = pow(textureSampleLevel(envmapTexture, textureSampler, refractionDirWorld, 0.0).rgb, vec3f(2.2));",
+    block([
+      "let refractedUV = calcReflactedTexCoord(surfacePosView, refractionDirView, thickness);",
+      "    var transmitted = pow(textureSampleLevel(bgTexture, textureSampler, refractedUV, 0.0).rgb, vec3f(2.2));"
+    ])
+  );
+  shader = shader.replace(
+    /\s*if \(refractionDirWorld\.y < 0\.\) \{[\s\S]*?transmitted = select\(transmitted, invGamma\(floor\.rgb\), floor\.w > 0\.5\);\s*\}/,
+    ""
+  );
+  shader = shader.replace(
+    /var reflectionColor: vec3f = invGamma\(select\(textureSampleLevel\(envmapTexture, textureSampler, reflectionDirWorld, 0\.\)\.rgb, vec3f\(0\.75\), reflectionDirWorld\.y < 0\.\)\);/,
+    "var reflectionColor: vec3f = invGamma(textureSampleLevel(envmapTexture, textureSampler, reflectionDirWorld, 0.).rgb);"
+  );
+  shader = shader.replace(
+    /\s*fresnel = select\(fresnel, 0\.1 \* fresnel, reflectionDirWorld\.y < 0\.\);\s*fresnelBiased = select\(fresnelBiased, 0\.1 \* fresnelBiased, reflectionDirWorld\.y < 0\.\);/,
+    ""
+  );
+
+  shader = shader.replace(
+    /var finalColor = 0\.0\s*\*\s*specular \+ mix\(refractionColor, reflectionColor, fresnel\) \+ 0\. \* fresnel;\s*\n\s*return vec4f\(gamma\(finalColor\), 1\.0\);/,
+    block([
+      "var finalColor = 0.0 * specular + " +
+        "mix(refractionColor, reflectionColor, fresnel) + 0. * fresnel;",
+      "    if (material.interaction.z < 0.5) {",
+      "        finalColor = min(finalColor * 1.08 + vec3f(0.012), vec3f(1.0));",
+      "    }",
+      "    if (material.interaction.z > 0.5) {",
+      "        let tintAmount = clamp(material.surface.x, 0.0, 0.94);",
+      "        let roughness = clamp(material.surface.y, 0.0, 1.0);",
+      "        let edgeLight = mix(",
+      "            0.80, 1.10, fresnel * (1.0 - roughness * 0.58)",
+      "        );",
+      "        let sheen = pow(",
+      "            clamp(fresnel, 0.0, 1.0),",
+      "            mix(1.5, 5.0, roughness)",
+      "        ) * material.surface.z * 0.16;",
+      "        let tinted = diffuseColor * edgeLight + vec3f(sheen);",
+      "        finalColor = mix(finalColor, tinted, tintAmount);",
+      "    }",
+      "    if (material.interaction.z > 1.5 && material.interaction.z < 2.5) {",
+      "        let grazing = pow(clamp(fresnel, 0.0, 1.0), 2.4);",
+      "        let warmBody = diffuseColor * (0.72 + 0.22 * (1.0 - fresnel));",
+      "        let softSpec = reflectionColor * grazing * 0.055;",
+      "        let depthShade = mix(0.84, 1.08, smoothstep(0.10, 1.65, thickness));",
+      "        finalColor = warmBody * depthShade + softSpec;",
+      "    }",
+      "    if (material.interaction.z > 2.5 && material.interaction.z < 3.5) {",
+      "        let t = max(thickness, 0.0);",
+      "        let membrane = 1.0 - smoothstep(0.18, 0.72, t);",
+      "        let deep = smoothstep(0.55, 2.25, t);",
+      "        let absorption = exp(-vec3f(2.35, 0.24, 2.10) * t * 0.92);",
+      "        let transmittedSlime = transmitted * absorption + diffuseColor * (vec3f(1.0) - absorption);",
+      "        let sculpt = 0.66 + 0.34 * (1.0 - clamp(fresnel, 0.0, 1.0));",
+      "        let cavity = 0.74 + 0.26 * deep;",
+      "        let body = diffuseColor * sculpt * cavity * mix(0.90, 1.08, deep);",
+      "        let rim = pow(clamp(fresnel, 0.0, 1.0), 2.1);",
+      "        let sharpHighlight = pow(clamp(fresnelBiased, 0.0, 1.0), 4.8);",
+      "        let envSpec = reflectionColor * (0.10 + rim * 0.72 + sharpHighlight * 0.46);",
+      "        let thickColor = body + envSpec;",
+      "        let membraneColor = transmittedSlime * 0.78 + diffuseColor * 0.20 + envSpec * 0.48;",
+      "        finalColor = mix(thickColor, membraneColor, membrane * 0.88);",
+      "    }",
+      "    return vec4f(gamma(finalColor), 1.0);"
+    ])
+  );
+  return shader;
+}
+
+function patchEnvironmentBackground(shader) {
+  // Splash's original bgColor.wgsl paints a finite grey grid floor below
+  // the camera. Replace the fragment body after bgColor sampling so the
+  // background is exclusively the currently synchronized environment.
+  return shader.replace(
+    /let bgColor = textureSampleLevel\(envmapTexture, textureSampler, rayDirWorld, 0\.\)\.rgb;[\s\S]*?return vec4f\(finalColor, 1\.\);\s*\}/,
+    block([
+      "let bgColor = textureSampleLevel(envmapTexture, textureSampler, rayDirWorld, 0.).rgb;",
+      "    return vec4f(bgColor, 1.);",
+      "}"
+    ])
+  );
+}
+
+function patchCloudVolume(shader) {
+  shader = shader.replace(
+    "struct FragmentInput {",
+    MATERIAL_STRUCT_WGSL + "\nstruct FragmentInput {"
+  );
+  shader = shader.replace(
+    "@group(0) @binding(6) var<uniform> densityGridSize: vec3f;",
+    block([
+      "@group(0) @binding(6) var<uniform> densityGridSize: vec3f;",
+      "@group(0) @binding(7) var<uniform> diffuseColor: vec3f;",
+      "@group(0) @binding(8) var<uniform> colorDensity: f32;",
+      "@group(0) @binding(9) var<uniform> material: MaterialParams;"
+    ])
+  );
+  shader = shader.replace(
+    /if \(depth >= 1e4\) \{\s*let bgColor:[\s\S]*?return vec4f\(bgColor, 0\.\);\s*\}/,
+    block([
+      "if (depth >= 1e4) {",
+      "        return vec4f(0.);",
+      "    }"
+    ])
+  );
+  shader = shader.replace(
+    "@fragment\nfn fs",
+    block([
+      "fn applyCloudBrush(uv: vec2f, brush: vec4f) -> f32 {",
+      "    if (brush.w <= 0.001) { return 1.0; }",
+      "    var delta = uv - brush.xy;",
+      "    delta.x *= uniforms.texelSize.y / max(uniforms.texelSize.x, 1e-8);",
+      "    let brushDistance = length(delta);",
+      "    let feather = smoothstep(brush.z * 0.24, brush.z, brushDistance);",
+      "    return 1.0 - brush.w * (1.0 - feather);",
+      "}",
+      "",
+      "fn cloudBrushSurvival(uv: vec2f) -> f32 {",
+      "    var survival = 1.0;",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush0);",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush1);",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush2);",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush3);",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush4);",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush5);",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush6);",
+      "    survival *= applyCloudBrush(uv, material.cloudBrush7);",
+      "    return survival;",
+      "}",
+      "",
+      "@fragment",
+      "fn fs"
+    ])
+  );
+  shader = shader.replace(
+    "let densityScale: f32 = 0.2;",
+    "let densityScale: f32 = 0.095 * colorDensity;"
+  );
+  shader = shader.replace(
+    "let albedo: vec3f = vec3f(0, 70, 250) / 256.;",
+    "let albedo: vec3f = diffuseColor;"
+  );
+  shader = shader.replace(
+    "return vec4f(gamma(finalColor), 1.);",
+    block([
+      "let localCoord = clamp(",
+      "        surfacePosWorld / densityGridSize,",
+      "        vec3f(0.002), vec3f(0.998)",
+      "    );",
+      "    let localStep = vec3f(1.6) / densityGridSize;",
+      "    var softDensity = textureSampleLevel(",
+      "        densityGridTexture, textureSampler, localCoord.zyx, 0.",
+      "    ).r * 0.34;",
+      "    softDensity += textureSampleLevel(",
+      "        densityGridTexture, textureSampler,",
+      "        (localCoord + vec3f(localStep.x, 0., 0.)).zyx, 0.",
+      "    ).r * 0.11;",
+      "    softDensity += textureSampleLevel(",
+      "        densityGridTexture, textureSampler,",
+      "        (localCoord - vec3f(localStep.x, 0., 0.)).zyx, 0.",
+      "    ).r * 0.11;",
+      "    softDensity += textureSampleLevel(",
+      "        densityGridTexture, textureSampler,",
+      "        (localCoord + vec3f(0., localStep.y, 0.)).zyx, 0.",
+      "    ).r * 0.11;",
+      "    softDensity += textureSampleLevel(",
+      "        densityGridTexture, textureSampler,",
+      "        (localCoord - vec3f(0., localStep.y, 0.)).zyx, 0.",
+      "    ).r * 0.11;",
+      "    softDensity += textureSampleLevel(",
+      "        densityGridTexture, textureSampler,",
+      "        (localCoord + vec3f(0., 0., localStep.z)).zyx, 0.",
+      "    ).r * 0.11;",
+      "    softDensity += textureSampleLevel(",
+      "        densityGridTexture, textureSampler,",
+      "        (localCoord - vec3f(0., 0., localStep.z)).zyx, 0.",
+      "    ).r * 0.11;",
+      "    let fogEnvelope = 1.0 - exp(-max(0.0, softDensity) * colorDensity * 0.82);",
+      "    let softEdge = smoothstep(0.006, 0.70, fogEnvelope);",
+      "    let survival = cloudBrushSurvival(input.uv);",
+      "    let alpha = material.interaction.w * softEdge * survival;",
+      "    var cloudColor = mix(diffuseColor * 0.985, finalColor, 0.20);",
+      "    cloudColor = mix(cloudColor, vec3f(1.0), 0.42 * softEdge);",
+      "    return vec4f(gamma(cloudColor) * alpha, alpha);"
+    ])
+  );
+  return shader;
+}
+
+/*
+   Keep Splash's original surface and volume shaders intact.  The only
+   wrapper-level change is making their empty pixels transparent so the
+   independent 360-degree panorama remains visible behind the fluid.
+*/
+function patchTransparentFluidBackground(shader) {
+  return shader.replace(
+    /if \(depth >= 1e4\) \{\s*let bgColor:[\s\S]*?return vec4f\(bgColor, 0\.\);\s*\}/,
+    block([
+      "if (depth >= 1e4) {",
+      "        return vec4f(0.);",
+      "    }"
+    ])
+  );
+}
+
+async function inlineWGSL(source, modulePath) {
+  const regex =
+    /import\s+([A-Za-z_$][\w$]*)\s+from\s+['"]([^'"]+\.wgsl)['"]\s*;?/g;
+  const imports = Array.from(source.matchAll(regex));
+  for (const match of imports) {
+    const fullImport = match[0];
+    const variableName = match[1];
+    const shaderPath = resolvePath(modulePath, match[2]);
+    let shaderSource = await getText(shaderPath);
+    if (shaderPath === "mls-mpm/p2g_2.wgsl") {
+      shaderSource = patchP2GMaterial(shaderSource);
+    }
+    if (shaderPath === "mls-mpm/updateGrid.wgsl") {
+      shaderSource = patchGridMaterial(shaderSource);
+    }
+    if (shaderPath === "mls-mpm/g2p.wgsl") {
+      shaderSource = patchG2PMaterial(shaderSource);
+    }
+    if (shaderPath === "render/fluid.wgsl") {
+      shaderSource = patchFluidSurface(shaderSource);
+    }
+    if (shaderPath === "render/bgColor.wgsl") {
+      shaderSource = patchEnvironmentBackground(shaderSource);
+    }
+    if (shaderPath === "render/densityRaymarch.wgsl") {
+      shaderSource = patchCloudVolume(shaderSource);
+    }
+    source = source.replace(
+      fullImport,
+      "const " + variableName + " = " + JSON.stringify(shaderSource) + ";"
+    );
+  }
+  return source;
+}
+
+async function buildCamera() {
+  let source = rewritePackages(await getText("camera.ts"));
+  source = source.replace(
+    /this\.canvas\s*=\s*canvas\s*;/,
+    block([
+      "this.canvas = canvas;",
+      "        this.prevHoverX = canvas.clientWidth * 0.5;",
+      "        this.prevHoverY = canvas.clientHeight * 0.5;",
+      "        this.currentHoverX = canvas.clientWidth * 0.5;",
+      "        this.currentHoverY = canvas.clientHeight * 0.5;"
+    ])
+  );
+  source = source.replace(
+    "mat4.rotateY(mat, this.currentXtheta, mat)",
+    block([
+      "const gyro = (window as any).__stressLabOrientation || " +
+        "{ yaw: 0, pitch: 0 };",
+      "        mat4.rotateY(mat, this.currentXtheta + gyro.yaw, mat)"
+    ])
+  );
+  source = source.replace(
+    "mat4.rotateX(mat, this.currentYtheta, mat)",
+    "mat4.rotateX(mat, this.currentYtheta + gyro.pitch, mat)"
+  );
+  return moduleURL(compile(source, "camera.ts"));
+}
+
+function patchInitialBlob(source) {
+  const start = source.indexOf("    initDambreak(");
+  const end = source.indexOf("    reset(", start);
+  if (start === -1 || end === -1) {
+    throw new Error("Could not locate Splash initDambreak().");
+  }
+
+  const replacement = block([
+    "    initDambreak(initBoxSize: number[], numParticles: number) {",
+    "        const particlesBuf = new ArrayBuffer(",
+    "            mlsmpmParticleStructSize * this.maxParticleCount",
+    "        );",
+    "        const materialId =",
+    "            (window as any).__stressLabMaterial?.id || 'water';",
+    "        const spacing = 0.90;",
+    "        const centerX = initBoxSize[0] * 0.5;",
+    "        const centerY = initBoxSize[1] * 0.5;",
+    "        const centerZ = initBoxSize[2] * 0.5;",
+    "        const approximateRadius = Math.cbrt(",
+    "            numParticles * spacing * spacing * spacing *",
+    "            (3 / (4 * Math.PI))",
+    "        ) * 1.075;",
+    "        const boxLimit = Math.min(",
+    "            initBoxSize[0], initBoxSize[1], initBoxSize[2]",
+    "        ) * 0.5 - 4.5;",
+    "        const radius = Math.min(approximateRadius, boxLimit);",
+    "        const radiusSquared = radius * radius;",
+    "        const candidates: {",
+    "            x: number, y: number, z: number, d2: number",
+    "        }[] = [];",
+    "",
+    "        for (",
+    "            let x = centerX - radius;",
+    "            x <= centerX + radius;",
+    "            x += spacing",
+    "        ) {",
+    "            for (",
+    "                let y = centerY - radius;",
+    "                y <= centerY + radius;",
+    "                y += spacing",
+    "            ) {",
+    "                for (",
+    "                    let z = centerZ - radius;",
+    "                    z <= centerZ + radius;",
+    "                    z += spacing",
+    "                ) {",
+    "                    const dx = x - centerX;",
+    "                    const dy = y - centerY;",
+    "                    const dz = z - centerZ;",
+    "                    const d2 = dx * dx + dy * dy + dz * dz;",
+    "                    if (d2 <= radiusSquared) {",
+    "                        candidates.push({ x, y, z, d2 });",
+    "                    }",
+    "                }",
+    "            }",
+    "        }",
+    "",
+    "        candidates.sort((a, b) => a.d2 - b.d2);",
+    "        const actualCount = Math.min(",
+    "            numParticles, this.maxParticleCount, candidates.length",
+    "        );",
+    "",
+    "        for (let n = 0; n < actualCount; n++) {",
+    "            const point = candidates[n];",
+    "            const offset = mlsmpmParticleStructSize * n;",
+    "            const particleViews = {",
+    "                position: new Float32Array(particlesBuf, offset, 3),",
+    "                v: new Float32Array(particlesBuf, offset + 16, 3),",
+    "                C: new Float32Array(particlesBuf, offset + 32, 12)",
+    "            };",
+    "",
+    "            let px = point.x;",
+    "            let py = point.y;",
+    "            let pz = point.z;",
+    "            let jitter = 0.055;",
+    "            if (materialId === 'snow') jitter = 0.032;",
+    "            if (materialId === 'sand') jitter = 0.085;",
+    "            if (materialId === 'slime') jitter = 0.024;",
+    "            if (materialId === 'cloud') {",
+    "                jitter = 0.12;",
+    "                const dx = point.x - centerX;",
+    "                const dy = point.y - centerY;",
+    "                const dz = point.z - centerZ;",
+    "                const puff =",
+    "                    1.0 +",
+    "                    0.075 * Math.sin(dy * 0.48 + dz * 0.17) +",
+    "                    0.055 * Math.sin(dx * 0.31 - dz * 0.43) +",
+    "                    0.035 * Math.cos(dx * 0.57 + dy * 0.29);",
+    "                px = centerX + dx * puff;",
+    "                py = centerY + dy * puff;",
+    "                pz = centerZ + dz * puff;",
+    "            }",
+    "",
+    "            particleViews.position.set([",
+    "                px + (Math.random() - 0.5) * jitter,",
+    "                py + (Math.random() - 0.5) * jitter,",
+    "                pz + (Math.random() - 0.5) * jitter",
+    "            ]);",
+    "            particleViews.v.set([0, 0, 0]);",
+    "            particleViews.C.fill(0);",
+    "        }",
+    "",
+    "        this.numParticles = actualCount;",
+    "        return particlesBuf.slice(",
+    "            0, mlsmpmParticleStructSize * actualCount",
+    "        );",
+    "    }",
+    "",
+    ""
+  ]);
+  return source.substring(0, start) + replacement + source.substring(end);
+}
+
+function patchSimulatorMaterialBuffer(source) {
+  source = source.replace(
+    "dtBuffer: GPUBuffer",
+    "dtBuffer: GPUBuffer\n    materialBuffer: GPUBuffer"
+  );
+
+  const dtBufferRegex =
+    /this\.dtBuffer\s*=\s*device\.createBuffer\(\{[\s\S]*?usage:\s*GPUBufferUsage\.UNIFORM\s*\|\s*GPUBufferUsage\.COPY_DST,\s*\}\)/;
+  const dtMatch = source.match(dtBufferRegex);
+  if (!dtMatch) throw new Error("Could not locate Splash dt buffer.");
+  source = source.replace(
+    dtBufferRegex,
+    dtMatch[0] + "\n" + block([
+      "        this.materialBuffer = device.createBuffer({",
+      "            label: 'stress material buffer',",
+      "            size: 208,",
+      "            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,",
+      "        })",
+      "        this.setMaterial([",
+      "            50,3,0.16,0,",
+      "            0.016,0.015,1,1,",
+      "            999,0,0,0,",
+      "            0,0,1,1.333,",
+      "            0,0,0,1",
+      "        ])"
+    ])
+  );
+
+  const p2g2End =
+    /(\{ binding: 5, resource: \{ buffer: this\.dtBuffer \}\},\s*)(\]\s*\}\)\s*this\.p2gDensityBindGroup)/;
+  source = source.replace(p2g2End, function (_, entry, rest) {
+    return entry +
+      "{ binding: 6, resource: { buffer: this.materialBuffer }},\n            " +
+      rest;
+  });
+
+  const updateGridEnd =
+    /(\{ binding: 6, resource: \{ buffer: this\.dtBuffer \}\},\s*)(\],\s*\}\)\s*this\.g2pBindGroup)/;
+  source = source.replace(updateGridEnd, function (_, entry, rest) {
+    return entry +
+      "{ binding: 7, resource: { buffer: this.materialBuffer }},\n            " +
+      rest;
+  });
+
+  const g2pEnd =
+    /(\{ binding: 5, resource: \{ buffer: this\.dtBuffer \}\},\s*)(\],\s*\}\)\s*this\.copyPositionBindGroup)/;
+  source = source.replace(g2pEnd, function (_, entry, rest) {
+    return entry +
+      "{ binding: 6, resource: { buffer: this.materialBuffer }},\n            " +
+      rest;
+  });
+
+  source = source.replace(
+    "    changeBoxSize(realBoxSize: number[]) {",
+    block([
+      "    setMaterial(params: number[]) {",
+      "        const values = new Float32Array(20)",
+      "        values.set(params.slice(0,20))",
+      "        this.device.queue.writeBuffer(this.materialBuffer,0,values)",
+      "    }",
+      "",
+      "    setCloudBrushes(params: Float32Array) {",
+      "        this.device.queue.writeBuffer(this.materialBuffer,80,params)",
+      "    }",
+      "",
+      "    changeBoxSize(realBoxSize: number[]) {"
+    ])
+  );
+  return source;
+}
+
+async function buildMLSMPM() {
+  let source = await getText("mls-mpm/mls-mpm.ts");
+  source = source.replace(
+    /dynamicViscosity\s*:\s*0\.1\s*,/,
+    "dynamicViscosity: 0.16,"
+  );
+  source = patchInitialBlob(source);
+  source = patchSimulatorMaterialBuffer(source);
+  source = await inlineWGSL(source, "mls-mpm/mls-mpm.ts");
+  return moduleURL(compile(source, "mls-mpm/mls-mpm.ts"));
+}
+
+function patchRendererMaterialBuffer(source) {
+  source = source.replace(
+    /depthMapTextureView:\s*GPUTextureView,\s*cubemapTextureView:\s*GPUTextureView,\s*densityGridTextureView:\s*GPUTextureView,/,
+    "depthMapTextureView: GPUTextureView, cubemapTextureView: GPUTextureView, " +
+      "densityGridTextureView: GPUTextureView, materialBuffer: GPUBuffer,"
+  );
+
+  const fluidEnd =
+    /(\{ binding: 7, resource: \{ buffer: this\.colorDensityBuffer \}\},\s*)(\],\s*\}\)\s*this\.depthMapBindGroup)/;
+  source = source.replace(fluidEnd, function (_, entry, rest) {
+    return entry +
+      "{ binding: 8, resource: { buffer: materialBuffer }},\n            " +
+      rest;
+  });
+
+  const cloudEnd =
+    /(\{ binding: 6, resource: \{ buffer: this\.densityGridSizeBuffer \}\},\s*)(\]\s*\}\)\s*console\.log)/;
+  source = source.replace(cloudEnd, function (_, entry, rest) {
+    return entry +
+      "{ binding: 7, resource: { buffer: this.diffuseColorBuffer }},\n" +
+      "                { binding: 8, resource: { buffer: this.colorDensityBuffer }},\n" +
+      "                { binding: 9, resource: { buffer: materialBuffer }},\n            " +
+      rest;
+  });
+
+  return source;
+}
+
+async function buildFluidRenderer() {
+  let source = await getText("render/fluidRender.ts");
+  source = patchRendererMaterialBuffer(source);
+  source = await inlineWGSL(source, "render/fluidRender.ts");
+  return moduleURL(compile(source, "render/fluidRender.ts"));
+}
+
+async function buildMain(cameraURL, mpmURL, rendererURL) {
+  let source = await getText("main.ts");
+  source = source
+    .replace(
+      /from\s+['"]\.\/camera['"]/g,
+      "from " + JSON.stringify(cameraURL)
+    )
+    .replace(
+      /from\s+['"]\.\/mls-mpm\/mls-mpm['"]/g,
+      "from " + JSON.stringify(mpmURL)
+    )
+    .replace(
+      /from\s+['"]\.\/render\/fluidRender['"]/g,
+      "from " + JSON.stringify(rendererURL)
+    );
+  source = rewritePackages(source);
+
+  source = source.replace(
+    /const canvas:\s*HTMLCanvasElement\s*=\s*document\.querySelector\('canvas'\)!/,
+    "const canvas = document.getElementById('fluidCanvas') as HTMLCanvasElement"
+  );
+  source = source.replace(
+    /context\.configure\(\{\s*device,\s*format:\s*presentationFormat,\s*\}\)/g,
+    block([
+      "context.configure({",
+      "        device,",
+      "        format: presentationFormat,",
+      "        alphaMode: 'premultiplied',",
+      "    })"
+    ])
+  );
+
+  const cubeNames = ["posx", "negx", "posy", "negy", "posz", "negz"];
+  const cubeFallbackSources = cubeNames.map(function (name) {
+    return REPO + "/public/cubemap/" + name + ".png";
+  });
+  const cubeListRegex =
+    /const imgSrcs\s*=\s*\[[\s\S]*?\];/;
+  if (!cubeListRegex.test(source)) {
+    throw new Error("Could not locate Splash cubemap source list.");
+  }
+  source = source.replace(
+    cubeListRegex,
+    CUBEMAP_DATA_URLS
+      ? "const imgSrcs = (window as any).__stressLabCubemapData;"
+      : "const imgSrcs = " + JSON.stringify(cubeFallbackSources) + ";"
+  );
+  const cubeLoaderRegex =
+    /const promises\s*=\s*imgSrcs\.map\(async \(src\) => \{[\s\S]*?\}\);\s*const imageBitmaps\s*=\s*await Promise\.all\(promises\);/;
+  if (!cubeLoaderRegex.test(source)) {
+    throw new Error("Could not locate Splash cubemap loader.");
+  }
+  source = source.replace(
+    cubeLoaderRegex,
+    block([
+      "const imageBitmaps = await Promise.all(imgSrcs.map(async (src) => {",
+      "            if (src.startsWith('data:')) {",
+      "                const comma = src.indexOf(',');",
+      "                const binary = atob(src.slice(comma + 1));",
+      "                const bytes = new Uint8Array(binary.length);",
+      "                for (let i = 0; i < binary.length; i++) {",
+      "                    bytes[i] = binary.charCodeAt(i);",
+      "                }",
+      "                return createImageBitmap(new Blob([bytes], { type: 'image/png' }));",
+      "            }",
+      "            const response = await fetch(src);",
+      "            if (!response.ok) throw new Error('Cubemap HTTP ' + response.status);",
+      "            return createImageBitmap(await response.blob());",
+      "        }));"
+    ])
+  );
+
+  const cubeViewRegex =
+    /const cubemapTextureView\s*=\s*cubemapTexture\.createView\(\{\s*dimension:\s*['"]cube['"],\s*\}\);/;
+  if (!cubeViewRegex.test(source)) {
+    throw new Error("Could not locate Splash cubemap texture view.");
+  }
+  source = source.replace(
+    cubeViewRegex,
+    function (match) {
+      return match + block([
+        "\n    ;(window as any).__stressLabGpuEnvironment = {",
+        "        device: device,",
+        "        texture: cubemapTexture,",
+        "        faceSize: cubemapTexture.width",
+        "    }",
+        "    if ((window as any).__stressLabApplyPendingEnvironment) {",
+        "        ;(window as any).__stressLabApplyPendingEnvironment()",
+        "    }"
+      ]);
+    }
+  );
+
+  source = source.replace(
+    /\{\s*particleCount:\s*40000[^}]+\}/,
+    "{ particleCount: 40000, initBoxSize: [60, 60, 60], " +
+      "initDistance: 64, mouseRadius: 13, cameraTargetY: 30, " +
+      "guiText: 'Small (40,000 particles)' }"
+  );
+  source = source.replace(
+    /\{\s*particleCount:\s*70000[^}]+\}/,
+    "{ particleCount: 70000, initBoxSize: [70, 70, 70], " +
+      "initDistance: 73, mouseRadius: 14, cameraTargetY: 35, " +
+      "guiText: 'Medium (70,000 particles)' }"
+  );
+  source = source.replace(
+    /\{\s*particleCount:\s*100000[^}]+\}/,
+    "{ particleCount: 100000, initBoxSize: [80, 80, 80], " +
+      "initDistance: 82, mouseRadius: 15, cameraTargetY: 40, " +
+      "guiText: 'Large (100,000 particles)' }"
+  );
+  source = source.replace(
+    /\{\s*particleCount:\s*180000[^}]+\}/,
+    "{ particleCount: 180000, initBoxSize: [92, 92, 92], " +
+      "initDistance: 94, mouseRadius: 17, cameraTargetY: 46, " +
+      "guiText: 'Very Large (180,000 particles)' }"
+  );
+
+  source = source.replace(
+    /camera\.reset\s*\(\s*simulationParam\.initDistance\s*,\s*\[\s*initBoxSize\[0\]\s*\/\s*2\s*,\s*simulationParam\.cameraTargetY\s*,\s*initBoxSize\[2\]\s*\/\s*2\s*\]\s*,\s*mlsmpmFov\s*,\s*mlsmpmZoomRate\s*\)/,
+    block([
+      "camera.reset(",
+      "        simulationParam.initDistance,",
+      "        [initBoxSize[0] / 2, initBoxSize[1] / 2, initBoxSize[2] / 2],",
+      "        mlsmpmFov,",
+      "        mlsmpmZoomRate",
+      "    )"
+    ])
+  );
+  source = source.replace(
+    /realBoxSize\[2\]\s*=\s*initBoxSize\[2\]\s*\*\s*boxWidthRatio\s*;/g,
+    "realBoxSize[2] = initBoxSize[2];"
+  );
+  source = source.replace(
+    /depthMapTextureView,\s*cubemapTextureView,\s*densityGridTextureView,\s*\n\s*canvas,/,
+    "depthMapTextureView, cubemapTextureView, densityGridTextureView, " +
+      "mlsmpmSimulator.materialBuffer,\n\t\tcanvas,"
+  );
+  source = source.replace(
+    "let boxWidthRatio = 1.",
+    "let boxWidthRatio = 1.\n    let stressMaterialVersion = -1"
+  );
+
+  source = source.replace(
+    "const particle = document.getElementById(\"particle\") as HTMLInputElement",
+    block([
+      "const materialBridge = (window as any).__stressLabMaterial",
+      "        const stressWaterDefaults =",
+      "            (window as any).__stressLabWaterDefaults || {",
+      "                r: guiParams.r,",
+      "                g: guiParams.g,",
+      "                b: guiParams.b,",
+      "                colorDensity: guiParams.colorDensity,",
+      "                speed: guiParams.speed",
+      "            }",
+      "        ;(window as any).__stressLabWaterDefaults = stressWaterDefaults",
+      "        if (materialBridge && " +
+        "materialBridge.version !== stressMaterialVersion) {",
+      "            stressMaterialVersion = materialBridge.version",
+      "            if (materialBridge.id !== 'snow') {",
+      "                mlsmpmSimulator.setMaterial(materialBridge.params)",
+      "                if (materialBridge.id === 'water') {",
+      "                    guiParams.r = stressWaterDefaults.r",
+      "                    guiParams.g = stressWaterDefaults.g",
+      "                    guiParams.b = stressWaterDefaults.b",
+      "                    guiParams.colorDensity = stressWaterDefaults.colorDensity",
+      "                    guiParams.speed = stressWaterDefaults.speed",
+      "                } else {",
+      "                    guiParams.r = materialBridge.color[0]",
+      "                    guiParams.g = materialBridge.color[1]",
+      "                    guiParams.b = materialBridge.color[2]",
+      "                    guiParams.colorDensity = materialBridge.density",
+      "                    guiParams.speed = materialBridge.speed",
+      "                }",
+      "                if (initBoxSize[0] > 0) {",
+      "                mlsmpmSimulator.reset(" +
+        "initBoxSize, simulationParam.particleCount)",
+      "                }",
+      "            }",
+      "        }",
+      "        mlsmpmSimulator.setCloudBrushes(",
+      "            (window as any).__stressLabCloudBrushes",
+      "        )",
+      "",
+      "        const particle = " +
+        "document.getElementById(\"particle\") as HTMLInputElement"
+    ])
+  );
+  source = source.replace(
+    "sphereRenderFl = particle.checked",
+    "sphereRenderFl = materialBridge?.renderMode === 'volume' || particle.checked"
+  );
+  source = source.replace(
+    /mlsmpmSimulator\.execute\(commandEncoder,\s*\n\s*\[camera\.currentHoverX \/ canvas\.clientWidth, camera\.currentHoverY \/ canvas\.clientHeight\],\s*\n\s*camera\.calcMouseVelocity\(\), simulationParam\.mouseRadius, sphereRenderFl, maxDt \* guiParams\.speed, guiParams\.running,\s*\n\s*densityGridSize\s*\)/,
+    block([
+      "const pinch = (window as any).__stressLabSlimePinch",
+      "        const defaultPosition = [camera.currentHoverX / canvas.clientWidth, camera.currentHoverY / canvas.clientHeight]",
+      "        const defaultVelocity = camera.calcMouseVelocity()",
+      "        const brushRadius = (materialBridge?.id === 'water' ? simulationParam.mouseRadius : (materialBridge?.mouseRadius ?? simulationParam.mouseRadius))",
+      "        if (materialBridge?.id === 'slime' && pinch?.active && pinch.a && pinch.b) {",
+      "            // Two actual MPM substeps: each finger applies its own local contact force.",
+      "            // Opposing contacts compress an almost-incompressible viscous body, so",
+      "            // bulges/folds are generated by the solver instead of painted in the shader.",
+      "            const fingers = [pinch.a, pinch.b]",
+      "            for (let pi = 0; pi < 2; pi++) {",
+      "                const finger = fingers[pi]",
+      "                const other = fingers[1 - pi]",
+      "                const oldPlane = camera.calcPlaneCoord(finger.prevX, finger.prevY)",
+      "                const newPlane = camera.calcPlaneCoord(finger.x, finger.y)",
+      "                const towardX = other.x - finger.x",
+      "                const towardY = other.y - finger.y",
+      "                const towardLength = Math.max(1, Math.hypot(towardX, towardY))",
+      "                const closing = Math.max(0, pinch.closing || 0)",
+      "                const grip = Math.min(2.35, 0.16 + closing * 0.046)",
+      "                const interactionPosition = [finger.x / canvas.clientWidth, finger.y / canvas.clientHeight]",
+      "                const interactionVelocity = [",
+      "                    (newPlane[0] - oldPlane[0]) * 1.34 + towardX / towardLength * grip,",
+      "                    (newPlane[1] - oldPlane[1]) * 1.34 - towardY / towardLength * grip,",
+      "                    0, 0",
+      "                ]",
+      "                mlsmpmSimulator.execute(commandEncoder, interactionPosition, interactionVelocity,",
+      "                    brushRadius * 0.92, sphereRenderFl, maxDt * guiParams.speed * 0.5,",
+      "                    guiParams.running, densityGridSize)",
+      "            }",
+      "        } else {",
+      "            mlsmpmSimulator.execute(commandEncoder, defaultPosition, defaultVelocity,",
+      "                brushRadius, sphereRenderFl, maxDt * guiParams.speed, guiParams.running,",
+      "                densityGridSize)",
+      "        }",
+    ])
+  );
+  return moduleURL(compile(source, "main.ts"));
+}
+
+function installTouchBridge() {
+  let pointerID = null;
+  let hiddenHint = false;
+  let lastPointerX = 0;
+  let lastPointerY = 0;
+  let lastPointerTime = 0;
+  const activePointers = new Map();
+
+  function dispatchMouseMove(x, y) {
+    fluidCanvas.dispatchEvent(new MouseEvent("mousemove", {
+      bubbles: false,
+      cancelable: false,
+      view: window,
+      clientX: x,
+      clientY: y,
+      screenX: x,
+      screenY: y,
+      buttons: 0
+    }));
+  }
+
+  function updateSlimePinch() {
+    const pinch = window.__stressLabSlimePinch;
+    const slimeSelected = MATERIALS[state.selected].id === "slime";
+    if (!slimeSelected || activePointers.size < 2) {
+      pinch.active = false;
+      pinch.a = null;
+      pinch.b = null;
+      pinch.closing = 0;
+      return;
+    }
+    const points = Array.from(activePointers.values()).slice(0, 2);
+    const a = points[0], b = points[1];
+    const gap = Math.hypot(a.x - b.x, a.y - b.y);
+    const previousGap = Math.hypot(a.prevX - b.prevX, a.prevY - b.prevY);
+    pinch.active = true;
+    pinch.a = { x:a.x, y:a.y, prevX:a.prevX, prevY:a.prevY };
+    pinch.b = { x:b.x, y:b.y, prevX:b.prevX, prevY:b.prevY };
+    // Positive while fingers close. A tiny baseline keeps a held pinch gripping.
+    pinch.closing = Math.max(4, previousGap - gap);
+    window.__stressLabPointerDown = true;
+  }
+
+  fluidCanvas.addEventListener("pointerdown", function (event) {
+    event.preventDefault();
+    activePointers.set(event.pointerId, {
+      x:event.clientX, y:event.clientY,
+      prevX:event.clientX, prevY:event.clientY
+    });
+
+    const selectedId = MATERIALS[state.selected].id;
+    if (selectedId === "slime" && activePointers.size >= 2) {
+      updateSlimePinch();
+      try { fluidCanvas.setPointerCapture(event.pointerId); } catch (_) {}
+      return;
+    }
+    if (pointerID !== null) return;
+    pointerID = event.pointerId;
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+    lastPointerTime = performance.now();
+    state.pointerDown = true;
+    const snowSelected = selectedId === "snow";
+    window.__stressLabPointerDown = !snowSelected;
+    try { fluidCanvas.setPointerCapture(pointerID); } catch (_) {}
+    if (snowSelected) {
+      ensureSnowSystem().beginContact(
+        event.clientX,
+        event.clientY,
+        event.pressure,
+        event.width,
+        event.height
+      );
+      dispatchMouseMove(-10000, -10000);
+    } else if (event.pointerType !== "mouse") {
+      dispatchMouseMove(event.clientX, event.clientY);
+    }
+    if (!snowSelected) addCloudBrush(event.clientX, event.clientY, 180);
+    if (!hiddenHint) {
+      hiddenHint = true;
+      hint.classList.add("used");
+    }
+    if (!snowSelected && navigator.vibrate) navigator.vibrate(4);
+  }, { passive: false });
+
+  fluidCanvas.addEventListener("pointermove", function (event) {
+    const tracked = activePointers.get(event.pointerId);
+    if (tracked) {
+      tracked.prevX = tracked.x;
+      tracked.prevY = tracked.y;
+      tracked.x = event.clientX;
+      tracked.y = event.clientY;
+      updateSlimePinch();
+    }
+    if (event.pointerId !== pointerID) return;
+    event.preventDefault();
+    if (window.__stressLabSlimePinch.active) return;
+    const now = performance.now();
+    const elapsed = Math.max(.008, Math.min(.12, (now - lastPointerTime) / 1000));
+    const velocityX = (event.clientX - lastPointerX) / elapsed;
+    const velocityY = (event.clientY - lastPointerY) / elapsed;
+    const speed = Math.hypot(velocityX, velocityY);
+    const snowSelected = MATERIALS[state.selected].id === "snow";
+    if (snowSelected) {
+      ensureSnowSystem().moveContact(
+        event.clientX,
+        event.clientY,
+        event.pressure,
+        event.width,
+        event.height
+      );
+    } else {
+      spawnDebris(
+        event.clientX, event.clientY, velocityX, velocityY, speed
+      );
+      addCloudBrush(event.clientX, event.clientY, speed);
+    }
+    lastPointerX = event.clientX;
+    lastPointerY = event.clientY;
+    lastPointerTime = now;
+    if (!snowSelected && event.pointerType !== "mouse") {
+      dispatchMouseMove(event.clientX, event.clientY);
+    }
+  }, { passive: false });
+
+  function releasePointer(event) {
+    activePointers.delete(event.pointerId);
+    updateSlimePinch();
+    if (event.pointerId !== pointerID) return;
+
+    // If another finger remains after a slime pinch, promote it to primary.
+    if (activePointers.size) {
+      const remaining = activePointers.entries().next().value;
+      pointerID = remaining[0];
+      const pt = remaining[1];
+      lastPointerX = pt.x;
+      lastPointerY = pt.y;
+      lastPointerTime = performance.now();
+      dispatchMouseMove(pt.x, pt.y);
+      return;
+    }
+
+    pointerID = null;
+    state.pointerDown = false;
+    window.__stressLabPointerDown = false;
+    if (snowSystem) snowSystem.endContact();
+    dispatchMouseMove(-10000, -10000);
+  }
+  fluidCanvas.addEventListener("pointerup", releasePointer);
+  fluidCanvas.addEventListener("pointercancel", releasePointer);
+}
+
+async function start() {
+  try {
+    installTouchBridge();
+    status.textContent = "Loading the original Splash camera…";
+    const cameraURL = await buildCamera();
+    status.textContent = "Building the five material responses…";
+    const mpmURL = await buildMLSMPM();
+    status.textContent = "Building surface and cloud rendering…";
+    const rendererURL = await buildFluidRenderer();
+    status.textContent = "Starting the zero-gravity solver…";
+    const mainURL = await buildMain(cameraURL, mpmURL, rendererURL);
+    await import(mainURL);
+    window.setTimeout(function () {
+      loading.classList.add("hidden");
+    }, 1150);
+  } catch (error) {
+    fatal(error);
+  }
+}
+
+start();
+
+</script>
+</body>
+</html>
