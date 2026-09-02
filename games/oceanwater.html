@@ -1,0 +1,4583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"
+>
+<meta name="theme-color" content="#5f8daa">
+
+<title>Open Ocean — Crest Churn</title>
+
+<style>
+:root{
+  color-scheme:dark;
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,
+body{
+  width:100%;
+  height:100%;
+  margin:0;
+  overflow:hidden;
+  overscroll-behavior:none;
+  touch-action:none;
+  background:#739ab4;
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+}
+
+canvas{
+  position:fixed;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:block;
+}
+
+#hint{
+  position:fixed;
+  left:14px;
+  bottom:max(14px,env(safe-area-inset-bottom));
+  z-index:4;
+  padding:7px 10px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:8px;
+  color:rgba(255,255,255,.72);
+  background:rgba(4,12,17,.26);
+  backdrop-filter:blur(10px);
+  font:600 9px/1 system-ui,sans-serif;
+  letter-spacing:.10em;
+  pointer-events:none;
+  text-transform:uppercase;
+}
+
+#stats{
+  position:fixed;
+  top:max(12px,env(safe-area-inset-top));
+  left:max(12px,env(safe-area-inset-left));
+  z-index:4;
+  min-width:92px;
+  padding:8px 9px;
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:6px;
+  color:rgba(255,255,255,.73);
+  background:rgba(4,11,16,.36);
+  backdrop-filter:blur(8px);
+  font:500 9px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;
+  pointer-events:none;
+}
+
+#stats b{
+  color:white;
+  font-weight:600;
+}
+
+.lil-gui.root{
+  --background-color:rgba(10,16,20,.74);
+  --widget-color:rgba(255,255,255,.08);
+  --hover-color:rgba(255,255,255,.12);
+  --focus-color:rgba(70,150,210,.32);
+  --text-color:rgba(255,255,255,.84);
+  --number-color:#83c8ff;
+  --string-color:#8fd0ff;
+  --font-size:10px;
+  --input-font-size:10px;
+  --padding:4px;
+  --spacing:3px;
+  --widget-height:20px;
+  --name-width:51%;
+  backdrop-filter:blur(12px);
+}
+
+@media(max-width:700px){
+  .lil-gui.root{
+    max-height:70vh;
+    overflow-y:auto;
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div id="stats">
+<b>GPU</b> shader<br>
+Draws <span id="draws">1</span><br>
+Tris <span id="tris">0</span><br>
+FPS <span id="fps">--</span>
+</div>
+
+<div id="hint">drag · pinch / wheel · ocean only</div>
+
+<script type="module">
+
+import * as THREE from
+  'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+
+import { GUI } from
+  'https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/libs/lil-gui.module.min.js';
+
+
+/* ==========================================================
+   RENDERER
+   ========================================================== */
+
+const renderer = new THREE.WebGLRenderer({
+  antialias:true,
+  alpha:false,
+  powerPreference:'high-performance'
+});
+
+renderer.outputColorSpace =
+  THREE.SRGBColorSpace;
+
+renderer.toneMapping =
+  THREE.ACESFilmicToneMapping;
+
+renderer.toneMappingExposure =
+  1.02;
+
+renderer.setPixelRatio(
+  Math.min(
+    devicePixelRatio || 1,
+    1.55
+  )
+);
+
+renderer.setSize(
+  innerWidth,
+  innerHeight
+);
+
+document.body.appendChild(
+  renderer.domElement
+);
+
+
+const scene =
+  new THREE.Scene();
+
+
+const camera =
+  new THREE.PerspectiveCamera(
+    56,
+    innerWidth / innerHeight,
+    0.1,
+    4500
+  );
+
+camera.position.set(
+  0,
+  5.1,
+  11
+);
+
+
+/* ==========================================================
+   SETTINGS
+   ========================================================== */
+
+const S = {
+
+  /* surface */
+
+  waterColor:'#075267',
+  deepColor:'#032b3a',
+  crestTint:'#1b8591',
+
+  opacity:1.0,
+
+  roughness:.255,
+
+  normalStrength:.72,
+
+  detailNormalStrength:.33,
+
+
+  /* foam / churn */
+
+  foamEnabled:true,
+
+  foamColor:'#eef0e9',
+
+  foamOpacity:.94,
+
+  jacobianThreshold:.73,
+
+  jacobianSoftness:.22,
+
+  crestThreshold:.24,
+
+  crestSharpness:3.8,
+
+  churnStrength:1.26,
+
+  capillaryStrength:1.15,
+
+  capillaryScale:1.15,
+
+  foamBreakup:.72,
+
+  foamDetail:1.28,
+
+  foamPersistence:.72,
+
+  foamTrailLength:1.55,
+
+  foamAdvection:1.0,
+
+  foamEdgeSoftness:.17,
+
+  residualFoam:.28,
+
+
+  /* geometry */
+
+  geometryScale:1.0,
+
+  verticalScale:1.0,
+
+  choppiness:1.42,
+
+  speed:1.0,
+
+  standingWaveRatio:.10,
+
+
+  /* wind */
+
+  windSpeed:31.7,
+
+  windDirection:61.0,
+
+  directionalSpread:.62,
+
+
+  /* primary waves */
+
+  wavesScale:.96,
+
+  wavesAmplitude:1.0,
+
+  wavesFrequency:1.0,
+
+
+  /* swells */
+
+  swellWavelength:31.0,
+
+  swellAmplitude:1.30,
+
+  swellSpread:.28,
+
+  swellSecondary:.58,
+
+
+  /* ripples */
+
+  rippleScale:1.42,
+
+  rippleAmplitude:.37,
+
+  rippleSpeed:1.0,
+
+
+  /* reflection */
+
+  reflectionStrength:.83,
+
+  fresnelStrength:1.0,
+
+  sunReflection:.92,
+
+  glitterStrength:.85,
+
+  skyReflection:.86,
+
+
+  /* scattering */
+
+  scatteringEnabled:true,
+
+  scatteringStrength:.37,
+
+  scatteringPower:4.0,
+
+  transmission:.34,
+
+
+  /* atmosphere */
+
+  fogStrength:.51,
+
+  fogDistance:720,
+
+  horizonBrightness:.90,
+
+  skySaturation:.85,
+
+  exposure:1.02,
+
+
+  /* camera */
+
+  eyeHeight:5.1,
+
+  fov:56,
+
+  cameraBob:.020,
+
+
+  /* performance */
+
+  pixelRatio:Math.min(devicePixelRatio || 1,1.55)
+
+};
+
+
+/* ==========================================================
+   PROCEDURAL TEXTURE UTILITIES
+   ========================================================== */
+
+function hash(x,y){
+
+  let n =
+    Math.imul(x,374761393) ^
+    Math.imul(y,668265263);
+
+  n =
+    Math.imul(
+      n ^ (n >>> 13),
+      1274126177
+    );
+
+  return (
+    (n ^ (n >>> 16)) >>> 0
+  ) / 4294967295;
+}
+
+
+function fade(t){
+
+  return t*t*(3.0-2.0*t);
+
+}
+
+
+function noise2(x,y){
+
+  const ix =
+    Math.floor(x);
+
+  const iy =
+    Math.floor(y);
+
+  const fx =
+    fade(x-ix);
+
+  const fy =
+    fade(y-iy);
+
+
+  const a =
+    hash(ix,iy);
+
+  const b =
+    hash(ix+1,iy);
+
+  const c =
+    hash(ix,iy+1);
+
+  const d =
+    hash(ix+1,iy+1);
+
+
+  const ab =
+    a+(b-a)*fx;
+
+  const cd =
+    c+(d-c)*fx;
+
+
+  return ab+(cd-ab)*fy;
+
+}
+
+
+function fbm(
+  x,
+  y,
+  octaves=5
+){
+
+  let s=0;
+  let a=.5;
+  let f=1;
+  let n=0;
+
+  for(
+    let i=0;
+    i<octaves;
+    i++
+  ){
+
+    s += noise2(
+      x*f,
+      y*f
+    )*a;
+
+    n += a;
+
+    a *= .5;
+
+    f *= 2.03;
+
+  }
+
+  return s/n;
+
+}
+
+
+/* ==========================================================
+   WATER NORMAL TEXTURE
+
+   256² only.
+   ========================================================== */
+
+function makeNormalTexture(
+  size=256
+){
+
+  const canvas =
+    document.createElement('canvas');
+
+  canvas.width =
+    canvas.height =
+    size;
+
+
+  const ctx =
+    canvas.getContext(
+      '2d'
+    );
+
+
+  const image =
+    ctx.createImageData(
+      size,
+      size
+    );
+
+
+  const field =
+    new Float32Array(
+      size*size
+    );
+
+
+  for(let y=0;y<size;y++){
+
+    for(let x=0;x<size;x++){
+
+      const u=x/size;
+      const v=y/size;
+
+
+      field[
+        y*size+x
+      ] =
+        fbm(
+          u*8,
+          v*8,
+          6
+        );
+
+    }
+
+  }
+
+
+  function get(
+    x,
+    y
+  ){
+
+    x =
+      (x+size)%size;
+
+    y =
+      (y+size)%size;
+
+    return field[
+      y*size+x
+    ];
+
+  }
+
+
+  for(let y=0;y<size;y++){
+
+    for(let x=0;x<size;x++){
+
+      const dx =
+        (
+          get(x+1,y)-
+          get(x-1,y)
+        )*8.5;
+
+
+      const dz =
+        (
+          get(x,y+1)-
+          get(x,y-1)
+        )*8.5;
+
+
+      let nx=-dx;
+      let ny=1;
+      let nz=-dz;
+
+
+      const len =
+        Math.sqrt(
+          nx*nx+
+          ny*ny+
+          nz*nz
+        );
+
+
+      nx/=len;
+      ny/=len;
+      nz/=len;
+
+
+      const i =
+        (y*size+x)*4;
+
+
+      image.data[i] =
+        (nx*.5+.5)*255;
+
+      image.data[i+1] =
+        (ny*.5+.5)*255;
+
+      image.data[i+2] =
+        (nz*.5+.5)*255;
+
+      image.data[i+3] =
+        255;
+
+    }
+
+  }
+
+
+  ctx.putImageData(
+    image,
+    0,
+    0
+  );
+
+
+  const tex =
+    new THREE.CanvasTexture(
+      canvas
+    );
+
+
+  tex.wrapS =
+    tex.wrapT =
+    THREE.RepeatWrapping;
+
+
+  tex.minFilter =
+    THREE.LinearMipmapLinearFilter;
+
+  tex.magFilter =
+    THREE.LinearFilter;
+
+
+  tex.anisotropy =
+    Math.min(
+      renderer.capabilities.getMaxAnisotropy(),
+      8
+    );
+
+
+  return tex;
+
+}
+
+
+/* ==========================================================
+   ANISOTROPIC CHURN TEXTURE
+
+   This is intentionally different from generic cloudy FBM.
+
+   Long fibres + torn cellular holes + micro froth.
+
+   It gets compressed/gathered toward actual Jacobian crests.
+   ========================================================== */
+
+function makeFoamTexture(
+  size=512
+){
+
+  const c =
+    document.createElement(
+      'canvas'
+    );
+
+  c.width =
+    c.height =
+    size;
+
+
+  const ctx =
+    c.getContext(
+      '2d'
+    );
+
+
+  const img =
+    ctx.createImageData(
+      size,
+      size
+    );
+
+
+  for(let y=0;y<size;y++){
+
+    for(let x=0;x<size;x++){
+
+      const u=x/size;
+      const v=y/size;
+
+
+      /*
+       * Long anisotropic capillary fibres.
+       */
+
+      const stretch1 =
+        fbm(
+          u*6.0,
+          v*42.0,
+          5
+        );
+
+
+      const stretch2 =
+        fbm(
+          (
+            u*.87+
+            v*.22
+          )*11.0+8.2,
+
+          (
+            v*.93-
+            u*.11
+          )*58.0+3.6,
+
+          4
+        );
+
+
+      /*
+       * Larger torn whitewater cells.
+       */
+
+      const body =
+        fbm(
+          u*7.0+21.3,
+          v*7.0+4.7,
+          5
+        );
+
+
+      /*
+       * Fine aerated breakup.
+       */
+
+      const micro =
+        fbm(
+          u*54.0+2.4,
+          v*54.0+9.1,
+          3
+        );
+
+
+      let fibres =
+        stretch1*.57 +
+        stretch2*.43;
+
+
+      fibres =
+        THREE.MathUtils.smoothstep(
+          fibres,
+          .43,
+          .68
+        );
+
+
+      let torn =
+        THREE.MathUtils.smoothstep(
+          body,
+          .40,
+          .71
+        );
+
+
+      let froth =
+        THREE.MathUtils.smoothstep(
+          micro,
+          .43,
+          .74
+        );
+
+
+      let value =
+          fibres*.58
+        + torn*.29
+        + froth*.13;
+
+
+      /*
+       * Preserve holes.
+       */
+
+      value *=
+        THREE.MathUtils.smoothstep(
+          body+
+          micro*.20,
+          .35,
+          .69
+        );
+
+
+      value =
+        Math.pow(
+          Math.min(
+            1,
+            value
+          ),
+          1.23
+        );
+
+
+      const n =
+        Math.round(
+          value*255
+        );
+
+
+      const i =
+        (
+          y*size+x
+        )*4;
+
+
+      img.data[i]=n;
+      img.data[i+1]=n;
+      img.data[i+2]=n;
+      img.data[i+3]=255;
+
+    }
+
+  }
+
+
+  ctx.putImageData(
+    img,
+    0,
+    0
+  );
+
+
+  const texture =
+    new THREE.CanvasTexture(
+      c
+    );
+
+
+  texture.wrapS =
+    texture.wrapT =
+    THREE.RepeatWrapping;
+
+
+  texture.minFilter =
+    THREE.LinearMipmapLinearFilter;
+
+  texture.magFilter =
+    THREE.LinearFilter;
+
+
+  texture.anisotropy =
+    Math.min(
+      renderer.capabilities.getMaxAnisotropy(),
+      8
+    );
+
+
+  return texture;
+
+}
+
+
+const normalTexture =
+  makeNormalTexture();
+
+
+const foamTexture =
+  makeFoamTexture();
+
+
+/* ==========================================================
+   SKY
+   ========================================================== */
+
+const skyUniforms={
+
+  uSun:{
+    value:
+      new THREE.Vector3(
+        -.52,
+        .43,
+        -.74
+      ).normalize()
+  },
+
+  uHorizonBrightness:{
+    value:S.horizonBrightness
+  },
+
+  uSkySaturation:{
+    value:S.skySaturation
+  }
+
+};
+
+
+const skyMaterial =
+  new THREE.ShaderMaterial({
+
+    side:
+      THREE.BackSide,
+
+    depthWrite:
+      false,
+
+    uniforms:
+      skyUniforms,
+
+    vertexShader:`
+
+      varying vec3 vDir;
+
+      void main(){
+
+        vec4 worldPos =
+          modelMatrix *
+          vec4(
+            position,
+            1.0
+          );
+
+        vDir =
+          normalize(
+            worldPos.xyz-
+            cameraPosition
+          );
+
+        gl_Position =
+          projectionMatrix *
+          viewMatrix *
+          worldPos;
+
+      }
+
+    `,
+
+    fragmentShader:`
+
+      precision highp float;
+
+      varying vec3 vDir;
+
+      uniform vec3 uSun;
+
+      uniform float
+        uHorizonBrightness;
+
+      uniform float
+        uSkySaturation;
+
+
+      void main(){
+
+        vec3 d =
+          normalize(
+            vDir
+          );
+
+
+        float h =
+          clamp(
+            d.y*.5+.5,
+            0.0,
+            1.0
+          );
+
+
+        vec3 horizon =
+          vec3(
+            .55,
+            .68,
+            .76
+          )
+          *
+          uHorizonBrightness;
+
+
+        vec3 zenith =
+          vec3(
+            .28,
+            .49,
+            .66
+          );
+
+
+        vec3 sky =
+          mix(
+            horizon,
+            zenith,
+            pow(
+              h,
+              .67
+            )
+          );
+
+
+        float l =
+          dot(
+            sky,
+            vec3(
+              .2126,
+              .7152,
+              .0722
+            )
+          );
+
+
+        sky =
+          mix(
+            vec3(l),
+            sky,
+            uSkySaturation
+          );
+
+
+        float haze =
+          exp(
+            -abs(d.y)*8.5
+          );
+
+
+        sky =
+          mix(
+            sky,
+            vec3(
+              .68,
+              .76,
+              .80
+            ),
+            haze*.46
+          );
+
+
+        float s =
+          max(
+            dot(
+              d,
+              uSun
+            ),
+            0.0
+          );
+
+
+        sky +=
+          vec3(
+            1.0,
+            .91,
+            .74
+          )
+          *
+          pow(
+            s,
+            34.0
+          )
+          *
+          .08;
+
+
+        sky +=
+          vec3(
+            1.0,
+            .97,
+            .86
+          )
+          *
+          pow(
+            s,
+            850.0
+          )
+          *
+          .75;
+
+
+        gl_FragColor =
+          vec4(
+            sky,
+            1.0
+          );
+
+      }
+
+    `
+
+  });
+
+
+const sky =
+  new THREE.Mesh(
+
+    new THREE.SphereGeometry(
+      2100,
+      24,
+      12
+    ),
+
+    skyMaterial
+
+  );
+
+
+scene.add(
+  sky
+);
+
+
+/* ==========================================================
+   OCEAN
+   ========================================================== */
+
+const oceanGeometry =
+  new THREE.PlaneGeometry(
+    1600,
+    1600,
+    255,
+    255
+  );
+
+
+oceanGeometry.rotateX(
+  -Math.PI/2
+);
+
+
+const U={
+
+  uTime:{value:0},
+
+  uNormalTex:{
+    value:normalTexture
+  },
+
+  uFoamTex:{
+    value:foamTexture
+  },
+
+  uWaterColor:{
+    value:new THREE.Color(
+      S.waterColor
+    )
+  },
+
+  uDeepColor:{
+    value:new THREE.Color(
+      S.deepColor
+    )
+  },
+
+  uCrestTint:{
+    value:new THREE.Color(
+      S.crestTint
+    )
+  },
+
+  uFoamColor:{
+    value:new THREE.Color(
+      S.foamColor
+    )
+  },
+
+  uSunDirection:{
+    value:
+      new THREE.Vector3(
+        -.52,
+        .43,
+        -.74
+      ).normalize()
+  },
+
+
+  /* overall */
+
+  uNormalStrength:{
+    value:S.normalStrength
+  },
+
+  uDetailNormalStrength:{
+    value:S.detailNormalStrength
+  },
+
+  uVerticalScale:{
+    value:S.verticalScale
+  },
+
+  uChoppiness:{
+    value:S.choppiness
+  },
+
+  uSpeed:{
+    value:S.speed
+  },
+
+  uStandingWaveRatio:{
+    value:S.standingWaveRatio
+  },
+
+
+  /* wind */
+
+  uWindDirection:{
+    value:THREE.MathUtils.degToRad(
+      S.windDirection
+    )
+  },
+
+  uDirectionalSpread:{
+    value:S.directionalSpread
+  },
+
+
+  /* main waves */
+
+  uWaveScale:{
+    value:S.wavesScale
+  },
+
+  uWaveAmplitude:{
+    value:S.wavesAmplitude
+  },
+
+  uWaveFrequency:{
+    value:S.wavesFrequency
+  },
+
+
+  /* swell */
+
+  uSwellWavelength:{
+    value:S.swellWavelength
+  },
+
+  uSwellAmplitude:{
+    value:S.swellAmplitude
+  },
+
+  uSwellSpread:{
+    value:S.swellSpread
+  },
+
+  uSwellSecondary:{
+    value:S.swellSecondary
+  },
+
+
+  /* ripple */
+
+  uRippleScale:{
+    value:S.rippleScale
+  },
+
+  uRippleAmplitude:{
+    value:S.rippleAmplitude
+  },
+
+  uRippleSpeed:{
+    value:S.rippleSpeed
+  },
+
+
+  /* churn */
+
+  uFoamEnabled:{
+    value:1
+  },
+
+  uFoamOpacity:{
+    value:S.foamOpacity
+  },
+
+  uJacobianThreshold:{
+    value:S.jacobianThreshold
+  },
+
+  uJacobianSoftness:{
+    value:S.jacobianSoftness
+  },
+
+  uCrestThreshold:{
+    value:S.crestThreshold
+  },
+
+  uCrestSharpness:{
+    value:S.crestSharpness
+  },
+
+  uChurnStrength:{
+    value:S.churnStrength
+  },
+
+  uCapillaryStrength:{
+    value:S.capillaryStrength
+  },
+
+  uCapillaryScale:{
+    value:S.capillaryScale
+  },
+
+  uFoamBreakup:{
+    value:S.foamBreakup
+  },
+
+  uFoamDetail:{
+    value:S.foamDetail
+  },
+
+  uFoamPersistence:{
+    value:S.foamPersistence
+  },
+
+  uFoamTrailLength:{
+    value:S.foamTrailLength
+  },
+
+  uFoamAdvection:{
+    value:S.foamAdvection
+  },
+
+  uFoamEdgeSoftness:{
+    value:S.foamEdgeSoftness
+  },
+
+  uResidualFoam:{
+    value:S.residualFoam
+  },
+
+
+  /* light */
+
+  uReflectionStrength:{
+    value:S.reflectionStrength
+  },
+
+  uFresnelStrength:{
+    value:S.fresnelStrength
+  },
+
+  uSunReflection:{
+    value:S.sunReflection
+  },
+
+  uGlitterStrength:{
+    value:S.glitterStrength
+  },
+
+  uSkyReflection:{
+    value:S.skyReflection
+  },
+
+
+  /* scattering */
+
+  uScatteringEnabled:{
+    value:1
+  },
+
+  uScatteringStrength:{
+    value:S.scatteringStrength
+  },
+
+  uScatteringPower:{
+    value:S.scatteringPower
+  },
+
+  uTransmission:{
+    value:S.transmission
+  },
+
+
+  /* atmosphere */
+
+  uFogStrength:{
+    value:S.fogStrength
+  },
+
+  uFogDistance:{
+    value:S.fogDistance
+  }
+
+};
+
+
+const oceanMaterial =
+  new THREE.ShaderMaterial({
+
+    uniforms:U,
+
+    vertexShader:`
+
+      precision highp float;
+
+      uniform float uTime;
+
+      uniform float uVerticalScale;
+      uniform float uChoppiness;
+      uniform float uSpeed;
+      uniform float uStandingWaveRatio;
+
+      uniform float uWindDirection;
+      uniform float uDirectionalSpread;
+
+      uniform float uWaveScale;
+      uniform float uWaveAmplitude;
+      uniform float uWaveFrequency;
+
+      uniform float uSwellWavelength;
+      uniform float uSwellAmplitude;
+      uniform float uSwellSpread;
+      uniform float uSwellSecondary;
+
+
+      varying vec3 vWorld;
+      varying vec3 vNormal;
+
+      varying float vHeight;
+
+      varying float vJacobian;
+
+      varying float vCompression;
+
+      varying float vCrestPhase;
+
+      varying float vSlope;
+
+
+      const float PI =
+        3.14159265358979323846;
+
+
+      vec2 directionFromAngle(
+        float a
+      ){
+
+        return vec2(
+          cos(a),
+          sin(a)
+        );
+
+      }
+
+
+      void addWave(
+
+        inout vec3 p,
+
+        inout vec3 tx,
+
+        inout vec3 tz,
+
+        inout mat2 horizontalDerivative,
+
+        vec2 dir,
+
+        float wavelength,
+
+        float amplitude,
+
+        float speed,
+
+        float chop,
+
+        float phaseOffset
+
+      ){
+
+        dir =
+          normalize(
+            dir
+          );
+
+
+        float k =
+          (
+            2.0*PI/
+            wavelength
+          )
+          *
+          uWaveFrequency;
+
+
+        float omega =
+          speed *
+          uSpeed;
+
+
+        float theta =
+          k*
+          dot(
+            dir,
+            p.xz
+          )
+          -
+          omega*uTime
+          +
+          phaseOffset;
+
+
+        /*
+         * Standing/travelling blend.
+         */
+
+        float travellingSin =
+          sin(theta);
+
+        float travellingCos =
+          cos(theta);
+
+
+        float spatial =
+          k*
+          dot(
+            dir,
+            p.xz
+          )
+          +
+          phaseOffset;
+
+
+        float standingSin =
+          sin(spatial)
+          *
+          cos(
+            omega*uTime
+          );
+
+
+        float standingCos =
+          cos(spatial)
+          *
+          cos(
+            omega*uTime
+          );
+
+
+        float s =
+          mix(
+            travellingSin,
+            standingSin,
+            uStandingWaveRatio
+          );
+
+
+        float c =
+          mix(
+            travellingCos,
+            standingCos,
+            uStandingWaveRatio
+          );
+
+
+        float A =
+          amplitude *
+          uWaveAmplitude *
+          uVerticalScale;
+
+
+        float Q =
+          chop *
+          uChoppiness;
+
+
+        float horizontal =
+          Q*A;
+
+
+        p.x +=
+          dir.x*
+          horizontal*
+          c;
+
+
+        p.z +=
+          dir.y*
+          horizontal*
+          c;
+
+
+        p.y +=
+          A*s;
+
+
+
+        /*
+         * Normal derivatives.
+         */
+
+        tx +=
+          vec3(
+
+            -dir.x*
+             dir.x*
+             horizontal*
+             k*
+             s,
+
+             dir.x*
+             A*
+             k*
+             c,
+
+            -dir.x*
+             dir.y*
+             horizontal*
+             k*
+             s
+
+          );
+
+
+        tz +=
+          vec3(
+
+            -dir.x*
+             dir.y*
+             horizontal*
+             k*
+             s,
+
+             dir.y*
+             A*
+             k*
+             c,
+
+            -dir.y*
+             dir.y*
+             horizontal*
+             k*
+             s
+
+          );
+
+
+
+        /*
+         * Horizontal-displacement Jacobian.
+
+           x' = x + Dx
+           z' = z + Dz
+
+           J = det(
+             d(x',z') / d(x,z)
+           )
+
+           Compression / folding pushes J downward.
+           This is the physically meaningful breaking signal.
+         */
+
+        float deriv =
+          -horizontal*
+          k*
+          s;
+
+
+        horizontalDerivative[0][0] +=
+          deriv*
+          dir.x*
+          dir.x;
+
+
+        horizontalDerivative[0][1] +=
+          deriv*
+          dir.x*
+          dir.y;
+
+
+        horizontalDerivative[1][0] +=
+          deriv*
+          dir.y*
+          dir.x;
+
+
+        horizontalDerivative[1][1] +=
+          deriv*
+          dir.y*
+          dir.y;
+
+      }
+
+
+      void main(){
+
+        vec3 p =
+          position;
+
+
+        vec3 tx =
+          vec3(
+            1.0,
+            0.0,
+            0.0
+          );
+
+
+        vec3 tz =
+          vec3(
+            0.0,
+            0.0,
+            1.0
+          );
+
+
+        mat2 H =
+          mat2(
+            1.0,
+            0.0,
+            0.0,
+            1.0
+          );
+
+
+        vec2 wind =
+          directionFromAngle(
+            uWindDirection
+          );
+
+
+        float spread =
+          uDirectionalSpread;
+
+
+
+        /*
+         * OPEN-OCEAN SWELLS
+         */
+
+        addWave(
+          p,tx,tz,H,
+          directionFromAngle(
+            uWindDirection-
+            uSwellSpread
+          ),
+          uSwellWavelength,
+          uSwellAmplitude,
+          1.34,
+          .68,
+          .1
+        );
+
+
+        addWave(
+          p,tx,tz,H,
+          directionFromAngle(
+            uWindDirection+
+            uSwellSpread*.72
+          ),
+          uSwellWavelength*.69,
+          uSwellAmplitude*
+          uSwellSecondary,
+          1.78,
+          .75,
+          1.8
+        );
+
+
+        /*
+         * WIND SEA
+         */
+
+        addWave(
+          p,tx,tz,H,
+          directionFromAngle(
+            uWindDirection-
+            spread*.33
+          ),
+          15.5*uWaveScale,
+          .48,
+          2.25,
+          .82,
+          3.1
+        );
+
+
+        addWave(
+          p,tx,tz,H,
+          directionFromAngle(
+            uWindDirection+
+            spread*.48
+          ),
+          9.2*uWaveScale,
+          .245,
+          2.94,
+          .89,
+          .9
+        );
+
+
+        addWave(
+          p,tx,tz,H,
+          directionFromAngle(
+            uWindDirection-
+            spread*.82
+          ),
+          5.6*uWaveScale,
+          .116,
+          3.75,
+          .92,
+          4.4
+        );
+
+
+        addWave(
+          p,tx,tz,H,
+          directionFromAngle(
+            uWindDirection+
+            spread*1.15
+          ),
+          3.15*uWaveScale,
+          .052,
+          4.65,
+          .76,
+          2.6
+        );
+
+
+        /*
+         * Long-wave grouping.
+         */
+
+        float group =
+          sin(
+            position.x*.019+
+            position.z*.012-
+            uTime*.095
+          )
+          *
+          sin(
+            position.x*.031-
+            position.z*.017+
+            uTime*.12
+          );
+
+
+        p.y +=
+          group*
+          .10*
+          uVerticalScale;
+
+
+        /*
+         * Geometric normal.
+         */
+
+        vec3 n =
+          normalize(
+            cross(
+              tz,
+              tx
+            )
+          );
+
+
+        if(
+          n.y<0.0
+        ){
+
+          n=-n;
+
+        }
+
+
+        /*
+         * Actual determinant.
+         */
+
+        float J =
+          H[0][0]*
+          H[1][1]
+          -
+          H[1][0]*
+          H[0][1];
+
+
+        vJacobian=J;
+
+
+        /*
+         * 0 = relaxed
+         * 1 = strongly compressed/folding
+         */
+
+        vCompression =
+          clamp(
+            1.0-J,
+            0.0,
+            2.5
+          );
+
+
+        vSlope =
+          1.0-
+          clamp(
+            n.y,
+            0.0,
+            1.0
+          );
+
+
+        /*
+         * Crest phase only provides a secondary front bias;
+           Jacobian remains the main breaking signal.
+         */
+
+        vCrestPhase =
+          .5+
+          .5*
+          sin(
+            dot(
+              position.xz,
+              wind
+            )
+            *
+            .37
+            -
+            uTime*
+            1.42
+          );
+
+
+        vec4 world =
+          modelMatrix*
+          vec4(
+            p,
+            1.0
+          );
+
+
+        vWorld=
+          world.xyz;
+
+
+        vNormal =
+          normalize(
+            mat3(
+              modelMatrix
+            )*
+            n
+          );
+
+
+        vHeight=
+          p.y;
+
+
+        gl_Position =
+          projectionMatrix*
+          viewMatrix*
+          world;
+
+      }
+
+    `,
+
+
+    fragmentShader:`
+
+      precision highp float;
+
+
+      uniform float uTime;
+
+      uniform sampler2D
+        uNormalTex;
+
+      uniform sampler2D
+        uFoamTex;
+
+
+      uniform vec3
+        uWaterColor;
+
+      uniform vec3
+        uDeepColor;
+
+      uniform vec3
+        uCrestTint;
+
+      uniform vec3
+        uFoamColor;
+
+      uniform vec3
+        uSunDirection;
+
+
+      uniform float
+        uNormalStrength;
+
+      uniform float
+        uDetailNormalStrength;
+
+
+      uniform float
+        uRippleScale;
+
+      uniform float
+        uRippleAmplitude;
+
+      uniform float
+        uRippleSpeed;
+
+
+      uniform float
+        uWindDirection;
+
+
+      uniform float
+        uFoamEnabled;
+
+      uniform float
+        uFoamOpacity;
+
+      uniform float
+        uJacobianThreshold;
+
+      uniform float
+        uJacobianSoftness;
+
+      uniform float
+        uCrestThreshold;
+
+      uniform float
+        uCrestSharpness;
+
+      uniform float
+        uChurnStrength;
+
+      uniform float
+        uCapillaryStrength;
+
+      uniform float
+        uCapillaryScale;
+
+      uniform float
+        uFoamBreakup;
+
+      uniform float
+        uFoamDetail;
+
+      uniform float
+        uFoamPersistence;
+
+      uniform float
+        uFoamTrailLength;
+
+      uniform float
+        uFoamAdvection;
+
+      uniform float
+        uFoamEdgeSoftness;
+
+      uniform float
+        uResidualFoam;
+
+
+      uniform float
+        uReflectionStrength;
+
+      uniform float
+        uFresnelStrength;
+
+      uniform float
+        uSunReflection;
+
+      uniform float
+        uGlitterStrength;
+
+      uniform float
+        uSkyReflection;
+
+
+      uniform float
+        uScatteringEnabled;
+
+      uniform float
+        uScatteringStrength;
+
+      uniform float
+        uScatteringPower;
+
+      uniform float
+        uTransmission;
+
+
+      uniform float
+        uFogStrength;
+
+      uniform float
+        uFogDistance;
+
+
+      varying vec3 vWorld;
+
+      varying vec3 vNormal;
+
+      varying float vHeight;
+
+      varying float vJacobian;
+
+      varying float vCompression;
+
+      varying float vCrestPhase;
+
+      varying float vSlope;
+
+
+      float saturate(
+        float x
+      ){
+
+        return clamp(
+          x,
+          0.0,
+          1.0
+        );
+
+      }
+
+
+      vec2 rotate2(
+        vec2 p,
+        float a
+      ){
+
+        float c=cos(a);
+        float s=sin(a);
+
+        return vec2(
+          c*p.x-s*p.y,
+          s*p.x+c*p.y
+        );
+
+      }
+
+
+      vec3 decodeNormal(
+        vec3 t
+      ){
+
+        return normalize(
+          t*2.0-1.0
+        );
+
+      }
+
+
+      vec3 perturbNormal(
+
+        vec3 base,
+
+        vec3 detail,
+
+        float strength
+
+      ){
+
+        vec3 axis;
+
+        if(
+          abs(base.y)<.999
+        ){
+
+          axis=
+            vec3(
+              0.0,
+              1.0,
+              0.0
+            );
+
+        }
+
+        else{
+
+          axis=
+            vec3(
+              1.0,
+              0.0,
+              0.0
+            );
+
+        }
+
+
+        vec3 T =
+          normalize(
+            cross(
+              axis,
+              base
+            )
+          );
+
+
+        vec3 B =
+          normalize(
+            cross(
+              base,
+              T
+            )
+          );
+
+
+        vec3 local =
+          normalize(
+            vec3(
+              detail.x*
+              strength,
+
+              max(
+                .16,
+                detail.z
+              ),
+
+              detail.y*
+              strength
+            )
+          );
+
+
+        return normalize(
+          T*local.x+
+          base*local.y+
+          B*local.z
+        );
+
+      }
+
+
+      float foamTexture(
+        vec2 uv
+      ){
+
+        return texture2D(
+          uFoamTex,
+          uv
+        ).r;
+
+      }
+
+
+      void main(){
+
+        vec3 V =
+          normalize(
+            cameraPosition-
+            vWorld
+          );
+
+
+        float dist =
+          distance(
+            cameraPosition,
+            vWorld
+          );
+
+
+        vec2 p =
+          vWorld.xz;
+
+
+        vec2 wind =
+          vec2(
+            cos(
+              uWindDirection
+            ),
+            sin(
+              uWindDirection
+            )
+          );
+
+
+        vec2 across =
+          vec2(
+            -wind.y,
+             wind.x
+          );
+
+
+        /*
+         * ====================================================
+         * RIPPLE NORMALS
+         * ====================================================
+         */
+
+        vec2 r1 =
+          rotate2(
+            p*
+            .145*
+            uRippleScale,
+            .16
+          )
+          +
+          wind*
+          uTime*
+          .018*
+          uRippleSpeed;
+
+
+        vec2 r2 =
+          rotate2(
+            p*
+            .34*
+            uRippleScale,
+            1.07
+          )
+          -
+          across*
+          uTime*
+          .027*
+          uRippleSpeed;
+
+
+        vec3 d1 =
+          decodeNormal(
+            texture2D(
+              uNormalTex,
+              r1
+            ).rgb
+          );
+
+
+        vec3 d2 =
+          decodeNormal(
+            texture2D(
+              uNormalTex,
+              r2
+            ).rgb
+          );
+
+
+        vec3 detail =
+          normalize(
+            d1*.61+
+            d2*.39
+          );
+
+
+        float nearFade =
+          1.0-
+          smoothstep(
+            160.0,
+            700.0,
+            dist
+          );
+
+
+        vec3 N =
+          perturbNormal(
+            normalize(vNormal),
+            detail,
+            uNormalStrength*
+            uRippleAmplitude*
+            nearFade
+          );
+
+
+        /*
+         * ====================================================
+         * WATER LIGHTING
+         * ====================================================
+         */
+
+        float NV =
+          saturate(
+            dot(
+              N,
+              V
+            )
+          );
+
+
+        float fresnel =
+          .020+
+          .980*
+          pow(
+            1.0-NV,
+            5.0
+          )
+          *
+          uFresnelStrength;
+
+
+        float crestHeight =
+          smoothstep(
+            -.25,
+            1.30,
+            vHeight
+          );
+
+
+        vec3 body =
+          mix(
+            uDeepColor,
+            uWaterColor,
+            .43+
+            crestHeight*.34
+          );
+
+
+        body =
+          mix(
+            body,
+            uCrestTint,
+            crestHeight*
+            vSlope*
+            .34
+          );
+
+
+        vec3 R =
+          reflect(
+            -V,
+            N
+          );
+
+
+        float skyAltitude =
+          saturate(
+            R.y*.5+.5
+          );
+
+
+        vec3 reflectedSky =
+          mix(
+            vec3(
+              .60,
+              .70,
+              .75
+            ),
+            vec3(
+              .27,
+              .49,
+              .62
+            ),
+            pow(
+              skyAltitude,
+              .68
+            )
+          );
+
+
+        vec3 color =
+          mix(
+            body,
+            reflectedSky,
+            fresnel*
+            uSkyReflection*
+            uReflectionStrength
+          );
+
+
+        /*
+         * ====================================================
+         * SUBSURFACE CREST TRANSMISSION
+         * ====================================================
+         */
+
+        if(
+          uScatteringEnabled>.5
+        ){
+
+          float steep =
+            smoothstep(
+              .04,
+              .34,
+              vSlope
+            );
+
+
+          float thinCrest =
+            pow(
+              crestHeight,
+              uScatteringPower
+            );
+
+
+          float back =
+            saturate(
+              dot(
+                -uSunDirection,
+                N
+              )*.5+.5
+            );
+
+
+          color +=
+            uCrestTint*
+            steep*
+            thinCrest*
+            back*
+            uScatteringStrength*
+            uTransmission;
+
+        }
+
+
+        /*
+         * ====================================================
+         * SUN GLITTER
+         * ====================================================
+         */
+
+        vec3 H =
+          normalize(
+            V+
+            uSunDirection
+          );
+
+
+        float NH =
+          max(
+            dot(
+              N,
+              H
+            ),
+            0.0
+          );
+
+
+        float specWide =
+          pow(
+            NH,
+            55.0
+          );
+
+
+        float specSharp =
+          pow(
+            NH,
+            330.0
+          );
+
+
+        float sparkle =
+          texture2D(
+            uNormalTex,
+            r1*3.7
+          ).r
+          *
+          texture2D(
+            uNormalTex,
+            r2*5.1
+          ).g;
+
+
+        sparkle =
+          smoothstep(
+            .23,
+            .69,
+            sparkle
+          );
+
+
+        color +=
+          vec3(
+            1.0,
+            .94,
+            .83
+          )
+          *
+          (
+            specWide*.21+
+            specSharp*
+            sparkle*
+            uGlitterStrength
+          )
+          *
+          uSunReflection;
+
+
+        /*
+         * ====================================================
+         *
+         * JACOBIAN WHITEWATER
+         *
+         * ====================================================
+         *
+         * vJacobian ~= 1    relaxed surface
+         * vJacobian < 1     horizontal compression
+         * vJacobian <= 0    fold / severe breaking
+         *
+         * Instead of placing white simply at high Y,
+         * compressed geometry is the primary source.
+         */
+
+        float compression =
+          saturate(
+            (
+              uJacobianThreshold-
+              vJacobian
+            )
+            /
+            max(
+              .001,
+              uJacobianSoftness
+            )
+          );
+
+
+        compression =
+          compression*
+          compression*
+          (
+            3.0-
+            2.0*
+            compression
+          );
+
+
+        /*
+         * The visible breaking front still favors
+         * upper / steep portions of the wave.
+         */
+
+        float crestGate =
+          smoothstep(
+            uCrestThreshold-
+            .34,
+            uCrestThreshold+
+            .40,
+            vHeight
+          );
+
+
+        float slopeGate =
+          smoothstep(
+            .055,
+            .285,
+            vSlope
+          );
+
+
+        float breaking =
+          compression*
+          (
+            .33+
+            .67*
+            max(
+              crestGate,
+              slopeGate
+            )
+          );
+
+
+        breaking =
+          pow(
+            saturate(
+              breaking*
+              uChurnStrength
+            ),
+            1.0/
+            max(
+              .15,
+              uCrestSharpness*.25
+            )
+          );
+
+
+        /*
+         * ====================================================
+         * CAPILLARY GATHERING
+         *
+         * Texture coordinates are elongated across the
+         * wave front and compressed in the travel direction.
+         *
+         * This turns generic noise into the narrow torn
+         * fibres visible at the breaking lip.
+         * ====================================================
+         */
+
+        vec2 capillarySpace =
+          vec2(
+            dot(
+              p,
+              across
+            ),
+
+            dot(
+              p,
+              wind
+            )
+          );
+
+
+        capillarySpace.x *=
+          .071*
+          uCapillaryScale;
+
+
+        capillarySpace.y *=
+          .19*
+          uCapillaryScale;
+
+
+        capillarySpace.y -=
+          uTime*
+          .038*
+          uFoamAdvection;
+
+
+        float capA =
+          foamTexture(
+            capillarySpace
+          );
+
+
+        float capB =
+          foamTexture(
+            capillarySpace*
+            vec2(
+              1.71,
+              1.26
+            )
+            +
+            vec2(
+              .37,
+              -.18
+            )
+          );
+
+
+        float capillary =
+          mix(
+            capA,
+            capB,
+            .34
+          );
+
+
+        capillary =
+          smoothstep(
+            .30+
+            uFoamBreakup*.20,
+            .78,
+            capillary
+          );
+
+
+        /*
+         * Gather capillary texture into compression areas.
+         */
+
+        float freshFoam =
+          breaking*
+          mix(
+            .52,
+            capillary,
+            uCapillaryStrength
+          );
+
+
+        /*
+         * ====================================================
+         * PSEUDO-PERSISTENCE
+         *
+         * There is deliberately NO history texture.
+         *
+         * We sample the same anisotropic field downstream
+         * at several offsets and progressively fade them.
+         *
+         * The eye reads these as foam that has detached from
+         * the crest and is being left behind.
+         * ====================================================
+         */
+
+        vec2 trailDir =
+          -wind*
+          uFoamTrailLength;
+
+
+        vec2 baseTrail =
+          p*.074*
+          uFoamDetail;
+
+
+        baseTrail +=
+          wind*
+          uTime*
+          .009*
+          uFoamAdvection;
+
+
+        float trail0 =
+          foamTexture(
+            baseTrail
+          );
+
+
+        float trail1 =
+          foamTexture(
+            baseTrail+
+            trailDir*.13
+          );
+
+
+        float trail2 =
+          foamTexture(
+            baseTrail+
+            trailDir*.29
+          );
+
+
+        float trail3 =
+          foamTexture(
+            baseTrail+
+            trailDir*.51
+          );
+
+
+        float persistentTexture =
+            trail0*.40
+          + trail1*.28
+          + trail2*.20
+          + trail3*.12;
+
+
+        /*
+         * Wider residual foam surrounding the exact fold.
+         */
+
+        float compressionHalo =
+          smoothstep(
+            uJacobianThreshold+
+            .18,
+            uJacobianThreshold-
+            .32,
+            vJacobian
+          );
+
+
+        float residual =
+          compressionHalo*
+          persistentTexture*
+          uFoamPersistence*
+          uResidualFoam;
+
+
+        /*
+         * Secondary crest streaks.
+         *
+         * These are intentionally weaker than Jacobian foam.
+         */
+
+        float secondary =
+          slopeGate*
+          crestGate*
+          smoothstep(
+            .57,
+            .84,
+            persistentTexture
+          )
+          *
+          .23;
+
+
+        float foam =
+          max(
+            freshFoam,
+            residual+
+            secondary
+          );
+
+
+        /*
+         * Break whitewater into holes.
+         */
+
+        float holeNoise =
+          foamTexture(
+            rotate2(
+              p*
+              .31*
+              uFoamDetail,
+              .74
+            )
+            +
+            vec2(
+              uTime*.018,
+              -uTime*.012
+            )
+          );
+
+
+        foam *=
+          mix(
+            .43,
+            1.0,
+            holeNoise
+          );
+
+
+        /*
+         * Separate tiny froth.
+         */
+
+        float microFroth =
+          foamTexture(
+            p*
+            .63*
+            uFoamDetail
+            +
+            wind*
+            uTime*
+            .026
+          );
+
+
+        foam +=
+          breaking*
+          smoothstep(
+            .67,
+            .91,
+            microFroth
+          )
+          *
+          .32;
+
+
+        foam =
+          smoothstep(
+            max(
+              .001,
+              uFoamEdgeSoftness*.18
+            ),
+            .72+
+            uFoamEdgeSoftness*.35,
+            foam
+          );
+
+
+        foam *=
+          uFoamEnabled*
+          uFoamOpacity;
+
+
+        /*
+         * Aerated water underneath white foam:
+         * first brighten/desaturate water,
+         * THEN place actual white bubbles.
+         *
+         * This gives churn volume rather than white paint.
+         */
+
+        float aerated =
+          smoothstep(
+            .03,
+            .70,
+            foam
+          );
+
+
+        color =
+          mix(
+            color,
+            vec3(
+              .34,
+              .56,
+              .58
+            ),
+            aerated*.19
+          );
+
+
+        color =
+          mix(
+            color,
+            uFoamColor,
+            foam*.91
+          );
+
+
+        /*
+         * Freshest capillary lips are brighter.
+         */
+
+        float freshLip =
+          freshFoam*
+          capillary;
+
+
+        color +=
+          vec3(
+            1.0,
+            .98,
+            .92
+          )
+          *
+          freshLip*
+          .15;
+
+
+        /*
+         * ====================================================
+         * DISTANCE
+         * ====================================================
+         */
+
+        float fog =
+          1.0-
+          exp(
+            -dist/
+            max(
+              20.0,
+              uFogDistance
+            )
+          );
+
+
+        fog =
+          saturate(
+            fog*
+            uFogStrength*
+            1.65
+          );
+
+
+        /*
+         * Fade microscopic foam texture before it aliases
+         * at the horizon, while keeping broad whitecaps.
+         */
+
+        float horizonFoamFade =
+          1.0-
+          smoothstep(
+            360.0,
+            1100.0,
+            dist
+          );
+
+
+        vec3 fogColor =
+          vec3(
+            .53,
+            .66,
+            .73
+          );
+
+
+        color =
+          mix(
+            color,
+            fogColor,
+            fog*.64
+          );
+
+
+        gl_FragColor =
+          vec4(
+            color,
+            1.0
+          );
+
+      }
+
+    `
+
+  });
+
+
+const ocean =
+  new THREE.Mesh(
+    oceanGeometry,
+    oceanMaterial
+  );
+
+
+ocean.frustumCulled=false;
+
+
+scene.add(
+  ocean
+);
+
+
+/* ==========================================================
+   GUI
+   ========================================================== */
+
+const gui =
+  new GUI({
+    title:'Ocean'
+  });
+
+
+gui.domElement.style.right='8px';
+gui.domElement.style.top='8px';
+
+
+/* ----------------------------------------------------------
+   Surface
+   ---------------------------------------------------------- */
+
+const surface =
+  gui.addFolder(
+    'Surface'
+  );
+
+
+surface
+  .addColor(
+    S,
+    'waterColor'
+  )
+  .name(
+    'Base Water'
+  )
+  .onChange(
+    v=>
+      U.uWaterColor.value.set(v)
+  );
+
+
+surface
+  .addColor(
+    S,
+    'deepColor'
+  )
+  .name(
+    'Deep Water'
+  )
+  .onChange(
+    v=>
+      U.uDeepColor.value.set(v)
+  );
+
+
+surface
+  .addColor(
+    S,
+    'crestTint'
+  )
+  .name(
+    'Crest Tint'
+  )
+  .onChange(
+    v=>
+      U.uCrestTint.value.set(v)
+  );
+
+
+surface
+  .add(
+    S,
+    'normalStrength',
+    0,
+    2,
+    .01
+  )
+  .name(
+    'Normal Strength'
+  )
+  .onChange(
+    v=>
+      U.uNormalStrength.value=v
+  );
+
+
+surface
+  .add(
+    S,
+    'detailNormalStrength',
+    0,
+    1,
+    .01
+  )
+  .name(
+    'Detail Normals'
+  );
+
+
+/* ----------------------------------------------------------
+   Wave Crest
+   ---------------------------------------------------------- */
+
+const crest =
+  gui.addFolder(
+    'Wave Crest / Churn'
+  );
+
+
+crest
+  .add(
+    S,
+    'foamEnabled'
+  )
+  .name(
+    'Enabled'
+  )
+  .onChange(
+    v=>
+      U.uFoamEnabled.value=
+        v?1:0
+  );
+
+
+crest
+  .addColor(
+    S,
+    'foamColor'
+  )
+  .name(
+    'Color'
+  )
+  .onChange(
+    v=>
+      U.uFoamColor.value.set(v)
+  );
+
+
+crest
+  .add(
+    S,
+    'foamOpacity',
+    0,
+    1,
+    .01
+  )
+  .name(
+    'Opacity'
+  )
+  .onChange(
+    v=>
+      U.uFoamOpacity.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'jacobianThreshold',
+    .10,
+    1.15,
+    .005
+  )
+  .name(
+    'Injection Threshold'
+  )
+  .onChange(
+    v=>
+      U.uJacobianThreshold.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'jacobianSoftness',
+    .02,
+    .80,
+    .005
+  )
+  .name(
+    'Injection Softness'
+  )
+  .onChange(
+    v=>
+      U.uJacobianSoftness.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'crestThreshold',
+    -.5,
+    1.5,
+    .01
+  )
+  .name(
+    'Crest Threshold'
+  )
+  .onChange(
+    v=>
+      U.uCrestThreshold.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'crestSharpness',
+    .5,
+    8,
+    .05
+  )
+  .name(
+    'Crest Sharpness'
+  )
+  .onChange(
+    v=>
+      U.uCrestSharpness.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'churnStrength',
+    0,
+    2.5,
+    .01
+  )
+  .name(
+    'Churn Strength'
+  )
+  .onChange(
+    v=>
+      U.uChurnStrength.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'capillaryStrength',
+    0,
+    2,
+    .01
+  )
+  .name(
+    'Capillary Front'
+  )
+  .onChange(
+    v=>
+      U.uCapillaryStrength.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'capillaryScale',
+    .2,
+    4,
+    .01
+  )
+  .name(
+    'Capillary Scale'
+  )
+  .onChange(
+    v=>
+      U.uCapillaryScale.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'foamBreakup',
+    0,
+    1,
+    .01
+  )
+  .name(
+    'Breakup'
+  )
+  .onChange(
+    v=>
+      U.uFoamBreakup.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'foamDetail',
+    .3,
+    3,
+    .01
+  )
+  .name(
+    'Texture Detail'
+  )
+  .onChange(
+    v=>
+      U.uFoamDetail.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'foamPersistence',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Persistence'
+  )
+  .onChange(
+    v=>
+      U.uFoamPersistence.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'foamTrailLength',
+    0,
+    4,
+    .01
+  )
+  .name(
+    'Trail Length'
+  )
+  .onChange(
+    v=>
+      U.uFoamTrailLength.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'foamAdvection',
+    0,
+    3,
+    .01
+  )
+  .name(
+    'Drift Speed'
+  )
+  .onChange(
+    v=>
+      U.uFoamAdvection.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'residualFoam',
+    0,
+    1,
+    .01
+  )
+  .name(
+    'Residual Foam'
+  )
+  .onChange(
+    v=>
+      U.uResidualFoam.value=v
+  );
+
+
+crest
+  .add(
+    S,
+    'foamEdgeSoftness',
+    .01,
+    .60,
+    .005
+  )
+  .name(
+    'Edge Softness'
+  )
+  .onChange(
+    v=>
+      U.uFoamEdgeSoftness.value=v
+  );
+
+
+crest.open();
+
+
+/* ----------------------------------------------------------
+   Geometry
+   ---------------------------------------------------------- */
+
+const geometry =
+  gui.addFolder(
+    'Geometry'
+  );
+
+
+geometry
+  .add(
+    S,
+    'verticalScale',
+    .25,
+    2.5,
+    .01
+  )
+  .name(
+    'Vertical Scale'
+  )
+  .onChange(
+    v=>
+      U.uVerticalScale.value=v
+  );
+
+
+geometry
+  .add(
+    S,
+    'choppiness',
+    0,
+    2.6,
+    .01
+  )
+  .name(
+    'Choppiness'
+  )
+  .onChange(
+    v=>
+      U.uChoppiness.value=v
+  );
+
+
+geometry
+  .add(
+    S,
+    'speed',
+    .1,
+    2.5,
+    .01
+  )
+  .name(
+    'Speed'
+  )
+  .onChange(
+    v=>
+      U.uSpeed.value=v
+  );
+
+
+geometry
+  .add(
+    S,
+    'standingWaveRatio',
+    0,
+    1,
+    .01
+  )
+  .name(
+    'Standing Wave Ratio'
+  )
+  .onChange(
+    v=>
+      U.uStandingWaveRatio.value=v
+  );
+
+
+/* ----------------------------------------------------------
+   Wind
+   ---------------------------------------------------------- */
+
+const windFolder =
+  gui.addFolder(
+    'Wind'
+  );
+
+
+windFolder
+  .add(
+    S,
+    'windSpeed',
+    0,
+    70,
+    .1
+  )
+  .name(
+    'Wind Speed'
+  );
+
+
+windFolder
+  .add(
+    S,
+    'windDirection',
+    0,
+    360,
+    1
+  )
+  .name(
+    'Wind Direction'
+  )
+  .onChange(
+    v=>
+      U.uWindDirection.value=
+        THREE.MathUtils.degToRad(v)
+  );
+
+
+windFolder
+  .add(
+    S,
+    'directionalSpread',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Directional Spread'
+  )
+  .onChange(
+    v=>
+      U.uDirectionalSpread.value=v
+  );
+
+
+/* ----------------------------------------------------------
+   Ripples
+   ---------------------------------------------------------- */
+
+const ripples =
+  gui.addFolder(
+    'Ripples'
+  );
+
+
+ripples
+  .add(
+    S,
+    'rippleScale',
+    .1,
+    5,
+    .01
+  )
+  .name(
+    'Scale'
+  )
+  .onChange(
+    v=>
+      U.uRippleScale.value=v
+  );
+
+
+ripples
+  .add(
+    S,
+    'rippleAmplitude',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Amplitude'
+  )
+  .onChange(
+    v=>
+      U.uRippleAmplitude.value=v
+  );
+
+
+ripples
+  .add(
+    S,
+    'rippleSpeed',
+    0,
+    3,
+    .01
+  )
+  .name(
+    'Speed'
+  )
+  .onChange(
+    v=>
+      U.uRippleSpeed.value=v
+  );
+
+
+/* ----------------------------------------------------------
+   Waves
+   ---------------------------------------------------------- */
+
+const waves =
+  gui.addFolder(
+    'Waves'
+  );
+
+
+waves
+  .add(
+    S,
+    'wavesScale',
+    .3,
+    2.5,
+    .01
+  )
+  .name(
+    'Scale'
+  )
+  .onChange(
+    v=>
+      U.uWaveScale.value=v
+  );
+
+
+waves
+  .add(
+    S,
+    'wavesAmplitude',
+    .1,
+    2.5,
+    .01
+  )
+  .name(
+    'Amplitude'
+  )
+  .onChange(
+    v=>
+      U.uWaveAmplitude.value=v
+  );
+
+
+waves
+  .add(
+    S,
+    'wavesFrequency',
+    .4,
+    2.2,
+    .01
+  )
+  .name(
+    'Frequency'
+  )
+  .onChange(
+    v=>
+      U.uWaveFrequency.value=v
+  );
+
+
+/* ----------------------------------------------------------
+   Swells
+   ---------------------------------------------------------- */
+
+const swells =
+  gui.addFolder(
+    'Swells'
+  );
+
+
+swells
+  .add(
+    S,
+    'swellWavelength',
+    8,
+    80,
+    .1
+  )
+  .name(
+    'Wavelength'
+  )
+  .onChange(
+    v=>
+      U.uSwellWavelength.value=v
+  );
+
+
+swells
+  .add(
+    S,
+    'swellAmplitude',
+    .1,
+    3,
+    .01
+  )
+  .name(
+    'Amplitude'
+  )
+  .onChange(
+    v=>
+      U.uSwellAmplitude.value=v
+  );
+
+
+swells
+  .add(
+    S,
+    'swellSpread',
+    0,
+    1.3,
+    .01
+  )
+  .name(
+    'Direction Spread'
+  )
+  .onChange(
+    v=>
+      U.uSwellSpread.value=v
+  );
+
+
+swells
+  .add(
+    S,
+    'swellSecondary',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Secondary'
+  )
+  .onChange(
+    v=>
+      U.uSwellSecondary.value=v
+  );
+
+
+/* ----------------------------------------------------------
+   Reflections
+   ---------------------------------------------------------- */
+
+const reflections =
+  gui.addFolder(
+    'Reflections'
+  );
+
+
+reflections
+  .add(
+    S,
+    'reflectionStrength',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Reflection'
+  )
+  .onChange(
+    v=>
+      U.uReflectionStrength.value=v
+  );
+
+
+reflections
+  .add(
+    S,
+    'fresnelStrength',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Fresnel'
+  )
+  .onChange(
+    v=>
+      U.uFresnelStrength.value=v
+  );
+
+
+reflections
+  .add(
+    S,
+    'skyReflection',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Sky'
+  )
+  .onChange(
+    v=>
+      U.uSkyReflection.value=v
+  );
+
+
+reflections
+  .add(
+    S,
+    'sunReflection',
+    0,
+    2,
+    .01
+  )
+  .name(
+    'Sun'
+  )
+  .onChange(
+    v=>
+      U.uSunReflection.value=v
+  );
+
+
+reflections
+  .add(
+    S,
+    'glitterStrength',
+    0,
+    2,
+    .01
+  )
+  .name(
+    'Glitter'
+  )
+  .onChange(
+    v=>
+      U.uGlitterStrength.value=v
+  );
+
+
+/* ----------------------------------------------------------
+   Subsurface Scattering
+   ---------------------------------------------------------- */
+
+const scattering =
+  gui.addFolder(
+    'Subsurface Scattering'
+  );
+
+
+scattering
+  .add(
+    S,
+    'scatteringEnabled'
+  )
+  .name(
+    'Enabled'
+  )
+  .onChange(
+    v=>
+      U.uScatteringEnabled.value=
+        v?1:0
+  );
+
+
+scattering
+  .add(
+    S,
+    'scatteringStrength',
+    0,
+    2,
+    .01
+  )
+  .name(
+    'Strength'
+  )
+  .onChange(
+    v=>
+      U.uScatteringStrength.value=v
+  );
+
+
+scattering
+  .add(
+    S,
+    'scatteringPower',
+    .5,
+    10,
+    .1
+  )
+  .name(
+    'Power'
+  )
+  .onChange(
+    v=>
+      U.uScatteringPower.value=v
+  );
+
+
+scattering
+  .add(
+    S,
+    'transmission',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Transmission'
+  )
+  .onChange(
+    v=>
+      U.uTransmission.value=v
+  );
+
+
+/* ----------------------------------------------------------
+   Atmosphere
+   ---------------------------------------------------------- */
+
+const atmosphere =
+  gui.addFolder(
+    'Atmosphere'
+  );
+
+
+atmosphere
+  .add(
+    S,
+    'fogStrength',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Haze'
+  )
+  .onChange(
+    v=>
+      U.uFogStrength.value=v
+  );
+
+
+atmosphere
+  .add(
+    S,
+    'fogDistance',
+    100,
+    2000,
+    5
+  )
+  .name(
+    'Haze Distance'
+  )
+  .onChange(
+    v=>
+      U.uFogDistance.value=v
+  );
+
+
+atmosphere
+  .add(
+    S,
+    'horizonBrightness',
+    .4,
+    1.5,
+    .01
+  )
+  .name(
+    'Horizon'
+  )
+  .onChange(
+    v=>
+      skyUniforms
+      .uHorizonBrightness
+      .value=v
+  );
+
+
+atmosphere
+  .add(
+    S,
+    'skySaturation',
+    0,
+    1.5,
+    .01
+  )
+  .name(
+    'Sky Saturation'
+  )
+  .onChange(
+    v=>
+      skyUniforms
+      .uSkySaturation
+      .value=v
+  );
+
+
+atmosphere
+  .add(
+    S,
+    'exposure',
+    .3,
+    2,
+    .01
+  )
+  .name(
+    'Exposure'
+  )
+  .onChange(
+    v=>
+      renderer.toneMappingExposure=v
+  );
+
+
+/* ----------------------------------------------------------
+   Camera
+   ---------------------------------------------------------- */
+
+const cameraFolder =
+  gui.addFolder(
+    'Camera'
+  );
+
+
+cameraFolder
+  .add(
+    S,
+    'eyeHeight',
+    1.5,
+    16,
+    .1
+  )
+  .name(
+    'Height'
+  );
+
+
+cameraFolder
+  .add(
+    S,
+    'fov',
+    30,
+    85,
+    1
+  )
+  .name(
+    'FOV'
+  );
+
+
+cameraFolder
+  .add(
+    S,
+    'cameraBob',
+    0,
+    .20,
+    .005
+  )
+  .name(
+    'Camera Motion'
+  );
+
+
+/* ----------------------------------------------------------
+   Performance
+   ---------------------------------------------------------- */
+
+const perf =
+  gui.addFolder(
+    'Performance'
+  );
+
+
+perf
+  .add(
+    S,
+    'pixelRatio',
+    .5,
+    Math.min(
+      2,
+      devicePixelRatio || 1
+    ),
+    .05
+  )
+  .name(
+    'Pixel Ratio'
+  )
+  .onChange(
+    v=>{
+
+      renderer.setPixelRatio(v);
+
+      renderer.setSize(
+        innerWidth,
+        innerHeight
+      );
+
+    }
+  );
+
+
+/* ==========================================================
+   POINTER CAMERA
+   ========================================================== */
+
+let yaw=0;
+
+let pitch=-.23;
+
+let targetYaw=yaw;
+
+let targetPitch=pitch;
+
+
+let activePointer=null;
+
+let lastX=0;
+
+let lastY=0;
+
+
+const pointers =
+  new Map();
+
+
+let oldPinch=0;
+
+
+renderer.domElement
+.addEventListener(
+  'pointerdown',
+  e=>{
+
+    pointers.set(
+      e.pointerId,
+      {
+        x:e.clientX,
+        y:e.clientY
+      }
+    );
+
+
+    if(
+      pointers.size===1
+    ){
+
+      activePointer=
+        e.pointerId;
+
+      lastX=
+        e.clientX;
+
+      lastY=
+        e.clientY;
+
+    }
+
+
+    try{
+
+      renderer.domElement
+      .setPointerCapture(
+        e.pointerId
+      );
+
+    }
+    catch{}
+
+  }
+);
+
+
+renderer.domElement
+.addEventListener(
+  'pointermove',
+  e=>{
+
+    if(
+      !pointers.has(
+        e.pointerId
+      )
+    ){
+      return;
+    }
+
+
+    pointers.set(
+      e.pointerId,
+      {
+        x:e.clientX,
+        y:e.clientY
+      }
+    );
+
+
+    if(
+      pointers.size===1 &&
+      e.pointerId===
+      activePointer
+    ){
+
+      const dx=
+        e.clientX-lastX;
+
+      const dy=
+        e.clientY-lastY;
+
+
+      lastX=
+        e.clientX;
+
+      lastY=
+        e.clientY;
+
+
+      targetYaw -=
+        dx*.0026;
+
+      targetPitch -=
+        dy*.00225;
+
+
+      targetPitch =
+        THREE.MathUtils.clamp(
+          targetPitch,
+          -.78,
+          .24
+        );
+
+    }
+
+
+    if(
+      pointers.size===2
+    ){
+
+      const p=
+        [...pointers.values()];
+
+
+      const d=
+        Math.hypot(
+          p[0].x-p[1].x,
+          p[0].y-p[1].y
+        );
+
+
+      if(
+        oldPinch>0
+      ){
+
+        S.fov -=
+          (
+            d-oldPinch
+          )*.045;
+
+
+        S.fov =
+          THREE.MathUtils.clamp(
+            S.fov,
+            30,
+            85
+          );
+
+      }
+
+
+      oldPinch=d;
+
+    }
+
+  }
+);
+
+
+function pointerEnd(e){
+
+  pointers.delete(
+    e.pointerId
+  );
+
+
+  if(
+    e.pointerId===
+    activePointer
+  ){
+
+    activePointer=null;
+
+  }
+
+
+  if(
+    pointers.size<2
+  ){
+
+    oldPinch=0;
+
+  }
+
+}
+
+
+renderer.domElement
+.addEventListener(
+  'pointerup',
+  pointerEnd
+);
+
+
+renderer.domElement
+.addEventListener(
+  'pointercancel',
+  pointerEnd
+);
+
+
+renderer.domElement
+.addEventListener(
+  'wheel',
+  e=>{
+
+    S.fov +=
+      e.deltaY*.017;
+
+
+    S.fov =
+      THREE.MathUtils.clamp(
+        S.fov,
+        30,
+        85
+      );
+
+  },
+  {
+    passive:true
+  }
+);
+
+
+/* ==========================================================
+   RESIZE
+   ========================================================== */
+
+addEventListener(
+  'resize',
+  ()=>{
+
+    camera.aspect =
+      innerWidth/
+      innerHeight;
+
+
+    camera.updateProjectionMatrix();
+
+
+    renderer.setSize(
+      innerWidth,
+      innerHeight
+    );
+
+  }
+);
+
+
+/* ==========================================================
+   STATS
+   ========================================================== */
+
+const fpsEl =
+  document.getElementById(
+    'fps'
+  );
+
+
+const trisEl =
+  document.getElementById(
+    'tris'
+  );
+
+
+let frameCounter=0;
+
+let fpsTimestamp=
+  performance.now();
+
+
+/* ==========================================================
+   LOOP
+   ========================================================== */
+
+const start=
+  performance.now();
+
+
+const look=
+  new THREE.Vector3();
+
+
+function animate(now){
+
+  requestAnimationFrame(
+    animate
+  );
+
+
+  const time=
+    (
+      now-start
+    )*.001;
+
+
+  U.uTime.value=
+    time;
+
+
+  yaw =
+    THREE.MathUtils.lerp(
+      yaw,
+      targetYaw,
+      .075
+    );
+
+
+  pitch =
+    THREE.MathUtils.lerp(
+      pitch,
+      targetPitch,
+      .075
+    );
+
+
+  camera.fov =
+    THREE.MathUtils.lerp(
+      camera.fov,
+      S.fov,
+      .08
+    );
+
+
+  camera.updateProjectionMatrix();
+
+
+  const bob =
+    (
+      Math.sin(
+        time*.46
+      )*.55
+      +
+      Math.sin(
+        time*.71+1.7
+      )*.25
+    )
+    *
+    S.cameraBob;
+
+
+  camera.position.y =
+    S.eyeHeight+
+    bob;
+
+
+  const cp =
+    Math.cos(
+      pitch
+    );
+
+
+  look.set(
+
+    Math.sin(yaw)*cp,
+
+    Math.sin(pitch),
+
+    -Math.cos(yaw)*cp
+
+  );
+
+
+  camera.lookAt(
+
+    camera.position.x+
+    look.x,
+
+    camera.position.y+
+    look.y,
+
+    camera.position.z+
+    look.z
+
+  );
+
+
+  /*
+   * Keep finite mesh under observer.
+   *
+   * There is no gigantic world allocation.
+   */
+
+  ocean.position.x=
+    camera.position.x;
+
+
+  ocean.position.z=
+    camera.position.z-265;
+
+
+  sky.position.copy(
+    camera.position
+  );
+
+
+  renderer.render(
+    scene,
+    camera
+  );
+
+
+  frameCounter++;
+
+
+  if(
+    now-fpsTimestamp>
+    500
+  ){
+
+    fpsEl.textContent=
+      Math.round(
+        frameCounter*
+        1000/
+        (
+          now-
+          fpsTimestamp
+        )
+      );
+
+
+    frameCounter=0;
+
+    fpsTimestamp=now;
+
+
+    trisEl.textContent =
+      renderer.info.render
+      .triangles
+      .toLocaleString();
+
+  }
+
+}
+
+
+requestAnimationFrame(
+  animate
+);
+
+</script>
+</body>
+</html>
