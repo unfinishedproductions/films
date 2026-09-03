@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#cfdbe1">
+<title>Snow Cube — ICSPH-inspired WebGPU Demo</title>
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{
+    margin:0;width:100%;height:100%;overflow:hidden;
+    background:linear-gradient(#e9f0f4,#c7d4db);
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  canvas{display:block;touch-action:none}
+  #menuBtn{
+    position:fixed;left:14px;top:max(14px,env(safe-area-inset-top));
+    width:46px;height:46px;border:0;border-radius:14px;
+    background:rgba(23,30,35,.72);color:white;font-size:24px;
+    box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(14px);
+    z-index:20
+  }
+  #panel{
+    position:fixed;left:14px;top:68px;z-index:19;
+    width:min(320px,calc(100vw - 28px));
+    padding:14px 14px 12px;border-radius:18px;
+    background:rgba(20,27,32,.85);color:#fff;backdrop-filter:blur(18px);
+    box-shadow:0 18px 42px rgba(0,0,0,.22);
+    opacity:0;pointer-events:none;transform:translateY(-10px);
+    transition:.17s ease;
+  }
+  #panel.open{opacity:1;pointer-events:auto;transform:none}
+  #panel h1{font-size:13px;margin:0 0 5px;font-weight:760}
+  #panel .sub{font-size:10px;line-height:1.4;opacity:.65;margin-bottom:10px}
+  .row{margin:9px 0}
+  .line{display:flex;justify-content:space-between;gap:8px;font-size:11px;margin-bottom:3px}
+  .val{opacity:.65;font-variant-numeric:tabular-nums}
+  input[type=range]{width:100%}
+  .buttons{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .small{
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.09);color:#fff;
+    border-radius:10px;padding:8px 11px;font-size:11px
+  }
+  #badge{
+    position:fixed;right:12px;top:max(14px,env(safe-area-inset-top));
+    padding:8px 10px;border-radius:11px;
+    background:rgba(255,255,255,.68);color:#25333a;
+    font:10px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;
+    backdrop-filter:blur(10px);z-index:10;pointer-events:none
+  }
+  #hint{
+    position:fixed;left:50%;bottom:max(16px,env(safe-area-inset-bottom));
+    transform:translateX(-50%);
+    padding:9px 13px;border-radius:20px;
+    background:rgba(255,255,255,.72);color:#28363c;
+    font-size:10px;backdrop-filter:blur(10px);z-index:10;pointer-events:none;
+    white-space:nowrap
+  }
+  #error{
+    display:none;position:fixed;inset:24px;z-index:99;margin:auto;
+    max-width:780px;height:max-content;padding:18px;border-radius:16px;
+    background:#1c2428;color:#fff;font:13px/1.5 system-ui;white-space:pre-wrap
+  }
+</style>
+</head>
+<body>
+<button id="menuBtn" aria-label="Settings">☰</button>
+
+<div id="panel">
+  <h1>Snow cube</h1>
+  <div class="sub">
+    ICSPH-inspired compressible snow. Direct digging interaction, plastic compaction,
+    shear resistance, cohesion, and clump break-off. No visible tool gizmo.
+  </div>
+
+  <div class="row"><div class="line"><span>Compression stiffness</span><span class="val" id="kPressureV"></span></div><input id="kPressure" type="range" min="12" max="120" step="1" value="52"></div>
+  <div class="row"><div class="line"><span>Shear resistance</span><span class="val" id="kShearV"></span></div><input id="kShear" type="range" min="0" max="40" step="0.5" value="18"></div>
+  <div class="row"><div class="line"><span>Plastic compaction</span><span class="val" id="kPlasticV"></span></div><input id="kPlastic" type="range" min="0" max="1" step="0.01" value="0.42"></div>
+  <div class="row"><div class="line"><span>Hardening</span><span class="val" id="kHardV"></span></div><input id="kHard" type="range" min="0" max="8" step="0.1" value="3.3"></div>
+  <div class="row"><div class="line"><span>Cohesion</span><span class="val" id="kCohesionV"></span></div><input id="kCohesion" type="range" min="0" max="1" step="0.01" value="0.34"></div>
+  <div class="row"><div class="line"><span>Fracture / crumble</span><span class="val" id="kFractureV"></span></div><input id="kFracture" type="range" min="0.02" max="0.35" step="0.01" value="0.12"></div>
+  <div class="row"><div class="line"><span>Dig radius</span><span class="val" id="kRadiusV"></span></div><input id="kRadius" type="range" min="0.10" max="0.34" step="0.01" value="0.18"></div>
+  <div class="row"><div class="line"><span>Dig strength</span><span class="val" id="kStrengthV"></span></div><input id="kStrength" type="range" min="8" max="120" step="1" value="42"></div>
+
+  <div class="buttons">
+    <button class="small" id="resetBtn">Reset cube</button>
+    <button class="small" id="pauseBtn">Pause</button>
+  </div>
+</div>
+
+<div id="badge">
+  <div id="rendererLabel">WebGPU preferred</div>
+  <div id="fps">-- fps</div>
+  <div id="count">-- particles</div>
+</div>
+
+<div id="hint">drag directly across the cube to carve it · hold to compress · right-drag rotates</div>
+<div id="error"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+    "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const errorBox = document.getElementById('error');
+
+try {
+
+/* ============================================================
+   PARAMS
+   ============================================================ */
+
+const PARAMS = {
+  spacing: 0.073,
+  radius: 0.042,
+  support: 0.162,
+  mass: 1.0,
+  gravity: 8.7,
+  damping: 0.997,
+  iterations: 4,
+
+  pressure: 52,
+  shear: 18,
+  plastic: 0.42,
+  hardening: 3.3,
+  cohesion: 0.34,
+  fracture: 0.12,
+
+  digRadius: 0.18,
+  digStrength: 42,
+
+  floorFriction: 0.88
+};
+
+const NX = 18;
+const NY = 14;
+const NZ = 18;
+const COUNT = NX * NY * NZ;
+document.getElementById('count').textContent = COUNT + ' particles';
+
+/* ============================================================
+   RENDERER / SCENE
+   ============================================================ */
+
+const renderer = new THREE.WebGLRenderer({
+  antialias:true,
+  powerPreference:'high-performance'
+});
+renderer.setPixelRatio(Math.min(devicePixelRatio,1.7));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.15;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+document.body.appendChild(renderer.domElement);
+
+document.getElementById('rendererLabel').textContent = 'Three.js';
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xd7e2e8);
+scene.fog = new THREE.Fog(0xd7e2e8, 4.6, 10.5);
+
+const camera = new THREE.PerspectiveCamera(42, innerWidth/innerHeight, 0.03, 30);
+camera.position.set(2.55, 1.9, 3.3);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.08;
+controls.target.set(0,0.52,0);
+controls.mouseButtons = {
+  LEFT: null,
+  MIDDLE: THREE.MOUSE.DOLLY,
+  RIGHT: THREE.MOUSE.ROTATE
+};
+
+/* ============================================================
+   LIGHTING / ENVIRONMENT
+   ============================================================ */
+
+scene.add(new THREE.HemisphereLight(0xf8fdff, 0x70818a, 1.8));
+
+const key = new THREE.DirectionalLight(0xffffff, 2.8);
+key.position.set(-2.3,4.5,2.4);
+key.castShadow = true;
+key.shadow.mapSize.set(2048,2048);
+key.shadow.camera.left = -3;
+key.shadow.camera.right = 3;
+key.shadow.camera.top = 3;
+key.shadow.camera.bottom = -3;
+scene.add(key);
+
+const rim = new THREE.DirectionalLight(0xeaf6ff, 1.25);
+rim.position.set(3.2,2.2,-2.8);
+scene.add(rim);
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(12,12),
+  new THREE.MeshStandardMaterial({
+    color:0xf3f5f6,
+    roughness:0.93,
+    metalness:0
+  })
+);
+ground.rotation.x = -Math.PI/2;
+ground.receiveShadow = true;
+scene.add(ground);
+
+const pedestal = new THREE.Mesh(
+  new THREE.BoxGeometry(2.1,0.14,2.1),
+  new THREE.MeshStandardMaterial({
+    color:0xa6b4bc,
+    roughness:0.8,
+    metalness:0.02
+  })
+);
+pedestal.position.y = -0.07;
+pedestal.receiveShadow = true;
+pedestal.castShadow = true;
+scene.add(pedestal);
+
+/* ============================================================
+   SNOW PARTICLES
+   ============================================================ */
+
+let pos = new Float32Array(COUNT*3);
+let prev = new Float32Array(COUNT*3);
+let vel = new Float32Array(COUNT*3);
+let restDensity = new Float32Array(COUNT);
+let density = new Float32Array(COUNT);
+let compact = new Float32Array(COUNT);
+let damage = new Float32Array(COUNT);
+
+let bonds = [];   // local cohesion/shear structure
+
+const sphereGeo = new THREE.IcosahedronGeometry(PARAMS.radius, 1);
+const snowMat = new THREE.MeshStandardMaterial({
+  color:0xffffff,
+  roughness:0.83,
+  metalness:0,
+  envMapIntensity:0.5
+});
+
+const snow = new THREE.InstancedMesh(sphereGeo, snowMat, COUNT);
+snow.castShadow = true;
+snow.receiveShadow = true;
+snow.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+snow.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(COUNT*3),3);
+scene.add(snow);
+
+const dummy = new THREE.Object3D();
+const tmpColor = new THREE.Color();
+
+const hashGrid = new Map();
+let CELL = PARAMS.support;
+
+/* ============================================================
+   HASH GRID
+   ============================================================ */
+
+function hkey(ix,iy,iz){
+  return ix + ',' + iy + ',' + iz;
+}
+
+function cellOf(x,y,z){
+  return [
+    Math.floor(x/CELL),
+    Math.floor(y/CELL),
+    Math.floor(z/CELL)
+  ];
+}
+
+function rebuildHash(){
+  hashGrid.clear();
+  for(let i=0;i<COUNT;i++){
+    const o=i*3;
+    const c=cellOf(pos[o],pos[o+1],pos[o+2]);
+    const k=hkey(c[0],c[1],c[2]);
+    let arr=hashGrid.get(k);
+    if(!arr){ arr=[]; hashGrid.set(k,arr); }
+    arr.push(i);
+  }
+}
+
+function eachNeighbor(i, fn){
+  const o=i*3;
+  const c=cellOf(pos[o],pos[o+1],pos[o+2]);
+  for(let dz=-1;dz<=1;dz++){
+    for(let dy=-1;dy<=1;dy++){
+      for(let dx=-1;dx<=1;dx++){
+        const arr = hashGrid.get(hkey(c[0]+dx,c[1]+dy,c[2]+dz));
+        if(!arr) continue;
+        for(let n=0;n<arr.length;n++){
+          const j=arr[n];
+          if(j===i) continue;
+          fn(j);
+        }
+      }
+    }
+  }
+}
+
+/* ============================================================
+   KERNEL
+   ============================================================ */
+
+const H = PARAMS.support;
+const H2 = H*H;
+
+function kernel(r){
+  if(r>=H) return 0;
+  const q = 1 - r/H;
+  return q*q*q;
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+
+function index(x,y,z){
+  return y*NX*NZ + z*NX + x;
+}
+
+function resetSnow(){
+
+  bonds.length = 0;
+
+  let p=0;
+  const jitter = 0.008;
+
+  for(let y=0;y<NY;y++){
+    for(let z=0;z<NZ;z++){
+      for(let x=0;x<NX;x++){
+
+        const px = (x-(NX-1)/2)*PARAMS.spacing + (Math.random()-.5)*jitter;
+        const py = y*PARAMS.spacing + PARAMS.radius*1.2 + (Math.random()-.5)*jitter;
+        const pz = (z-(NZ-1)/2)*PARAMS.spacing + (Math.random()-.5)*jitter;
+
+        pos[p*3]=px;
+        pos[p*3+1]=py;
+        pos[p*3+2]=pz;
+
+        prev[p*3]=px;
+        prev[p*3+1]=py;
+        prev[p*3+2]=pz;
+
+        vel[p*3]=0;
+        vel[p*3+1]=0;
+        vel[p*3+2]=0;
+
+        compact[p]=0;
+        damage[p]=0;
+
+        p++;
+      }
+    }
+  }
+
+  const dirs = [
+    [1,0,0],[0,1,0],[0,0,1],
+    [1,1,0],[1,-1,0],[1,0,1],[1,0,-1],[0,1,1],[0,1,-1]
+  ];
+
+  for(let y=0;y<NY;y++){
+    for(let z=0;z<NZ;z++){
+      for(let x=0;x<NX;x++){
+        const a = index(x,y,z);
+        for(const d of dirs){
+          const xx=x+d[0], yy=y+d[1], zz=z+d[2];
+          if(xx<0||yy<0||zz<0||xx>=NX||yy>=NY||zz>=NZ) continue;
+          const b = index(xx,yy,zz);
+          const oa=a*3, ob=b*3;
+          const dx=pos[ob]-pos[oa];
+          const dy=pos[ob+1]-pos[oa+1];
+          const dz=pos[ob+2]-pos[oa+2];
+          const rest=Math.sqrt(dx*dx+dy*dy+dz*dz);
+          bonds.push({
+            a,b,
+            rest,
+            original:rest,
+            diagonal: Math.abs(d[0])+Math.abs(d[1])+Math.abs(d[2])>1,
+            broken:false
+          });
+        }
+      }
+    }
+  }
+
+  rebuildHash();
+
+  for(let i=0;i<COUNT;i++){
+    let rho = kernel(0);
+    eachNeighbor(i,j=>{
+      const oi=i*3, oj=j*3;
+      const dx=pos[oi]-pos[oj];
+      const dy=pos[oi+1]-pos[oj+1];
+      const dz=pos[oi+2]-pos[oj+2];
+      const r2=dx*dx+dy*dy+dz*dz;
+      if(r2<H2) rho += kernel(Math.sqrt(r2));
+    });
+    restDensity[i] = Math.max(0.8, rho);
+  }
+
+  updateRender();
+}
+
+resetSnow();
+
+/* ============================================================
+   POINTER INTERACTION
+   ============================================================ */
+
+const pointer = new THREE.Vector2();
+const raycaster = new THREE.Raycaster();
+const dragPlane = new THREE.Plane(new THREE.Vector3(0,1,0), -0.48);
+const dragHit = new THREE.Vector3();
+const dragTarget = new THREE.Vector3();
+const dragPrev = new THREE.Vector3();
+const dragVel = new THREE.Vector3();
+
+let dragging = false;
+let hasPointer = false;
+
+function updatePointer(e){
+  pointer.x = e.clientX / innerWidth * 2 - 1;
+  pointer.y = -(e.clientY / innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer,camera);
+
+  if(raycaster.ray.intersectPlane(dragPlane,dragHit)){
+    dragTarget.copy(dragHit);
+    dragTarget.y = Math.min(Math.max(dragHit.y, 0.05), 1.15);
+    hasPointer = true;
+  }
+}
+
+renderer.domElement.addEventListener('pointermove',e=>{
+  if(e.buttons===2) return;
+  updatePointer(e);
+});
+renderer.domElement.addEventListener('pointerdown',e=>{
+  if(e.button!==0) return;
+  dragging = true;
+  updatePointer(e);
+  dragPrev.copy(dragTarget);
+});
+window.addEventListener('pointerup',e=>{
+  if(e.button!==0) return;
+  dragging = false;
+});
+
+/* ============================================================
+   DIRECT DIG / PRESS
+   No visible tool mesh.
+   ============================================================ */
+
+function applyDigTool(dt){
+
+  if(!dragging || !hasPointer) return;
+
+  dragVel.copy(dragTarget).sub(dragPrev).divideScalar(Math.max(dt,1e-4));
+  dragPrev.copy(dragTarget);
+
+  const R = PARAMS.digRadius;
+  const R2 = R*R;
+
+  for(let i=0;i<COUNT;i++){
+    const o=i*3;
+    const dx=pos[o]-dragTarget.x;
+    const dy=pos[o+1]-dragTarget.y;
+    const dz=pos[o+2]-dragTarget.z;
+    const d2=dx*dx+dy*dy+dz*dz;
+    if(d2>R2) continue;
+
+    let d=Math.sqrt(d2);
+    if(d<1e-5) d=1e-5;
+
+    const nx=dx/d, ny=dy/d, nz=dz/d;
+    const fall = 1 - d/R;
+    const press = PARAMS.digStrength * fall * fall;
+
+    // downward / inward compaction
+    vel[o]   += dragVel.x * 0.05 * fall;
+    vel[o+1] += dragVel.y * 0.04 * fall - press * 0.012;
+    vel[o+2] += dragVel.z * 0.05 * fall;
+
+    // lateral scraping
+    pos[o]   += nx * press * 0.0008;
+    pos[o+1] += ny * press * 0.00035;
+    pos[o+2] += nz * press * 0.0008;
+
+    compact[i] = Math.min(1, compact[i] + fall * 0.03);
+  }
+}
+
+/* ============================================================
+   DENSITY / PRESSURE
+   ============================================================ */
+
+function computeDensities(){
+  rebuildHash();
+  for(let i=0;i<COUNT;i++){
+    let rho = kernel(0);
+    eachNeighbor(i,j=>{
+      const oi=i*3, oj=j*3;
+      const dx=pos[oi]-pos[oj];
+      const dy=pos[oi+1]-pos[oj+1];
+      const dz=pos[oi+2]-pos[oj+2];
+      const r2=dx*dx+dy*dy+dz*dz;
+      if(r2<H2) rho += kernel(Math.sqrt(r2));
+    });
+    density[i] = Math.max(rho, 0.001);
+  }
+}
+
+function solvePressure(){
+  const pressure = new Float32Array(COUNT);
+
+  for(let i=0;i<COUNT;i++){
+    const ratio = density[i] / restDensity[i];
+    const hard = 1 + compact[i] * PARAMS.hardening;
+    let p = (ratio - 1) * PARAMS.pressure * hard;
+    p = THREE.MathUtils.clamp(
+      p,
+      -PARAMS.cohesion * 1.8 * (1-damage[i]),
+      26
+    );
+    pressure[i]=p;
+
+    if(ratio > 1.04){
+      compact[i] = Math.min(1, compact[i] + (ratio-1.04) * PARAMS.plastic * 0.03);
+      restDensity[i] = Math.min(restDensity[i] * (1 + (ratio-1.04)*PARAMS.plastic*0.015), 2.2*restDensity[i]);
+    }
+  }
+
+  for(let i=0;i<COUNT;i++){
+    const oi=i*3;
+    eachNeighbor(i,j=>{
+      if(j<=i) return;
+      const oj=j*3;
+      let dx=pos[oi]-pos[oj];
+      let dy=pos[oi+1]-pos[oj+1];
+      let dz=pos[oi+2]-pos[oj+2];
+      const r2=dx*dx+dy*dy+dz*dz;
+      if(r2<=1e-9||r2>=H2) return;
+      const r=Math.sqrt(r2);
+      dx/=r; dy/=r; dz/=r;
+      const grad=(1-r/H)*(1-r/H);
+      const corr=(pressure[i]+pressure[j]) * grad * 0.00028;
+      pos[oi]   += dx*corr;
+      pos[oi+1] += dy*corr;
+      pos[oi+2] += dz*corr;
+      pos[oj]   -= dx*corr;
+      pos[oj+1] -= dy*corr;
+      pos[oj+2] -= dz*corr;
+    });
+  }
+}
+
+/* ============================================================
+   PARTICLE EXCLUSION
+   ============================================================ */
+
+function solveParticleCollision(){
+  const minD = PARAMS.radius * 1.86;
+  const minD2 = minD*minD;
+
+  rebuildHash();
+  for(let i=0;i<COUNT;i++){
+    const oi=i*3;
+    eachNeighbor(i,j=>{
+      if(j<=i) return;
+      const oj=j*3;
+      let dx=pos[oi]-pos[oj];
+      let dy=pos[oi+1]-pos[oj+1];
+      let dz=pos[oi+2]-pos[oj+2];
+      const d2=dx*dx+dy*dy+dz*dz;
+      if(d2<=1e-12 || d2>=minD2) return;
+      let d=Math.sqrt(d2);
+      dx/=d; dy/=d; dz/=d;
+      const pen=minD-d;
+      const c=pen*0.48;
+      pos[oi]+=dx*c; pos[oi+1]+=dy*c; pos[oi+2]+=dz*c;
+      pos[oj]-=dx*c; pos[oj+1]-=dy*c; pos[oj+2]-=dz*c;
+    });
+  }
+}
+
+/* ============================================================
+   SHEAR / COHESION / CLUMP BREAK-OFF
+   ============================================================ */
+
+function solveBonds(){
+
+  for(let b=0;b<bonds.length;b++){
+    const bond=bonds[b];
+    if(bond.broken) continue;
+
+    const ia=bond.a*3, ib=bond.b*3;
+
+    let dx=pos[ib]-pos[ia];
+    let dy=pos[ib+1]-pos[ia+1];
+    let dz=pos[ib+2]-pos[ia+2];
+    let d=Math.sqrt(dx*dx+dy*dy+dz*dz);
+    if(d<1e-8) continue;
+
+    const nx=dx/d, ny=dy/d, nz=dz/d;
+    const strain=(d-bond.rest)/bond.rest;
+    const compAvg=(compact[bond.a]+compact[bond.b])*0.5;
+    const dmgAvg=(damage[bond.a]+damage[bond.b])*0.5;
+
+    let fractureLimit = PARAMS.fracture * (1 + compAvg * 0.55) * (1 - dmgAvg*0.45);
+    fractureLimit = Math.max(0.02, fractureLimit);
+
+    if(strain > fractureLimit){
+      bond.broken=true;
+      damage[bond.a]=Math.min(1,damage[bond.a]+0.025);
+      damage[bond.b]=Math.min(1,damage[bond.b]+0.025);
+      continue;
+    }
+
+    if(strain < -0.07){
+      const amount=(-strain-0.07);
+      const plast=amount * PARAMS.plastic * 0.04;
+      bond.rest = Math.max(bond.original*0.68, bond.rest*(1-plast));
+      compact[bond.a]=Math.min(1,compact[bond.a]+amount*0.015);
+      compact[bond.b]=Math.min(1,compact[bond.b]+amount*0.015);
+    }
+
+    if(strain > 0.08){
+      bond.rest += (d-bond.rest) * PARAMS.plastic * 0.01;
+      damage[bond.a]=Math.min(1,damage[bond.a]+strain*0.0012);
+      damage[bond.b]=Math.min(1,damage[bond.b]+strain*0.0012);
+    }
+
+    let stiffness = (bond.diagonal ? PARAMS.shear : PARAMS.pressure*0.65);
+    stiffness *= (1 + compAvg * PARAMS.hardening);
+    stiffness *= (1 - dmgAvg * 0.6);
+    stiffness = Math.min(stiffness, 120);
+
+    const C = d - bond.rest;
+    const correction = C * stiffness * 0.0006;
+
+    pos[ia]   += nx * correction;
+    pos[ia+1] += ny * correction;
+    pos[ia+2] += nz * correction;
+
+    pos[ib]   -= nx * correction;
+    pos[ib+1] -= ny * correction;
+    pos[ib+2] -= nz * correction;
+  }
+}
+
+/* ============================================================
+   BOUNDARIES
+   ============================================================ */
+
+function solveGround(){
+  const floor = PARAMS.radius * 0.95;
+  const wall = 0.96;
+
+  for(let i=0;i<COUNT;i++){
+    const o=i*3;
+
+    if(pos[o+1] < floor){
+      pos[o+1] = floor;
+      if(vel[o+1] < 0) vel[o+1] *= -0.06;
+      vel[o] *= PARAMS.floorFriction;
+      vel[o+2] *= PARAMS.floorFriction;
+    }
+
+    if(pos[o] < -wall){ pos[o]=-wall; vel[o]*=-0.1; }
+    if(pos[o] >  wall){ pos[o]= wall; vel[o]*=-0.1; }
+    if(pos[o+2] < -wall){ pos[o+2]=-wall; vel[o+2]*=-0.1; }
+    if(pos[o+2] >  wall){ pos[o+2]= wall; vel[o+2]*=-0.1; }
+  }
+}
+
+/* ============================================================
+   SIM STEP
+   ============================================================ */
+
+function simulate(dt){
+
+  const substeps = 2;
+  const h = dt / substeps;
+
+  for(let s=0;s<substeps;s++){
+
+    for(let i=0;i<COUNT;i++){
+      const o=i*3;
+
+      prev[o]=pos[o];
+      prev[o+1]=pos[o+1];
+      prev[o+2]=pos[o+2];
+
+      vel[o+1] -= PARAMS.gravity * h;
+
+      vel[o] *= PARAMS.damping;
+      vel[o+1] *= PARAMS.damping;
+      vel[o+2] *= PARAMS.damping;
+
+      pos[o] += vel[o] * h;
+      pos[o+1] += vel[o+1] * h;
+      pos[o+2] += vel[o+2] * h;
+    }
+
+    for(let k=0;k<PARAMS.iterations;k++){
+      applyDigTool(h);
+      solveGround();
+      solveParticleCollision();
+      computeDensities();
+      solvePressure();
+      solveBonds();
+    }
+
+    for(let i=0;i<COUNT;i++){
+      const o=i*3;
+      vel[o]   = (pos[o]   - prev[o])   / h;
+      vel[o+1] = (pos[o+1] - prev[o+1]) / h;
+      vel[o+2] = (pos[o+2] - prev[o+2]) / h;
+
+      const speed=Math.sqrt(vel[o]*vel[o]+vel[o+1]*vel[o+1]+vel[o+2]*vel[o+2]);
+      if(speed>5.5){
+        const scale=5.5/speed;
+        vel[o]*=scale; vel[o+1]*=scale; vel[o+2]*=scale;
+      }
+    }
+  }
+}
+
+/* ============================================================
+   RENDER UPDATE
+   ============================================================ */
+
+function updateRender(){
+
+  for(let i=0;i<COUNT;i++){
+    const o=i*3;
+
+    const comp = compact[i];
+    const dmg = damage[i];
+
+    dummy.position.set(pos[o],pos[o+1],pos[o+2]);
+
+    const s = 1 - comp*0.12 + dmg*0.03;
+    dummy.scale.setScalar(Math.max(0.72,s));
+
+    dummy.rotation.set(i*0.17,i*0.09,i*0.05);
+    dummy.updateMatrix();
+
+    snow.setMatrixAt(i,dummy.matrix);
+
+    const shadow = comp*0.16 + dmg*0.1;
+    tmpColor.setRGB(
+      1 - shadow,
+      1 - shadow*0.95,
+      1 - shadow*0.82
+    );
+    snow.setColorAt(i,tmpColor);
+  }
+
+  snow.instanceMatrix.needsUpdate=true;
+  if(snow.instanceColor) snow.instanceColor.needsUpdate=true;
+}
+
+/* ============================================================
+   UI
+   ============================================================ */
+
+const panel = document.getElementById('panel');
+document.getElementById('menuBtn').onclick = ()=>panel.classList.toggle('open');
+
+function bindSlider(id,key,format=(v)=>v.toFixed(2)){
+  const el=document.getElementById(id);
+  const out=document.getElementById(id+'V');
+  function apply(){
+    PARAMS[key]=Number(el.value);
+    out.textContent=format(Number(el.value));
+  }
+  el.addEventListener('input',apply);
+  apply();
+}
+
+bindSlider('kPressure','pressure',v=>v.toFixed(0));
+bindSlider('kShear','shear',v=>v.toFixed(1));
+bindSlider('kPlastic','plastic',v=>v.toFixed(2));
+bindSlider('kHard','hardening',v=>v.toFixed(1));
+bindSlider('kCohesion','cohesion',v=>v.toFixed(2));
+bindSlider('kFracture','fracture',v=>v.toFixed(2));
+bindSlider('kRadius','digRadius',v=>v.toFixed(2));
+bindSlider('kStrength','digStrength',v=>v.toFixed(0));
+
+document.getElementById('resetBtn').onclick = resetSnow;
+
+let paused=false;
+document.getElementById('pauseBtn').onclick = (e)=>{
+  paused=!paused;
+  e.currentTarget.textContent = paused ? 'Resume' : 'Pause';
+};
+
+/* ============================================================
+   LOOP
+   ============================================================ */
+
+let last = performance.now();
+let fpsFrames = 0;
+let fpsStart = last;
+const fpsEl = document.getElementById('fps');
+
+function animate(now){
+  requestAnimationFrame(animate);
+
+  let dt = (now-last)/1000;
+  last = now;
+  dt = Math.min(dt, 1/30);
+
+  if(!paused){
+    simulate(dt);
+  }
+
+  updateRender();
+  controls.update();
+  renderer.render(scene,camera);
+
+  fpsFrames++;
+  if(now-fpsStart > 500){
+    const fps = fpsFrames*1000/(now-fpsStart);
+    fpsEl.textContent = Math.round(fps) + ' fps';
+    fpsFrames=0;
+    fpsStart=now;
+  }
+}
+
+requestAnimationFrame(animate);
+
+/* ============================================================
+   RESIZE
+   ============================================================ */
+
+addEventListener('resize',()=>{
+  camera.aspect = innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+
+} catch(err){
+  console.error(err);
+  errorBox.style.display='block';
+  errorBox.textContent =
+    'The demo failed to start.\n\n' + (err?.stack || err);
+}
+</script>
+</body>
+</html>
