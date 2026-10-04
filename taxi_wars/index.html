@@ -4,6 +4,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Taxi Wars" id="appTitle">
 <title>Taxi Wars</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -74,6 +79,22 @@ body{height:100%;margin:0;background:var(--coal);color:var(--ink);overflow:hidde
 .garageBottom{position:absolute;bottom:max(34px,env(safe-area-inset-bottom));width:100%}#skinName{font:400 29px Georgia;color:#f5ead5;margin-bottom:8px}#skinDetail{font-size:11px;color:#aba99f;letter-spacing:.10em;margin-bottom:21px}
 .garageActions{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap}.garageActions button{pointer-events:auto;touch-action:none;color:#f2e7cf;border:1px solid #d8c8a24a;border-radius:8px;background:#1e2525cc;padding:11px 12px;font:12px system-ui;cursor:pointer}
 #raceButton{background:#cba961!important;color:#141816!important;border:none!important;padding:16px 34px!important;font-weight:600!important;letter-spacing:.12em}#freeButton{padding:16px 30px!important;letter-spacing:.12em}
+/* on a phone's browser the showroom has one button: PLAY, which puts the one you are looking at on your home screen */
+#playButton{background:#cba961!important;color:#141816!important;border:none!important;padding:17px 54px!important;font-weight:700!important;font-size:14px!important;letter-spacing:.24em;box-shadow:0 6px 22px #0009}
+#pwaSheet{position:fixed;inset:0;z-index:95;display:none;align-items:flex-end;justify-content:center;background:rgba(0,0,0,.55);font-family:system-ui,-apple-system,"Segoe UI",sans-serif}
+#pwaSheet.on{display:flex}
+#pwaSheet .card{width:min(420px,94vw);max-height:92vh;overflow:auto;margin-bottom:calc(14px + env(safe-area-inset-bottom,0px));background:#16130e;border:1px solid rgba(201,161,74,.5);border-radius:18px;padding:20px 20px 14px;color:#f1e6ca;text-align:center;box-shadow:0 10px 40px #000a;animation:pwaUp .38s cubic-bezier(.2,.9,.3,1)}
+@keyframes pwaUp{from{transform:translateY(46px);opacity:0}to{transform:none;opacity:1}}
+#pwaSheet img{width:76px;height:76px;border-radius:18px;box-shadow:0 4px 14px #0008;display:block;margin:0 auto 12px}
+#pwaSheet h2{font:400 21px Georgia,serif;margin:0 0 6px;color:#f5ead5}
+#pwaSheet p{font-size:14px;line-height:1.5;color:#d4c9ad;margin:6px 0}
+#pwaSheet .steps{margin:10px 0 12px;text-align:left;display:inline-block;font-size:14px;line-height:1.8;color:#efe4c9}
+#pwaSheet .steps b{color:#e9c36a;font-weight:600}
+#pwaSheet button{display:block;width:100%;margin-top:8px;padding:13px;border-radius:10px;font:600 12px system-ui,sans-serif;letter-spacing:.14em;cursor:pointer;touch-action:manipulation}
+#pwaSheet .go{background:#cba961;color:#141816;border:none}
+#pwaSheet .alt{background:none;color:#d9d3c2;border:1px solid #d8c8a24a}
+#pwaSheet button:focus-visible{outline:2px solid #e0bd66;outline-offset:2px}
+@media (prefers-reduced-motion: reduce){#pwaSheet .card{animation:none}}
 #garageLoad{display:flex;flex-direction:column;align-items:center;gap:4px;width:min(330px,62vw);pointer-events:none;opacity:0;transition:opacity .9s ease}#garageLoad.on{opacity:1}
 /* first screen: dark, one small line, while the two cabs are built; then the showroom lights come up on them */
 #boot{position:fixed;inset:0;z-index:90;background:#000;display:flex;align-items:center;justify-content:center;pointer-events:none;transition:opacity 1.7s ease}
@@ -117,6 +138,12 @@ body{height:100%;margin:0;background:var(--coal);color:var(--ink);overflow:hidde
 #ghost.key.down{background:rgba(226,204,150,.95);box-shadow:0 1px 0 rgba(0,0,0,.4)}
 @media (orientation:landscape) and (max-height:520px){#tut .tutSub{bottom:auto;top:calc(48px + env(safe-area-inset-top,0px));width:min(560px,62vw)}#tut .tutStep{top:calc(18px + env(safe-area-inset-top,0px))}}
 body.touch #speed{top:calc(68px + env(safe-area-inset-top,0px));bottom:auto}
+/* on a touch screen the minimap is out only while the stick is: it rises out of the corner opposite the stick, and sinks back into it */
+body.touch #radar{transition:transform .55s cubic-bezier(.22,1,.36,1),opacity .3s ease;will-change:transform}
+body.touch #radar.rR{left:auto;right:calc(14px + env(safe-area-inset-right,0px))}
+body.touch #radar.rOff{transform:translate(-62%,66%) scale(.5) rotate(-24deg);opacity:0;transition:transform .45s cubic-bezier(.55,0,.75,.3),opacity .35s ease .1s}
+body.touch #radar.rR.rOff{transform:translate(62%,66%) scale(.5) rotate(24deg)}
+body.touch #radar.rNo{transition:none}
 @media (max-height:520px){#radar{width:120px;height:120px}}
 @media (max-width:640px){#radar{width:120px;height:120px}#street b{font-size:1.25rem}.mTime b{font-size:2.5rem}#fareBtn{padding:10px 14px}}
 /* Developer page */
@@ -162,7 +189,7 @@ body.touch #speed{top:calc(68px + env(safe-area-inset-top,0px));bottom:auto}
 @keyframes lrPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.45)}}
 #lfade{position:fixed;inset:0;z-index:70;background:#000;opacity:0;pointer-events:none;transition:opacity .45s ease}
 body.lriding #prompt,body.lriding #touch,body.lriding #radar,body.lriding #pmenu,body.lriding #wheel{display:none!important}
-@media (prefers-reduced-motion: reduce){#route .fill,#toast,#street{transition:none}#boot span{animation:none;opacity:.7}#lroute .lst.here .dot{animation:none}#lfade{transition-duration:.15s}.gtap{animation:none;opacity:.6}#wheel .wpn{transition-duration:.01s}#tut .tutSub.in{animation:none}}
+@media (prefers-reduced-motion: reduce){#route .fill,#toast,#street,body.touch #radar,body.touch #radar.rOff{transition:none}#boot span{animation:none;opacity:.7}#lroute .lst.here .dot{animation:none}#lfade{transition-duration:.15s}.gtap{animation:none;opacity:.6}#wheel .wpn{transition-duration:.01s}#tut .tutSub.in{animation:none}}
 </style>
 </head>
 <body>
@@ -192,7 +219,7 @@ body.lriding #prompt,body.lriding #touch,body.lriding #radar,body.lriding #pmenu
     <rect class="fill" id="routeFill" x="30" y="25" width="400" height="100" rx="14" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/>
     <g id="stations"></g>
   </svg>
-  <div id="status">Lighting the showroom&hellip;</div></div><button id="raceButton" style="display:none">RACE</button><button id="freeButton" style="display:none">DRIVE</button></div><button id="tutLink" class="tutLink" type="button" style="display:none">View tutorial</button></div></div>
+  <div id="status">Lighting the showroom&hellip;</div></div><button id="playButton" style="display:none">PLAY</button><button id="raceButton" style="display:none">RACE</button><button id="freeButton" style="display:none">DRIVE</button></div><button id="tutLink" class="tutLink" type="button" style="display:none">View tutorial</button></div></div>
 <div id="touch"><div id="stick"><div id="knob"></div></div></div>
 <div id="menu"><div class="mInner">
   <div class="mTime"><b id="mClock">4:30 PM</b><span id="mDate">Tuesday, October 16, 1928</span></div>
@@ -231,6 +258,7 @@ body.lriding #prompt,body.lriding #touch,body.lriding #radar,body.lriding #pmenu
     <tr><td>H / Esc</td><td>This menu</td></tr>
     <tr><td>Touch: stick</td><td>Put a thumb down below your character's shoulders (the bottom third of the screen) and push: the stick. On foot he walks while the little circle stays inside the big one, and runs once it crosses, faster the further you push. In a car nothing moves until the little circle's edge meets the big one's; push on from there, and pull back to brake and, once stopped, reverse. A finger put down higher up looks around</td></tr>
     <tr><td>Touch: you</td><td>Only his legs, chest and head count (a finger on an arm is the stick's). Hold him to run, and slide the finger sideways to look round while he does. Swipe up from below his knees: a high jump; from his hips: a skip when he strolls, a hop standing and a long leap running; from his chest: a lunge (a jump if you hold him or he is running). Swipe out from his chest to punch, down and hold to crouch. Drag from his head to look around</td></tr>
+    <tr><td>Touch: on horseback</td><td>The stick walks him on, trots further out and canters past the ring; hold your finger on the horse to gallop. Flick a finger up anywhere to jump: asked a few strides out he picks his own spot, and the faster he goes the higher he jumps. Catch a rail and it comes down; run him at a fence and he stumbles. Double-tap to get down</td></tr>
     <tr><td>Touch: the city</td><td>Tap someone near you to talk; tap a car, a horse, a boat or a standing L train to get in, up or aboard (from further off you hurry over). Double-tap anywhere to get into the nearest car; at the wheel, double-tap anywhere to get out (at speed, you jump out and roll). Hold your car above the stick for the horn</td></tr>
    </table></details>
    <button id="mBack">Back</button>
@@ -239,6 +267,7 @@ body.lriding #prompt,body.lriding #touch,body.lriding #radar,body.lriding #pmenu
 </div></div>
 <div id="mapView"><canvas id="mapCanvas"></canvas><div id="mapTitle">THE LOOP &middot; CHICAGO 1928</div><button id="mapClose">Close</button></div>
 <div id="boot" role="status"><span>Loading Chicago&hellip;</span></div>
+<div id="pwaSheet" role="dialog" aria-modal="true" aria-labelledby="pwaH"></div>
 </div>
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js","ez-tree":"https://cdn.jsdelivr.net/npm/@dgreenheck/ez-tree@1.1.0/build/ez-tree.es.js"}}</script>
 <!--GAME-DATA-BEGIN-->
@@ -2298,6 +2327,16 @@ function ctDrop(T){if(T.mesh){scene.remove(T.mesh);T.mesh.geometry.dispose();}co
   for(const c of T.cols)removeCol(c);if(T.trees.length)CT.trees.instanceMatrix.needsUpdate=CT.tl.instanceMatrix.needsUpdate=true;CT.tiles.delete(ctKey(T.i,T.j));}
 // every third of a second: the tiles wanted round the camera (finer near), the nearest missing or wrong one begun; far ones dropped;
 // every frame a little of the one being made
+// the land round a far spot built at once, behind a black fade (going straight to Leona Farms from the garage would otherwise show it
+// half made for a few seconds): every tile within 700 m at the detail ctUpdate would give it, nearest first, a frame between a few
+async function ctWarm(x,z){lUI();const L=$('lfade');L.style.opacity='1';await nextFrame();
+  try{const ci=Math.floor((x-WG.x0)/CT.size),cj=Math.floor((z-WG.z0)/CT.size),list=[];
+    for(let i=ci-3;i<=ci+3;i++)for(let j=cj-3;j<=cj+3;j++){const mx=ctX(i)+CT.size/2,mz=ctZ(j)+CT.size/2,d=Math.max(0,Math.hypot(mx-x,mz-z)-CT.size*.7);if(d>700)continue;
+      const T=CT.tiles.get(ctKey(i,j));if(T&&T.empty)continue;const fine=ctFine(i,j);if(!fine&&!T&&ctAllCity(i,j))continue;const res=fine||d<250?4:d<640?8:16;if(T&&T.res<=res)continue;list.push([d,i,j,res]);}
+    list.sort((a,b)=>a[0]-b[0]);let t0=performance.now();
+    for(const [,i,j,res] of list){ctStart(i,j,res);ctStep(1e9);if(performance.now()-t0>45){await nextFrame();t0=performance.now();}}}
+  catch(e){console.warn('the country round a far spot',e);}
+  await nextFrame();L.style.opacity='0';}
 function ctUpdate(dt,cam){ctStep(CT.job&&CT.job.res===4?1200:900);CT.t-=dt;if(CT.t>0)return;CT.t=.33;const cx=cam.position.x,cz=cam.position.z,ci=Math.floor((cx-WG.x0)/CT.size),cj=Math.floor((cz-WG.z0)/CT.size);
   let best=null,bd=1e18;
   for(let i=ci-4;i<=ci+4;i++)for(let j=cj-4;j<=cj+4;j++){const mx=ctX(i)+CT.size/2,mz=ctZ(j)+CT.size/2,d=Math.max(0,Math.hypot(mx-cx,mz-cz)-CT.size*.7);if(d>1050)continue;
@@ -2445,7 +2484,7 @@ function hwyTruss(R,s0,s1){const steel=C('#4a5650'),stone=C('#8f897c'),under=C('
 // sides of an aisle, horses looking out of them, lanterns), the tall brick silo with its white bands and its dome, low red barns,
 // paddocks of white boards, fields, a windmill; the farm's people about. Laid out in the farm's own frame (LEONA.frame: u along the dirt
 // road away from the highway, v from it toward the river), every building on level ground of its own (pads), the land rolling between.
-const LEO={pads:[],stable:null,area:null,fields:[]};
+const LEO={pads:[],stable:null,area:null,fields:[],arena:null,arenaP:null,veh:[],vehOn:false,tractorAt:null};
 // a point of the farm's frame in the world
 function leoP(u,v){const F=LEONA.frame;return[F.x+F.ux*u+F.vx*v,F.z+F.uz*u+F.vz*v];}
 // where the river is from the dirt road, u along it (how far v the water starts)
@@ -2458,7 +2497,12 @@ function leonaPlan(){const F=LEONA.frame;if(!F)return;const pad=(u,v,hu,hv,m,tur
   LEO.manor=pad(120,58,17,13,16);LEO.farmhouse=pad(215,48,9,9,12);LEO.stableP=pad(300,62,25,10,14);LEO.silo=pad(372,46,6,6,8);
   LEO.barn1=pad(410,40,17,8,10);LEO.barn2=pad(455,72,13,7,10);LEO.yard=pad(392,64,30,24,18);LEO.gateP=pad(60,8,10,6,10);
   // the fields beyond the yard (their colours are the land's: see leonaFieldCol), the paddocks between the stable and the river
-  LEO.fields=[{u0:490,u1:680,v0:12,v1:150,k:'plough'},{u0:490,u1:680,v0:150,v1:300,k:'stubble'},{u0:150,u1:260,v0:95,v1:300,k:'pasture'},{u0:265,u1:345,v0:84,v1:300,k:'paddock'}];}
+  LEO.fields=[{u0:490,u1:680,v0:12,v1:150,k:'plough'},{u0:490,u1:680,v0:150,v1:300,k:'stubble'},{u0:150,u1:260,v0:95,v1:300,k:'pasture'},{u0:265,u1:345,v0:84,v1:300,k:'paddock'}];
+  // the training ground in the pasture (leonaArena): an oval track 8 m wide, its turns 44 m round the middle line, its straights as long
+  // as the land allows short of the river; tighter turns if it is short. All on one level pad.
+  {let vmax=300;for(let u=150;u<=260;u+=25)vmax=Math.min(vmax,rvAt(u)-28);const W=8,len=vmax-100;let Rt=44,Ls=(len-4-2*(Rt+W/2))/2;
+    if(Ls<8){Ls=8;Rt=clamp((len-4)/2-Ls-W/2,22,44);}Ls=Math.min(Ls,60);const vc=102+Rt+W/2+Ls;
+    LEO.arena={uc:205,vc,Rt,W,Ls,Lt:4*Ls+2*Math.PI*Rt};LEO.arenaP=pad(205,vc,Rt+W/2+3,Ls+Rt+W/2+3,14);}}
 // is (x,z) on the farm (the country's own trees keep off)?
 function leonaKeep(x,z){const F=LEONA.frame;if(!F||!LEO.area)return false;const dx=x-F.x,dz=z-F.z,u=dx*F.ux+dz*F.uz,v=dx*F.vx+dz*F.vz;return u>LEO.area.u0&&u<LEO.area.u1&&v>-12&&v<LEO.area.v1(u);}
 // a field's colour over the land's on the farm
@@ -2479,7 +2523,10 @@ function bareTree(x,y,z,s,seed){let st=seed>>>0;const rr=()=>{st=(Math.imul(st,1
   circCol(x,z,r0+.1,y+6*s,'tree',null,y-1);}
 // white board fence along a run of the farm's frame's points (posts every 2.4 m on the land, three boards)
 function leoFence(pts,col){const c=col||C('#ece6d8');for(let k=0;k<pts.length-1;k++){const [ua,va]=pts[k],[ub,vb]=pts[k+1],L=Math.hypot(ub-ua,vb-va),n=Math.max(1,Math.round(L/2.4));let prev=null;
-    for(let i=0;i<=n;i++){const t=i/n,p=leoP(lerp(ua,ub,t),lerp(va,vb,t)),y=cTerrainAt(p[0],p[1]);box('wood',p[0],y,p[1],.14,1.35,.14,c);if(prev)for(const h of [.42,.82,1.22])railBox('wood',prev[0],prev[2],p[0],p[1],(prev[1]+y)/2+h,.12,c);prev=[p[0],y,p[1]];}}}
+    for(let i=0;i<=n;i++){const t=i/n,p=leoP(lerp(ua,ub,t),lerp(va,vb,t)),y=cTerrainAt(p[0],p[1]);box('wood',p[0],y,p[1],.14,1.35,.14,c);if(prev)for(const h of [.42,.82,1.22])railBox('wood',prev[0],prev[2],p[0],p[1],(prev[1]+y)/2+h,.12,c);prev=[p[0],y,p[1]];}
+    // a horse can be put at it (a jump of 1.28 m); to anything else it is a wall. In pieces of 12 m at most, the land under each near level
+    const np=Math.max(1,Math.ceil(L/12));for(let i=0;i<np;i++){const A=leoP(lerp(ua,ub,i/np),lerp(va,vb,i/np)),B=leoP(lerp(ua,ub,(i+1)/np),lerp(va,vb,(i+1)/np)),ya=cTerrainAt(A[0],A[1]),yb=cTerrainAt(B[0],B[1]);
+      jumpWall(jumpAdd({x0:A[0],z0:A[1],x1:B[0],z1:B[1],h:1.28,solid:true}),Math.min(ya,yb)-1,Math.max(ya,yb)+1.3);}}}
 // the farm: built with the city
 function leonaBuild(){const F=LEONA.frame;if(!F)return;const R=wRng(1894),white=C('#ece6d8'),red=C('#8a2e24'),roofG=C('#4a4a46'),roofD=C('#3e3630'),FRONT=[-F.vx,-F.vz];
   // the buildings' frames: their fronts toward the dirt road (-v)
@@ -2555,18 +2602,134 @@ function leonaBuild(){const F=LEONA.frame;if(!F)return;const R=wRng(1894),white=
     {const P=wbP(wx,0,wz);circCol(P[0],P[2],2.6,H,'post');}
     wbBox('wood',-8,0,8,3,.7,1.1,C('#5a4a38'),0,55);wbBox('glass',-8,.55,8,2.7,.1,.85,C('#3f6a78'),0,63);
     for(let i=0;i<6;i++)wbCyl('plain',4+(i%3)*1.6,0,10+Math.floor(i/3)*1.7,.72,.72,1.4,12,C('#c8b05a'));
-    {const tx=12,tz=-6;wbBox('metal',tx,.5,tz,1.5,1.0,3.2,C('#2f6a3a'),0,63);wbBox('metal',tx,1.5,tz-.6,1.2,.9,1.2,C('#2f6a3a'),0,63);for(const sx of [-1,1]){wbCyl('metal',tx+sx*.95,.0,tz-.9,.85,.85,.5,12,C('#1c1c1a'));}const P=wbP(tx,0,tz);circCol(P[0],P[2],1.6,2.5,'post');}
+    // (the tractor that stands here is a real one, brought out when you come near: see leonaVehicles)
+    {const P=wbP(12,0,-6);LEO.tractorAt={x:P[0],z:P[2],yaw:Math.atan2(FRONT[0],FRONT[1])};}
     {const hx=-4,hz=-12;wbBox('wood',hx,.8,hz,2.4,.2,5,C('#7a5a3a'),0,63);for(let i=0;i<5;i++)wbBox('plain',hx+(R()-.5)*1.6,1,hz+(R()-.5)*3.6,.8,.5,1.2,C('#c8b05a'),R(),63);const P=wbP(hx,0,hz);circCol(P[0],P[2],1.6,2,'post');}}
   // ---- the paddocks between the stable and the river, white boards, horses grazing ----
   {const f=LEO.fields.find(q=>q.k==='paddock'),u0=f.u0,u1=f.u1,v0=f.v0,v1=Math.min(f.v0+70,LEO.area.v1((u0+u1)/2)-6);leoFence([[u0,v0],[u1,v0],[u1,v1],[u0,v1],[u0,v0+30]]);leoFence([[u0,v0+38],[u0,v1]]);
     const coats=['chestnut','bay','grey','darkbay'];for(let i=0;i<4;i++){const p=leoP(lerp(u0+8,u1-8,R()),lerp(v0+8,v1-8,R()));try{new Mount({coat:coats[i],colors:{saddleOn:0,halterOn:0},name:'Leona Farms '+COAT_NAMES[coats[i]],x:p[0],z:p[1],yaw:R()*TAU});}catch(e){console.warn('paddock horse',e);}}}
   // ---- big bare trees about the houses and along the fields; fence along the pasture ----
   for(const [u,v] of [[95,30],[150,30],[175,75],[200,24],[240,70],[262,30],[340,30],[350,90],[470,30],[485,100],[520,8],[600,8],[640,40],[700,60]]){const p=leoP(u+(R()-.5)*6,v+(R()-.5)*6);bareTree(p[0],cTerrainAt(p[0],p[1]),p[1],1.1+R()*.45,R()*1e9);}
-  {const f=LEO.fields.find(q=>q.k==='pasture');leoFence([[f.u0,f.v0],[f.u1,f.v0]]);}
+  // ---- the pasture's front fence, with a gate toward the stable; inside it the training ground ----
+  {const f=LEO.fields.find(q=>q.k==='pasture');leoFence([[f.u0,f.v0],[f.u1-22,f.v0]]);leoFence([[f.u1-10,f.v0],[f.u1,f.v0]]);try{leonaArena();}catch(e){console.warn('Leona Farms: the training ground',e);}}
   // ---- its people ----
   const put=(kind,u,v,st)=>{const p=leoP(u,v),q=makeNPC(kind);q.mode='special';q.h.state=st;q.home=[p[0],p[1]];q.h.place(p[0],cTerrainAt(p[0],p[1]),p[1],Math.atan2(F.vx,F.vz)+R()*2);scene.add(q.h.group);return q;};
   put('farmer',300,45,'idle');put('farmer',395,60,'talk');put('farmer',397.5,61.5,'idle');const g=put('farmer',62,-2,'idle');put('maid',128,40,'idle');
   BOARD_LAMPS.push([...(()=>{const p=leoP(60,8);return[p[0],LEO.gateP.y+4.4,p[1]];})()]);}
+// ---------------- the training ground: Leona Farms' track and jumping course ----------------
+// In the pasture on its own level ground (LEO.arenaP): an oval of dirt between white rails, with an opening through both rails on the
+// near turn so you can ride in from the farm; in its middle a course of seven numbered jumps - a cross-rail, a vertical, an oxer, a
+// wall, a brush, a double, a gate - their standards and wings white and coloured, their poles striped and loose (one instanced draw,
+// JMP.poles: they fall when knocked and are put back up), the wall and the rails solid. Every rail and jump is a JMP (see jumping, in
+// the saddle horses' section). A round starts over jump 1 (COURSE); the next jump has a gold ring before it. The track takes the horse
+// race (startHorseRace). In the farm's frame: a = u - A.uc across, b = v - A.vc along the straights.
+// a point of the track s metres round from its start (the foot of the right-hand straight, going up it), off metres out from its middle
+// line: {x,z (world), yaw (the way round), u,v (the farm's frame)}
+function arenaAt(s,off=0){const A=LEO.arena,F=LEONA.frame,Lt=A.Lt;s=((s%Lt)+Lt)%Lt;let u,v,du,dv,nu,nv;
+  if(s<2*A.Ls){nu=1;nv=0;u=A.uc+A.Rt;v=A.vc-A.Ls+s;du=0;dv=1;}
+  else if(s<2*A.Ls+Math.PI*A.Rt){const t=(s-2*A.Ls)/A.Rt;nu=Math.cos(t);nv=Math.sin(t);u=A.uc+A.Rt*nu;v=A.vc+A.Ls+A.Rt*nv;du=-nv;dv=nu;}
+  else if(s<4*A.Ls+Math.PI*A.Rt){nu=-1;nv=0;u=A.uc-A.Rt;v=A.vc+A.Ls-(s-2*A.Ls-Math.PI*A.Rt);du=0;dv=-1;}
+  else{const t=Math.PI+(s-4*A.Ls-Math.PI*A.Rt)/A.Rt;nu=Math.cos(t);nv=Math.sin(t);u=A.uc+A.Rt*nu;v=A.vc-A.Ls+A.Rt*nv;du=-nv;dv=nu;}
+  u+=nu*off;v+=nv*off;const p=leoP(u,v);return{x:p[0],z:p[1],yaw:Math.atan2(F.ux*du+F.vx*dv,F.uz*du+F.vz*dv),u,v};}
+// where (x,z) is round the track: s, and how far out from its middle line (off: negative inside)
+function arenaS(x,z){const A=LEO.arena,F=LEONA.frame,dx=x-F.x,dz=z-F.z,u=dx*F.ux+dz*F.uz,v=dx*F.vx+dz*F.vz,b=v-A.vc;
+  if(b>=-A.Ls&&b<=A.Ls)return u>=A.uc?{s:b+A.Ls,off:u-A.uc-A.Rt}:{s:2*A.Ls+Math.PI*A.Rt+A.Ls-b,off:A.uc-A.Rt-u};
+  if(b>A.Ls){const t=Math.atan2(v-A.vc-A.Ls,u-A.uc);return{s:2*A.Ls+clamp(t,0,Math.PI)*A.Rt,off:Math.hypot(u-A.uc,v-A.vc-A.Ls)-A.Rt};}
+  let t=Math.atan2(v-A.vc+A.Ls,u-A.uc);if(t>0)t=t>Math.PI/2?-Math.PI:0;return{s:4*A.Ls+Math.PI*A.Rt+(t+Math.PI)*A.Rt,off:Math.hypot(u-A.uc,v-A.vc+A.Ls)-A.Rt};}
+// is (x,z) on the track or inside it?
+function arenaIn(x,z){return !!LEO.arena&&arenaS(x,z).off<LEO.arena.W/2+.3;}
+// the farm's frame to the world, a turned point of the arena's (a,b)
+function arenaP(a,b){const A=LEO.arena;return leoP(A.uc+a,A.vc+b);}
+function leonaArena(){const A=LEO.arena,P=LEO.arenaP;if(!A||!P)return;const F=LEONA.frame,y=P.y,W=A.W,white=C('#efe9dc'),dirt=C('#8f7350');
+  A.y=y;A.gate=4*A.Ls+Math.PI*A.Rt+.75*Math.PI*A.Rt;A.start=A.Ls*.35;
+  const gapAt=s=>{const g=((s-A.gate)%A.Lt+A.Lt*1.5)%A.Lt-A.Lt/2;return Math.abs(g)<6;};
+  // the dirt, round the oval
+  const n=Math.ceil(A.Lt/2.5);for(let i=0;i<n;i++){const a0=arenaAt(i/n*A.Lt,-W/2),a1=arenaAt((i+1)/n*A.Lt,-W/2),b0=arenaAt(i/n*A.Lt,W/2),b1=arenaAt((i+1)/n*A.Lt,W/2);
+    quadDir('gravelC',[a0.x,y+.04,a0.z],[a1.x,y+.04,a1.z],[b1.x,y+.04,b1.z],[b0.x,y+.04,b0.z],0,1,0,[0,0,W/4,A.Lt/n/4],dirt);}
+  // the rails, inside and out: posts every 3 m or so, a top and a middle board, the opening on the near turn; each length between two
+  // posts a jump of 1.05 m (and a wall)
+  for(const off of [-W/2-.25,W/2+.25]){const N=Math.round(A.Lt/3);let prev=null;
+    for(let i=0;i<=N;i++){const s=i/N*A.Lt;if(gapAt(s)){prev=null;continue;}const p=arenaAt(s,off);box('wood',p.x,y,p.z,.12,1.08,.12,white);
+      if(prev){for(const h of [.55,1.0])railBox('wood',prev.x,prev.z,p.x,p.z,y+h,.09,white);jumpWall(jumpAdd({x0:prev.x,z0:prev.z,x1:p.x,z1:p.z,h:1.05,solid:true}),y-1,y+1.06);}prev=p;}}
+  // the winning post, on the outer rail at the line: white, a red disc on top
+  {const p=arenaAt(A.start,W/2+.6);box('wood',p.x,y,p.z,.14,3.2,.14,white);_m1.makeRotationY(p.yaw).multiply(new THREE.Matrix4().makeRotationX(Math.PI/2)).setPosition(p.x,y+3.3,p.z);cyl('paint',0,0,0,.32,.32,.04,20,C('#b3261e'),false,_m1);}
+  // the course: [number, a, b (a share of the infield's half length), the way it is jumped (+b, -b, -a), kind, wing colour]
+  const Hb=A.Ls+32,red=C('#b8342a'),blue=C('#2a4c94'),green=C('#2f6a3a');
+  const CS=[[1,-18,-.6,'b+','cross',red],[2,-18,-.12,'b+','vertical',blue],[3,-18,.43,'b+','oxer',red],[4,18,.43,'b-','wall',green],[5,18,0,'b-','brush',blue],[6,18,-.34,'b-','double',red],[7,0,-.87,'a-','gate',blue]];
+  const PL=[];JMP.poles={im:null,list:PL,jumps:[],q:new THREE.Quaternion(),dirty:true};COURSE.first={};const plates=[];
+  const pole=(J,x,z,yy,len,tilt)=>{PL.push({J,i:PL.length,x,y:yy,z,len,tilt,tilt2:0,t:-1,dir:1,gy:y,nx:J.nx,nz:J.nz,yaw:Math.atan2(-J.az,J.ax)});return PL[PL.length-1];};
+  for(const [num,a,bf,way,kind,col] of CS){const b=bf*Hb,da=way[0]==='a'?(way[1]==='+'?1:-1):0,db=way[0]==='b'?(way[1]==='+'?1:-1):0;
+    // the jump's lines: [offset along the way it is jumped, height, poles' heights]
+    const lines=kind==='cross'?[[0,.58,null]]:kind==='vertical'?[[0,.88,[.32,.6,.88]]]:kind==='oxer'?[[-.5,.85,[.45,.85]],[.5,.95,[.5,.95]]]:kind==='wall'?[[0,.9,null]]:kind==='brush'?[[0,.85,[.85]]]:kind==='double'?[[0,.8,[.42,.8]],[7.5,.8,[.42,.8]]]:[[0,.92,[.3,.62,.92]]];
+    lines.forEach(([o,h,ps],li)=>{const ca=a+da*o,cb=b+db*o,ra=Math.abs(db),rb=Math.abs(da);// (the rails run across the way it is jumped)
+      const e0=arenaP(ca-ra*1.75,cb-rb*1.75),e1=arenaP(ca+ra*1.75,cb+rb*1.75),J=jumpAdd({x0:e0[0],z0:e0[1],x1:e1[0],z1:e1[1],h,n:num,solid:kind==='wall'});
+      // which way along its normal it is jumped
+      const tu=da,tv=db,wx=F.ux*tu+F.vx*tv,wz=F.uz*tu+F.vz*tv;J.appr=Math.sign(wx*J.nx+wz*J.nz)||1;if(!li)COURSE.first[num]=J;
+      // the standards and their wings: a post at each end, a lattice wing out beyond it in the jump's colour
+      for(const sd of [-1,1]){const ex=J.x+J.ax*sd*1.85,ez=J.z+J.az*sd*1.85,ry=Math.atan2(J.ax,J.az);box('wood',ex,y,ez,.13,1.55,.13,white,ry);
+        for(const [w,hh] of [[.45,1.3],[.9,1.05]]){const wx2=J.x+J.ax*sd*(1.85+w),wz2=J.z+J.az*sd*(1.85+w);box('wood',wx2,y,wz2,.1,hh,.1,white,ry);}
+        for(const hh of [.3,.62,.94]){const a0=J.x+J.ax*sd*1.85,a1=J.x+J.ax*sd*2.75;railBox('wood',a0,J.z+J.az*sd*1.85,a1,J.z+J.az*sd*2.75,y+hh,.07,col||white);}
+        if(!li&&sd<0)plates.push([num,J.x+J.ax*sd*1.85-J.nx*J.appr*.08,y+1.42,J.z+J.az*sd*1.85-J.nz*J.appr*.08,Math.atan2(-J.nx*J.appr,-J.nz*J.appr)]);}
+      if(kind==='wall'){const ry=Math.atan2(J.ax,J.az);box('stone',J.x,y,J.z,.45,h-.08,3.5,C('#9a4a36'),ry);box('plain',J.x,y+h-.08,J.z,.55,.08,3.6,white,ry);jumpWall(J,y-1,y+h);return;}
+      if(kind==='brush'){const ry=Math.atan2(J.ax,J.az);box('plain',J.x,y,J.z,.5,.55,3.4,C('#3d5a2a'),ry);for(let k=0;k<9;k++){const t=(k+.5)/9-.5;box('plain',J.x+J.ax*t*3.2,y+.55,J.z+J.az*t*3.2,.36,.15+((k*37)%5)*.02,.38,C('#4a6a30'),ry+k);}
+        segCol(J.x0,J.z0,J.x1,J.z1,.5,y+.7,y-1,'prop');}
+      J.poles=[];if(kind==='cross'){const t=Math.atan2(.72,3.5);J.poles.push(pole(J,J.x,J.z,y+.57,3.58,t),pole(J,J.x,J.z,y+.57,3.58,-t));}else for(const ph of ps)J.poles.push(pole(J,J.x,J.z,y+ph,3.6,0));
+      JMP.poles.jumps.push(J);jumpWall(J,y-1,y+h);});}
+  // the poles: one instanced draw, striped red and white
+  {const c=mk(4,128),g=c.ctx;g.fillStyle='#f2efe6';g.fillRect(0,0,4,128);g.fillStyle='#b8342a';for(let k=0;k<7;k++)if(k%2)g.fillRect(0,k*128/7,4,128/7);
+    const geo=new THREE.CylinderGeometry(.055,.055,1,10).rotateZ(Math.PI/2),im=new THREE.InstancedMesh(geo,new THREE.MeshStandardMaterial({map:ctex(c),roughness:.55}),PL.length);
+    im.castShadow=true;im.receiveShadow=true;im.frustumCulled=false;im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);im.name='jump poles';JMP.poles.im=im;for(const p of PL)poleMatrix(p);scene.add(im);}
+  // the jumps' numbers, on the near standard of each: one draw from a strip of seven
+  {const c=mk(448,64),g=c.ctx;for(let k=0;k<7;k++){g.fillStyle='#f4f1e8';g.fillRect(k*64+2,2,60,60);g.strokeStyle='#1b1712';g.lineWidth=3;g.strokeRect(k*64+4,4,56,56);g.fillStyle='#1b1712';g.font='bold 44px Georgia, serif';g.textAlign='center';g.textBaseline='middle';g.fillText(String(k+1),k*64+32,35);}
+    const list=plates.map(([num,x,yy,z,ry])=>{const pg=new THREE.PlaneGeometry(.3,.3),uv=pg.attributes.uv;for(let i=0;i<uv.count;i++)uv.setX(i,(num-1+uv.getX(i))/7);return[pg,new THREE.Matrix4().makeRotationY(ry).setPosition(x,yy,z)];});
+    if(list.length){const m=new THREE.Mesh(mergeGeos(list),new THREE.MeshStandardMaterial({map:ctex(c,{clamp:true}),roughness:.6}));m.name='jump numbers';scene.add(m);JMP.poles.nums=m;}}}
+// a pole where it is: at rest on its cups, or falling (t 0..1) off them to the ground on the side the horse went, rolling flat
+function poleMatrix(p){const P=JMP.poles,e=p.t<0?0:p.t,f=e*e,bo=e>.8?Math.sin((e-.8)/.2*Math.PI)*.07:0,y=lerp(p.y,p.gy+.06,f)+bo,o=p.t<0?0:p.dir*(.15+.5*e);
+  _v1.set(p.x+p.nx*o,y,p.z+p.nz*o);_q1.setFromAxisAngle(_v2.set(0,1,0),p.yaw);P.q.setFromAxisAngle(_v2.set(0,0,1),lerp(p.tilt,p.tilt2,e));_q1.multiply(P.q);_v3.set(p.len,1,1);_m1.compose(_v1,_q1,_v3);P.im.setMatrixAt(p.i,_m1);}
+// a jump's top pole knocked off (the cross-rail's both; now and then the next one down too): the jump is down until put back up
+function jumpKnock(J,m){if(J.down||!J.poles)return;J.down=true;J.downT=0;if(J.col){removeCol(J.col);J.col=null;}
+  const side=Math.sign(Math.sin(m.yaw)*J.nx+Math.cos(m.yaw)*J.nz)||1,ps=J.poles.slice().sort((a,b)=>b.y-a.y),k=Math.abs(ps[0].tilt)>0?ps.length:(Math.random()<.35?2:1);
+  for(let i=0;i<Math.min(k,ps.length);i++){const p=ps[i];p.t=0;p.dir=side*(.6+Math.random()*.5);p.tilt2=(Math.random()-.5)*.1;p.gy=groundAt(p.x,p.z);}}
+function jumpRaise(J){J.down=false;J.downT=0;for(const p of J.poles){p.t=-1;poleMatrix(p);}if(!J.col&&J.cy1!==undefined){J.col=segCol(J.x0,J.z0,J.x1,J.z1,.16,J.cy1,J.cy0,'prop');J.col.jump=J;}JMP.poles.dirty=true;}
+function jumpsReset(keep){if(JMP.poles)for(const J of JMP.poles.jumps)if(J.down&&J!==keep)jumpRaise(J);}
+// every frame near the farm: falling poles fall; knocked jumps stand up again a while after (not during a round, and not with you on top of them)
+function jumpPolesUpdate(dt,px,pz){const P=JMP.poles;if(!P||!P.im)return;let dirty=P.dirty;P.dirty=false;
+  for(const p of P.list){if(p.t<0||p.t>=1)continue;p.t=Math.min(1,p.t+dt/.6);dirty=true;poleMatrix(p);}
+  for(const J of P.jumps)if(J.down&&!COURSE.on){J.downT+=dt;if(J.downT>8&&Math.hypot(J.x-px,J.z-pz)>14){jumpRaise(J);dirty=true;}}
+  if(dirty)P.im.instanceMatrix.needsUpdate=true;}
+// ---------- a round of the course ----------
+// Over jump 1 it starts (the knocked poles put back up), the clock running; then 2 to 7 in order, a rail down four faults; done, the
+// time and the faults (and the best clear round). The next jump has a gold ring on the ground before it; before a round, with you in
+// the saddle in the arena, jump 1 has it.
+const COURSE={on:false,next:1,t:0,faults:0,best:null,n:7,first:{},marker:null,away:0};
+function courseCross(J,what){const C=COURSE;
+  if(J.n===1&&(!C.on||C.next>2)){jumpsReset(J);C.on=true;C.next=2;C.t=0;C.away=0;C.faults=what==='fault'?4:0;showToast('Round started - jumps 1 to 7, in order');return;}
+  if(!C.on)return;if(J.n===C.next){C.next++;if(what==='fault')C.faults+=4;if(C.next>C.n)courseDone();}else if(J.n===C.next-1&&what==='fault')C.faults+=4;}
+function courseTime(t){const m=Math.floor(t/60),s=t-m*60;return m+':'+(s<10?'0':'')+s.toFixed(1);}
+function courseDone(){const C=COURSE;C.on=false;C.next=1;const t=C.t,clear=!C.faults;if(clear&&(C.best===null||t<C.best))C.best=t;
+  showToast(clear?'Clear round! '+courseTime(t)+(C.best===t?' - your best':''):'Round over - '+C.faults+' faults - '+courseTime(t));gEvent('course');}
+function courseMarker(){const g=new THREE.Group(),r=new THREE.Mesh(new THREE.RingGeometry(1.45,1.8,40),new THREE.MeshBasicMaterial({color:C(0xffcc29).multiplyScalar(2),transparent:true,opacity:.75,side:THREE.DoubleSide,depthWrite:false}));
+  r.rotation.x=-Math.PI/2;g.add(r);const b=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,12,10,1,true),new THREE.MeshBasicMaterial({color:C(0xffc850),transparent:true,opacity:.1,blending:THREE.AdditiveBlending,depthWrite:false,side:THREE.DoubleSide}));
+  b.position.y=6;g.add(b);g.visible=false;scene.add(g);return g;}
+function courseUpdate(dt){const C=COURSE,M=PLAYER.mount;if(C.on){C.t+=dt;C.away=M&&arenaIn(M.x,M.z)?0:C.away+dt;if(C.away>8){C.on=false;C.next=1;showToast('Round abandoned');}}
+  const want=C.on?C.next:(M&&arenaIn(M.x,M.z)?1:0),J=want?C.first[want]:null;
+  if(!J){if(C.marker)C.marker.visible=false;return;}if(!C.marker)C.marker=courseMarker();
+  const x=J.x-J.nx*J.appr*6,z=J.z-J.nz*J.appr*6;C.marker.position.set(x,groundAt(x,z)+.06,z);C.marker.visible=true;C.marker.children[0].material.opacity=.55+.25*Math.sin(simT*4);}
+// ---------- the farm's own motor vehicles: the tractor in the yard, the family's limousine by the manor, a sedan by the farmhouse,
+// the stake truck at the barn, the pickup by the other barn - brought out when you come within 700 m, put away past a kilometre
+// (unless you drive one off: then it is yours like any car) ----------
+function leonaVehicles(){LEO.vehOn=true;const F=LEONA.frame,yu=Math.atan2(F.ux,F.uz),yv=Math.atan2(F.vx,F.vz),L=LEO.veh=[];
+  const put=(kind,x,z,yaw)=>{try{const v=new Vehicle(kind);if(!v.ready){v.remove();return;}v.place(x,z,yaw);v.mode='parked';v.keep=true;L.push(v);}catch(e){console.warn('Leona Farms: the '+kind,e);}};
+  if(LEO.tractorAt&&!VEHICLES.some(v=>v.trac&&!v.dead)){const T=LEO.tractorAt;put('tractor',T.x,T.z,T.yaw);}
+  let p=leoP(128,40.5);put('eight',p[0],p[1],yu+.06);p=leoP(205,35.5);put('tudor',p[0],p[1],yu+Math.PI-.05);p=leoP(420,28.5);put('truck',p[0],p[1],yu);p=leoP(452,58.5);put('pickup',p[0],p[1],yv+Math.PI+.3);}
+function leonaVehiclesOff(){LEO.vehOn=false;for(const v of LEO.veh)if(!v.dead&&v!==PLAYER.car&&v!==GAME.pcar&&!v.driver&&v.mode==='parked')v.remove();LEO.veh=[];}
+// where you start out at the farm with your horse: before the stable, facing the training ground, your horse saddled beside you
+function leonaSpot(){const F=LEONA.frame;if(!F||!LEO.stable)return null;const yaw=Math.atan2(-F.ux,-F.uz),p=leoP(286,47.5),h=leoP(286.5,51.2);return{px:p[0],pz:p[1],hx:h[0],hz:h[1],yaw};}
+// every frame (from updateCountry)
+function leonaUpdate(dt,px,pz){if(!LEONA.frame||!LEO.arena)return;const c=leoP(330,80),d=Math.hypot(px-c[0],pz-c[1]);
+  if(d<700&&!LEO.vehOn&&STATE.started)leonaVehicles();else if(d>1000&&LEO.vehOn)leonaVehiclesOff();
+  const P=JMP.poles;if(P&&P.im){P.im.visible=d<900;if(P.nums)P.nums.visible=d<900;}
+  if(d<900){jumpPolesUpdate(dt,px,pz);courseUpdate(dt);}else if(COURSE.marker)COURSE.marker.visible=false;}
 // ---------------- the country's roads, built with the city and on ahead of you ----------------
 // The highways near town (to beyond Leona Farms on the northwest road), the lone filling station and the farm are built with the city;
 // past that each highway is built in stretches of 192 m as you come near (and let go well behind you), a stretch its own meshes (one per
@@ -2625,20 +2788,22 @@ function hznUpdate(dt,cam,night,lit=0){if(!HZN.ring)return;const c=cam.position,
 // their rows, the lamps over the boards, on the bridges and at the filling stations. One point each, all in one draw (thinned evenly to
 // HZL.cap): none near (the real ones show there), smaller and fainter further off, each twinkling a little in the air between; past
 // the far plane drawn on a sphere just inside it along its own line of sight, behind the horizon ring, so the far crest hides those
-// under it. Over the Loop, low on the horizon, the glow of it all on the haze (drawn with the sky, before the ring and the skyline, so
-// the towers stand dark against it).
-const HZL={pts:null,glow:null,t:0,cap:72000};
+// under it. They are pin-pricks, never brighter than the post's bloom and bokeh pick up (HZL_CAP), and they are drawn keeping the
+// brightest at each pixel rather than adding up, so where thousands of them crowd together (the Loop seen from miles off) they make a
+// dense field of sparks, not one blinding blob. What all that light does to the sky is the glow (HZL.glow, see hznGlowInit).
+const HZL={pts:null,glow:null,t:0,cap:72000,box:null};
+const HZL_CAP='.26';
 const HZL_VS=`attribute vec3 aCol;attribute vec4 aN;uniform float uR,uPix,uTime,uI;varying vec3 vC;
 void main(){vec3 d=position-cameraPosition;float D=max(length(d),1.);
  float win=step(.5,abs(aN.x)+abs(aN.y));
  float nr=smoothstep(mix(170.,300.,win),mix(330.,520.,win),D);
  float fc=mix(1.,smoothstep(0.,.15,-(aN.x*d.x+aN.y*d.z)/D),win);
- float tw=1.+mix(.08,.4,smoothstep(700.,4000.,D))*sin(uTime*(2.3+3.1*aN.w)+aN.w*40.)*sin(uTime*(.7+1.9*fract(aN.w*7.3))+aN.w*93.);
- float k=uI*nr*fc*tw*pow(clamp(650./D,.12,1.),.75)*exp(-D/14000.);
- vC=aCol*k;float s=aN.z*uPix*mix(3.,1.6,smoothstep(300.,3500.,D));if(s<2.){vC*=s*s*.25;s=2.;}
+ float tw=1.+mix(.15,.55,smoothstep(600.,4000.,D))*sin(uTime*(2.3+3.1*aN.w)+aN.w*40.)*sin(uTime*(.7+1.9*fract(aN.w*7.3))+aN.w*93.);
+ float k=uI*nr*fc*pow(clamp(650./D,.12,1.),.75)*exp(-D/14000.);
+ vC=min(aCol*k,vec3(`+HZL_CAP+`))*tw;float s=aN.z*uPix*mix(2.4,1.5,smoothstep(300.,3500.,D));if(s<1.6){vC*=s/1.6;s=1.6;}
  vec3 p=D>uR?cameraPosition+d*(uR/D):position-d/D*.8;
  gl_PointSize=s;gl_Position=k>.002?projectionMatrix*viewMatrix*vec4(p,1.):vec4(2.,2.,2.,1.);}`;
-const HZL_FS=`varying vec3 vC;void main(){vec2 q=gl_PointCoord*2.-1.;float r2=dot(q,q);if(r2>1.)discard;gl_FragColor=vec4(vC*(exp(-r2*4.5)+.12*(1.-r2)),1.);}`;
+const HZL_FS=`varying vec3 vC;void main(){vec2 q=gl_PointCoord*2.-1.;float r2=dot(q,q);if(r2>1.)discard;gl_FragColor=vec4(vC*exp(-r2*2.2),1.);}`;
 function hznLightsInit(scene){let sd=1928;const R=()=>{sd=(Math.imul(sd,1664525)+1013904223)>>>0;return sd/4294967296;};
   const P=[],K=[],N=[],WARM=[[1,.7,.4],[1,.78,.52],[1,.64,.34],[1,.86,.64],[.92,.9,.82]],warm=()=>WARM[Math.floor(R()*WARM.length)];
   const add=(x,y,z,c,k,nx,nz,s)=>{P.push(x,y,z);K.push(c[0]*k,c[1]*k,c[2]*k);N.push(nx,nz,s,R());};
@@ -2658,20 +2823,45 @@ function hznLightsInit(scene){let sd=1928;const R=()=>{sd=(Math.imul(sd,1664525)
   for(const b of BOARD_LAMPS)add(b[0],b[1],b[2],[1,.86,.64],1.5,0,0,1.2);
   let n=P.length/3;if(n>HZL.cap){const keep=HZL.cap/n;let j=0;for(let i=0;i<n;i++){if(R()>keep)continue;for(let a=0;a<3;a++){P[j*3+a]=P[i*3+a];K[j*3+a]=K[i*3+a];}for(let a=0;a<4;a++)N[j*4+a]=N[i*4+a];j++;}n=j;P.length=K.length=n*3;N.length=n*4;}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('aCol',new THREE.Float32BufferAttribute(K,3));g.setAttribute('aN',new THREE.Float32BufferAttribute(N,4));g.boundingSphere=new THREE.Sphere(new THREE.Vector3(),1e6);
-  const pts=new THREE.Points(g,new THREE.ShaderMaterial({uniforms:{uR:{value:800},uPix:{value:1},uTime:{value:0},uI:{value:0}},vertexShader:HZL_VS,fragmentShader:HZL_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
+  const pts=new THREE.Points(g,new THREE.ShaderMaterial({uniforms:{uR:{value:800},uPix:{value:1},uTime:{value:0},uI:{value:0}},vertexShader:HZL_VS,fragmentShader:HZL_FS,transparent:true,depthWrite:false,
+    blending:THREE.CustomBlending,blendEquation:THREE.MaxEquation,blendSrc:THREE.OneFactor,blendDst:THREE.OneFactor,fog:false}));
   pts.frustumCulled=false;pts.matrixAutoUpdate=false;pts.renderOrder=-2;pts.visible=false;pts.name='cityLights';scene.add(pts);HZL.pts=pts;
-  const glow=new THREE.Mesh(new THREE.PlaneGeometry(1,1),new THREE.ShaderMaterial({uniforms:{uCol:{value:new THREE.Color()}},vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
-    fragmentShader:'uniform vec3 uCol;varying vec2 vUv;void main(){vec2 q=vUv-.5;gl_FragColor=vec4(uCol*exp(-q.x*q.x*11.-q.y*q.y*26.),1.);}',depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending,fog:false}));
-  glow.frustumCulled=false;glow.renderOrder=-5;glow.visible=false;glow.name='cityGlow';scene.add(glow);HZL.glow=glow;}
-// every frame: on with the city's lamps (not from the air), the far sphere just inside the far plane; the glow over the Loop when it is
-// a good way off, centred on the crest in its direction (the ring hides its lower half)
+  // where the light is: the box round all of it, and the middle of it weighted by how bright (the Loop pulls it east)
+  let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9,wx=0,wz=0,ww=0;for(let i=0;i<n;i++){const x=P[i*3],z=P[i*3+2],w=K[i*3]+K[i*3+1];if(x<x0)x0=x;if(x>x1)x1=x;if(z<z0)z0=z;if(z>z1)z1=z;wx+=x*w;wz+=z*w;ww+=w;}
+  HZL.box=n?{x0,x1,z0,z1,cx:wx/ww,cz:wz/ww}:null;hznGlowInit(scene);}
+// ---------------- the city's glow in the sky ----------------
+// From out in the country at night the city is a dome of yellow light on the haze over it, brightest down on the horizon and fading
+// up into the dark, wide as the city is and a little wider, brightest over the Loop; its dark towers and the far hills stand against
+// it (it is drawn with the sky, before the horizon ring and the skyline). One dome of sky round the camera, its colour worked out per
+// pixel from the way it looks: how far that is round from the city's span (uA: the middle of it, its half width, how soft its sides
+// are; uL: the Loop's way and spread), how high above the crest (uE: the glow's two heights, the crest), and how bright (uI).
+const HZG_VS=`varying vec3 vW;void main(){vec4 w=modelMatrix*vec4(position,1.);vW=w.xyz;gl_Position=projectionMatrix*viewMatrix*w;}`;
+const HZG_FS=`uniform vec3 uA,uL,uE,uCol,uHi;uniform float uI;varying vec3 vW;
+float ad(float a,float b){return abs(mod(a-b+3.14159265,6.2831853)-3.14159265);}
+void main(){vec3 d=normalize(vW-cameraPosition);float el=asin(clamp(d.y,-1.,1.)),az=atan(d.x,d.z);
+ float o=max(ad(az,uA.x)-uA.y,0.),fa=exp(-o*o/(uA.z*uA.z)),lp=ad(az,uL.x),fl=exp(-lp*lp/(uL.y*uL.y))*uL.z;
+ float h=max(el-uE.z,0.),fe=exp(-h/uE.x),fb=exp(-h/uE.y);
+ float k=(fa*(.7*fe+.18*fb)+fl*fe*fe)*(.55+.45*smoothstep(uE.z-.05,uE.z,el));
+ gl_FragColor=vec4(mix(uHi,uCol,fe)*k*uI,1.);}`;
+function hznGlowInit(scene){const g=new THREE.SphereGeometry(1,64,14,0,TAU,.24,1.44);
+  const m=new THREE.ShaderMaterial({uniforms:{uA:{value:new THREE.Vector3()},uL:{value:new THREE.Vector3()},uE:{value:new THREE.Vector3()},uCol:{value:C('#ffc46a')},uHi:{value:C('#b8743e')},uI:{value:0}},
+    vertexShader:HZG_VS,fragmentShader:HZG_FS,side:THREE.BackSide,depthTest:false,depthWrite:false,blending:THREE.AdditiveBlending,fog:false});// (not 'transparent': it must draw in order with the sky, before the ring)
+  const glow=new THREE.Mesh(g,m);glow.frustumCulled=false;glow.renderOrder=-5;glow.visible=false;glow.name='cityGlow';scene.add(glow);HZL.glow=glow;}
+// every frame: on with the city's lamps (not from the air), the far sphere just inside the far plane; and the glow
 function hznLightsUpdate(dt,cam,lit){const L=HZL.pts;if(!L)return;HZL.t+=dt;const I=AER.on||EDCAM.on?0:sstep(.08,.55,lit);L.visible=I>.01;
-  const U=L.material.uniforms;U.uI.value=I*2.2;U.uR.value=cam.far*.93;U.uTime.value=HZL.t;U.uPix.value=renderer.domElement.height/1080;
-  const G=HZL.glow,c=cam.position,dx=HZN.cc[0]-c.x,dz=HZN.cc[1]-c.z,d=Math.max(1,Math.hypot(dx,dz)),gI=I*sstep(1100,2600,d);G.visible=gI>.01;if(!G.visible)return;
-  const Rg=cam.far*.95,top=c.y+Rg*hznCrest(c.x,c.z,c.y,Math.atan2(dx,dz)),w=2*Rg*Math.tan(Math.min(1.2,Math.atan(1300/d)+.08));
-  G.position.set(c.x+dx/d*Rg,top,c.z+dz/d*Rg);G.scale.set(w,w*.42,1);G.lookAt(c);G.material.uniforms.uCol.value.setRGB(1,.62,.34).multiplyScalar(.018*gI);}
+  const U=L.material.uniforms;U.uI.value=I*1.4;U.uR.value=cam.far*.93;U.uTime.value=HZL.t;U.uPix.value=renderer.domElement.height/1080;hznGlow(cam,I);}
+// the glow, once you are out of the city (none inside its box, coming up over the first kilometre out, fading slowly with miles):
+// round the camera, its span the city's box as seen from here, its heights from how far off the city's light is, sitting on the crest
+function hznGlow(cam,I){const G=HZL.glow,B=HZL.box;if(!G)return;if(!B){G.visible=false;return;}const c=cam.position;
+  const de=Math.hypot(Math.max(B.x0-c.x,0,c.x-B.x1),Math.max(B.z0-c.z,0,c.z-B.z1)),gI=I*sstep(120,900,de)/(1+de/7000);G.visible=gI>.004;if(!G.visible)return;
+  const ac=Math.atan2(B.cx-c.x,B.cz-c.z),dC=Math.max(300,Math.hypot(B.cx-c.x,B.cz-c.z));let lo=0,hi=0;
+  for(const [x,z] of [[B.x0,B.z0],[B.x1,B.z0],[B.x0,B.z1],[B.x1,B.z1]]){const a=angDiff(ac,Math.atan2(x-c.x,z-c.z));lo=Math.min(lo,a);hi=Math.max(hi,a);}
+  const Ug=G.material.uniforms,dL=Math.max(300,Math.hypot(HZN.cc[0]-c.x,HZN.cc[1]-c.z));
+  Ug.uA.value.set(ac+(lo+hi)/2,(hi-lo)/2,.12+Math.atan(1200/dC));Ug.uL.value.set(Math.atan2(HZN.cc[0]-c.x,HZN.cc[1]-c.z),Math.atan(900/dL)+.04,.9);
+  Ug.uE.value.set(Math.atan(650/dC)+.02,Math.atan(2400/dC)+.05,Math.atan(hznCrest(c.x,c.z,c.y,ac)));Ug.uI.value=gI*.18;
+  G.position.copy(c);G.scale.setScalar(cam.far*.96);}
 // the country, every frame: its ground's tiles, its highways' stretches, the horizon
-function updateCountry(dt,px,pz,S){ctUpdate(dt,camera);hwyUpdate(dt,camera);hznUpdate(dt,camera,S.night,S.lit);}
+function updateCountry(dt,px,pz,S){ctUpdate(dt,camera);hwyUpdate(dt,camera);hznUpdate(dt,camera,S.night,S.lit);try{leonaUpdate(dt,px,pz);}catch(e){if(!LEO.err){LEO.err=1;console.warn('Leona Farms',e);}}}
 // ================= LINCOLN PARK AND THE BEACHES =================
 // Above the pier the lake shore is park. Lake Shore Drive runs on north from the Loop's last block (the road is Sheridan Road's first
 // two and a half kilometres; it takes that name where the park ends) between the lake and Lincoln Park. East of it a promenade, Oak
@@ -4966,7 +5156,7 @@ const LEGS=[['LH','L',HIND,0],['LF','L',FORE,1],['RH','R',HIND,2],['RF','R',FORE
 class HorseAnimator{
   constructor(h){this.h=h;this.B=h.bones;this.phase=0;this.t=0;this.gait='walk';this.prevGait='walk';this.gaitBlend=1;this.tail=0;this.tailV=0;this.lean=0;this.bend=0;
     this.ear=[0,0];this.earT=1+Math.random()*3;this.rest=0;this.restSide=1;this.restT=4;this.amt=0;this.carriage=1;
-    this.ri={phase:0,gait:'walk',prevGait:'walk',gb:1,amt:0,v:0,f:0,pitch:0,lean:0,bounce:0,nod:0,jp:-1,jw:0};// what a rider feels (see riderInfo)
+    this.ri={phase:0,gait:'walk',prevGait:'walk',gb:1,amt:0,v:0,f:0,pitch:0,lean:0,bounce:0,nod:0,jp:-1,jw:0,sw:0};// what a rider feels (see riderInfo)
     this.q=new THREE.Quaternion();this.m=new THREE.Matrix4();this.mi=new THREE.Matrix4();this.v3=new THREE.Vector3();
     const bp=b=>b.userData.bindPos||b.position;
     const objBind=b=>{const p=[0,0,0];for(let c=b;c&&c.isBone;c=c.parent){const q=bp(c);p[0]+=q.x;p[1]+=q.y;p[2]+=q.z;}return p;};
@@ -5025,18 +5215,22 @@ class HorseAnimator{
     // turning: bend spine/neck into the turn, lean with speed
     this.bend+=(tr*(5+3*clamp(v/4,0,1))-this.bend)*(1-Math.exp(-dt*5));this.lean+=(tr*clamp(v/6,0,1)*7-this.lean)*(1-Math.exp(-dt*4));
     // jump overlay (st.jump 0..1): 0-.2 gather, .2-.3 take-off, .3-.78 flight, .78-1 landing
-    let jw=0,jlift=0,jpitch=0,jp=-1;if(st.jump!=null&&st.jump>=0){jp=clamp(st.jump,0,1);jw=smooth(jp/0.08)*(1-smooth((jp-0.94)/0.06));
-      const s=clamp((jp-0.3)/0.48,0,1);jlift=0.8*4*s*(1-s)-0.07*smooth(jp/0.18)*(1-smooth((jp-0.22)/0.1))-0.07*bump(jp,0.78,1);
-      jpitch=-3*bump(jp,0,0.2)+16*bump(jp,0.15,0.45)-12*bump(jp,0.5,0.95);}
-    {const ri=this.ri;ri.phase=this.phase;ri.gait=this.gait;ri.prevGait=this.prevGait;ri.gb=gb;ri.amt=this.amt;ri.v=v;ri.f=f;ri.pitch=pitch+jpitch*jw;ri.lean=this.lean;ri.bounce=bounce-drop+jlift*jw;ri.nod=nod;ri.jp=jp;ri.jw=jw;}
+    // (st.jumpH: how high the body rises over a fence, 0.8 m when not given)
+    let jw=0,jlift=0,jpitch=0,jp=-1;if(st.jump!=null&&st.jump>=0){jp=clamp(st.jump,0,1);jw=smooth(jp/0.08)*(1-smooth((jp-0.94)/0.06));const JH=st.jumpH||0.8;
+      const s=clamp((jp-0.3)/0.48,0,1);jlift=JH*4*s*(1-s)-0.07*smooth(jp/0.18)*(1-smooth((jp-0.22)/0.1))-0.07*bump(jp,0.78,1);
+      jpitch=(-3*bump(jp,0,0.2)+16*bump(jp,0.15,0.45)-12*bump(jp,0.5,0.95))*Math.sqrt(JH/0.8);}
+    // stumble overlay (st.stumble 0..1, st.stumbleK how bad): a fence caught or run into - the forehand drops, the nose goes down, the
+    // knees give, and it catches itself
+    let stw=0;if(st.stumble!=null&&st.stumble>=0){const u=clamp(st.stumble,0,1);stw=Math.pow(bump(u,0,1),.7)*smooth(u/0.06)*(st.stumbleK||1);}
+    {const ri=this.ri;ri.phase=this.phase;ri.gait=this.gait;ri.prevGait=this.prevGait;ri.gb=gb;ri.amt=this.amt;ri.v=v;ri.f=f;ri.pitch=pitch+jpitch*jw-15*stw;ri.lean=this.lean;ri.bounce=bounce-drop+jlift*jw-.24*stw;ri.nod=nod;ri.jp=jp;ri.jw=jw;ri.sw=stw;}
     // ---- body ----
-    const R=B.Root;R.position.copy(R.userData.bindPos);R.position.y+=bounce-drop+breathe+jlift*jw;
-    R.quaternion.setFromAxisAngle(this.Xa,-(pitch+jpitch*jw)*D2R);this.q.setFromAxisAngle(this.Za,-this.lean*D2R);R.quaternion.multiply(this.q);
+    const R=B.Root;R.position.copy(R.userData.bindPos);R.position.y+=bounce-drop+breathe+jlift*jw-.24*stw;
+    R.quaternion.setFromAxisAngle(this.Xa,-(pitch+jpitch*jw-15*stw)*D2R);this.q.setFromAxisAngle(this.Za,-this.lean*D2R);R.quaternion.multiply(this.q);
     const set=(n,list)=>{const b=B[n];if(!b)return;b.quaternion.identity();for(const [ax,deg] of list){if(!deg)continue;this.q.setFromAxisAngle(ax,deg*D2R);b.quaternion.multiply(this.q);}};
     const X=this.Xa,Y=this.Ya,Z=this.Za,bd=this.bend;
     set('Spine1',[[Y,bd*0.2],[X,spine*0.3]]);set('Spine2',[[Y,bd*0.25],[X,spine*0.3]]);set('Chest',[[Y,bd*0.2],[X,-spine*0.2]]);
     set('Pelvis',[[Y,-bd*0.15],[X,-tuck-jpitch*jw*0.2],[Z,this.rest*this.restSide*3]]);
-    const hd=nod+headIdle+(jp>=0?(-6*bump(jp,0.15,0.4)+10*bump(jp,0.35,0.75)-5*bump(jp,0.75,1))*jw:0)+(pitch+jpitch*jw)*0.5;
+    const hd=nod+headIdle+(jp>=0?(-6*bump(jp,0.15,0.4)+10*bump(jp,0.35,0.75)-5*bump(jp,0.75,1))*jw:0)+(pitch+jpitch*jw)*0.5+20*stw;
     // head carriage: lift the neck, keep the face near vertical (the source horse rests with its head low)
     const cg=this.carriage;set('Neck1',[[Y,bd*0.5],[X,hd*0.3-6*cg]]);set('Neck2',[[Y,bd*0.6],[X,hd*0.3-8*cg]]);set('Neck3',[[Y,bd*0.5],[X,hd*0.2-4*cg]]);set('Head',[[Y,bd*0.3],[X,hd*0.2+12*cg]]);
     this.earT-=dt;if(this.earT<0){this.earT=1.5+Math.random()*4;this.ear=[Math.random()*40-20,Math.random()*40-20];}
@@ -5058,6 +5252,7 @@ class HorseAnimator{
         else{gw=1-smooth((jp-0.3)/0.08)+smooth((jp-0.84)/0.1);dz=jp<0.5?mix(0.15,-0.35,smooth(jp/0.3)):0.25-clamp((jp-0.84)/0.16,0,1)*0.4;dth=mix(30,-12,smooth((jp-0.38)/0.37));dk=mix(15,75,bump(jp,0.35,0.95));}
         gw=clamp(gw,0,1);const jt=this.v3.set(L.eff[0],L.eff[1],L.eff[2]+dz).applyMatrix4(this.mi);const js={th:L.jth,k:L.jk};this.solve(L,jt.y,jt.z,0,js);L.jth=js.th;L.jk=js.k;
         const jth=mix(dth,js.th,gw),jk=mix(dk,js.k,gw),jsw=1-gw;th=mix(th,jth,jw);k=mix(k,jk,jw);swv=mix(swv,jsw,jw);}
+      if(stw>0&&L.fore){k=mix(k,96,stw*.8);th=mix(th,-8,stw*.55);swv=mix(swv,1,stw*.8);}
       const al=this.angles(L,th,k,Math.max(swv,rest*0.9),L.al);
       // hoof: flat on the ground in stance (absolute angle 0), folded in the swing; resting hind hoof tips onto its toe
       let abs=parPitch;for(let i=0;i<5;i++)abs+=al[i];const flat=-abs;al[5]=mix(flat,al[5],swv)+rest*20;
@@ -5286,7 +5481,8 @@ function riderPose(h,dt){const A=h.ang,X=b=>b*3,Y=b=>b*3+1,Z=b=>b*3+2,m=h.mount,
     const wc=W.canter*mv;fwd+=.035*Math.sin(tp)*wc;rise+=.012*Math.max(0,-Math.sin(tp))*wc;lean+=.06*wc;// canter: the seat scoops with the rock
     const wg=W.gallop*mv;rise+=(.075-I.bounce*.8)*wg;fwd-=.035*wg;lean+=.52*wg;armF+=wg;// gallop: half seat, knees soak the bounce
     pitchS=I.pitch*D2R;rollS=-I.lean*D2R;nodA=I.nod*D2R;
-    if(I.jp>=0){const fold=bumpR(I.jp,.1,.62)*I.jw,land=bumpR(I.jp,.7,1)*I.jw;lean+=.6*fold-.12*land;rise+=.1*fold;fwd+=.05*fold;armF+=.9*fold;}}
+    if(I.jp>=0){const fold=bumpR(I.jp,.1,.62)*I.jw,land=bumpR(I.jp,.7,1)*I.jw;lean+=.6*fold-.12*land;rise+=.1*fold;fwd+=.05*fold;armF+=.9*fold;}
+    if(I.sw>0){lean+=.55*I.sw;rise+=.05*I.sw;fwd+=.09*I.sw;armF+=.7*I.sw;}}// (a stumble throws the rider up the neck)
   const sp=m?m.speed:0;S.acc+=((sp-S.sp)/Math.max(dt,1e-3)-S.acc)*Math.min(1,dt*4);S.sp=sp;lean+=clamp(S.acc*.035,-.3,.12);
   const turn=m?m.turn:0;roll-=turn*.07*clamp(sp/4,0,1);S.look+=(turn*.35+.22*Math.sin(t*.23)*(1-mv)-S.look)*Math.min(1,dt*3);
   // the seat goes with the saddle; spine and neck give most of it back so the head rides level
@@ -5742,7 +5938,8 @@ const CAR_MODELS={
  police:{name:'Police Squad',L:4.26,W:1.88,wb:2.91,wr:.43,wheel:'wood',body:'touring',hood:1.18,colors:['#0f0f10'],police:1,decal:3,mass:900,power:6400,top:28,grip:.84},
  modelt:{name:'Black Model T Sedan',L:3.9,W:1.8,wb:2.6,wr:.45,wheel:'wood',body:'sedan',hood:1.0,colors:['#111817'],mass:900,power:4200,top:21,grip:.82},
  coupe:{name:'Sport Coupe',L:3.8,W:1.95,wb:2.57,wr:.48,body:'coupe',hood:1.5,colors:['#7a1e1e'],mass:950,power:6600,top:31,grip:.86},
- pickup:{name:'Produce Pickup',L:4.2,W:1.95,wb:2.99,wr:.48,body:'pickup',hood:1.5,colors:['#1f4d2b'],mass:1150,power:5200,top:22,grip:.82}};
+ pickup:{name:'Produce Pickup',L:4.2,W:1.95,wb:2.99,wr:.48,body:'pickup',hood:1.5,colors:['#1f4d2b'],mass:1150,power:5200,top:22,grip:.82},
+ tractor:{name:'John Deere Model D',L:3.4,W:1.8,wb:2.05,wr:.66,mass:2300,power:6000,top:6.5,grip:1.05}};
 // (sizes of every model but the cabs are measured from the new bodies when the city is built: see autoMake)
 function buildCarMaterials(){stdMat('carpaint',{roughness:.26,metalness:.25,envMapIntensity:1.2});stdMat('chrome',{roughness:.12,metalness:1,envMapIntensity:1.3});stdMat('rubber',{roughness:.92});stdMat('leather',{roughness:.55});
   MATS.carglass=new THREE.MeshStandardMaterial({color:0x1e2a30,roughness:.12,metalness:.2,transparent:true,opacity:.34,depthWrite:false,envMapIntensity:1.8});MCFG.carglass={cast:false,recv:false};
@@ -6093,7 +6290,7 @@ function autoWheelInst(q){const key='aw'+q;let w=WHEEL_INST[key];if(w)return w;c
   return WHEEL_INST[key]={parts,n:0,cap};}
 function farWheelGeo(r){const key='fw'+r.toFixed(2);if(WHEEL_GEO[key])return WHEEL_GEO[key];const M=()=>new THREE.Matrix4();return WHEEL_GEO[key]=mergeGeos([[new THREE.TorusGeometry(r-.08,.08,5,14),M().makeRotationY(Math.PI/2),C('#1a1917')],[new THREE.CylinderGeometry(r-.13,r-.13,.1,12),M().makeRotationZ(Math.PI/2),C('#5a4a36')],[new THREE.CylinderGeometry(.09,.09,.2,8),M().makeRotationZ(Math.PI/2),C('#cfcabd')]]);}
 function updateWheelInstances(){for(const k in WHEEL_INST)WHEEL_INST[k].n=0;
-  for(const v of VEHICLES){if(v.dead||v.wagon||v.hero||v.mode==='tram'||!v.root.visible)continue;if(!v.gOn&&v._bodyF!==frameNo)continue;if(!v.inView&&v.dist>30&&v!==PLAYER.car)continue;const fw=v.dist>60&&v!==PLAYER.car,wr=v.wr||v.md.wr;
+  for(const v of VEHICLES){if(v.dead||v.wagon||v.hero||v.trac||v.mode==='tram'||!v.root.visible)continue;if(!v.gOn&&v._bodyF!==frameNo)continue;if(!v.inView&&v.dist>30&&v!==PLAYER.car)continue;const fw=v.dist>60&&v!==PLAYER.car,wr=v.wr||v.md.wr;
    const W=fw?wheelInst('far'+wr.toFixed(2),farWheelGeo(wr)):(v.auto?autoWheelInst(v.gOn?0:1):wheelInst(v.wkey||v.kind,v.wgeo));
    const bm=_wbm.compose(v.pos,_wbq.setFromEuler(_wbe.set(v.p,v.yaw,v.q,'YXZ')),_wbs);_ws.setScalar(v.auto&&!fw?v.auto.S:1);// the body instance's own frame
    for(const w of v.wheels){if(W.n>=W.cap)break;let st=0;if(w.front&&Math.abs(v.steer)>1e-4)st=Math.atan(v.md.wb/(v.md.wb/Math.tan(v.steer)-w.x));_we.set(w.spin,st,0,'YXZ');_wq.setFromEuler(_we);_wp.set(w.x,wr+clamp(w.y,-.3,.2),w.z);_wm.compose(_wp,_wq,_ws);_wr.multiplyMatrices(bm,_wm);
@@ -6337,6 +6534,82 @@ function heroSync(v,dt,sp){const H=v.hero,md=v.md,st=v.steer;for(const w of H.wh
    w.spin.rotation.x=(w.spin.rotation.x+sp*dt/(.53*CAB_S))%TAU;w.g.position.y=.53+clamp(v.wheelY[w.i]||0,-.3,.2)/CAB_S;}
   if(H.wset)placeWheelSet(H.wset);
   H.sw.quaternion.copy(H.swRest).multiply(_q1.setFromAxisAngle(_v2.set(0,0,1),st*10));}
+// ---------- the farm tractor: a 1928 John Deere Model D, the "spoker D" ----------
+// Built once, in its own meshes (one per material; the wheels apart, to turn), from the city's primitive helpers: the long hood with
+// the fuel tank along its top, the radiator in its cast shell over the front axle, the two-cylinder engine's spoked flywheel on the
+// left and the belt pulley on the right, the exhaust and the air stack, steel wheels - the big rear ones with angle-iron cleats -
+// the steering shaft down the right of the hood to a wheel before the pan seat on its spring bar, the platform, the fenders, the
+// drawbar; green, the wheels yellow, the maker's name on the radiator's top tank. Origin on the ground midway between the axles,
+// facing +z, the axles md.wb apart as the physics has them.
+function makeTractor(){const md=CAR_MODELS.tractor,ZF=md.wb/2,ZR=-md.wb/2,RR=.66,RF=.38,XR=.71,XF=.56,M=new THREE.Matrix4(),N=new THREE.Matrix4();
+  const green=C('#2f6a2c'),greenD=C('#23501f'),yel=C('#e3b02a'),yelD=C('#b98a1c'),iron=C('#2a2a27'),blk=C('#121210'),brass=C('#b8913a'),grey=C('#55574f');
+  // a turned part whose axis is the axle's (x): its geometry (axis y) laid over
+  const axX=(geo,x,y,z,mk,col)=>{_m1.makeRotationZ(Math.PI/2).setPosition(x,y,z);addGeo(mk,geo,_m1,col);};
+  const cylG=(r0,r1,h,seg)=>G('trc'+r0+'_'+r1+'_'+h+'_'+seg,()=>new THREE.CylinderGeometry(r0,r1,h,seg));
+  const ring=(key,pts,seg)=>G(key,()=>new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])),seg));
+  const SW=[0,1.6,ZR+.1],SG=[-.27,1.18,ZF-.12];
+  const body=buildGroup(()=>{
+    // the front axle (a forged beam across, its spindles down to the wheels) and the bolster up to the radiator
+    box('paint',0,.3,ZF,XF*2-.12,.09,.1,greenD);box('paint',0,.36,ZF-.03,.2,.3,.22,greenD);for(const s of [-1,1])box('paint',s*(XF-.06),.26,ZF,.08,.18,.08,greenD);
+    // the radiator: its cast shell, the finned core behind a grille, the top and bottom tanks, the brass cap
+    box('paint',0,.55,ZF+.02,.64,.66,.24,green);box('metal',0,.62,ZF+.141,.5,.5,.02,blk);for(let i=0;i<10;i++)box('metal',-.225+i*.05,.62,ZF+.155,.014,.5,.014,grey);
+    for(let i=0;i<6;i++)box('metal',0,.66+i*.08,ZF+.158,.5,.012,.012,grey);
+    rb('paint',0,1.32,ZF+.02,.66,.2,.3,.06,green);box('paint',0,.48,ZF+.02,.62,.1,.26,greenD);cyl('metal',0,1.42,ZF+.02,.045,.055,.07,12,brass);
+    // the engine: the two cylinders lie forward under the hood, the block and the crankcase running back to the transmission
+    rb('paint',0,.76,.42,.56,.6,1.0,.07,greenD);rb('paint',0,.74,-.4,.66,.66,.74,.08,greenD);
+    for(const s of [-1,1])for(let i=0;i<4;i++)box('metal',s*.285,.62+i*.1,.15+i*.12,.02,.04,.04,iron);
+    // the hood, and the fuel tank along its top
+    rb('paint',0,1.15,.4,.5,.14,1.16,.04,green);cylZ('paint',0,1.33,.36,.19,1.0,green,22);for(const z of [-.13,.85])cylZ('paint',0,1.33,z,.2,.035,greenD,22);
+    cyl('metal',0,1.5,.62,.04,.045,.06,10,brass);rodTo('metal',[.17,1.2,.82],[.17,1.2,-.06],.012,brass,6);
+    // the exhaust, flared at its top (right), and the air stack under its cap (left), up from the hood's edges
+    cyl('metal',-.25,1.18,.7,.045,.05,.84,10,blk);cyl('metal',-.25,2.02,.7,.075,.046,.11,12,blk);
+    cyl('paint',.25,1.18,.6,.055,.055,.6,10,green);cyl('paint',.25,1.78,.6,.12,.07,.06,14,greenD);cyl('paint',.25,1.84,.6,.04,.12,.04,14,greenD);
+    // the flywheel (left): rim, six spokes, the hub; the belt pulley (right)
+    axX(ring('trFly',[[.33,-.05],[.4,-.05],[.4,.05],[.33,.05],[.33,-.05]],36),.4,.8,.14,'paint',green);
+    for(let i=0;i<6;i++){const a=i/6*TAU+.3;rodTo('paint',[.4,.8+.07*Math.cos(a),.14+.07*Math.sin(a)],[.4,.8+.34*Math.cos(a),.14+.34*Math.sin(a)],.024,green,8);}
+    axX(cylG(.075,.075,.14,14),.37,.8,.14,'paint',greenD);axX(cylG(.035,.035,.24,10),.38,.8,.14,'metal',iron);
+    axX(cylG(.2,.2,.15,24),-.42,.84,.28,'paint',green);axX(cylG(.07,.07,.2,12),-.38,.84,.28,'paint',greenD);
+    // the transmission and differential between the rear wheels, the axle housings out to them, the big final-drive covers
+    rb('paint',0,.72,ZR+.06,.74,.62,.62,.08,greenD);axX(cylG(.095,.095,1.22,14),0,RR,ZR,'paint',greenD);for(const s of [-1,1])axX(cylG(.25,.25,.1,22),s*.47,RR,ZR,'paint',greenD);
+    // the rear fenders: steel shells over the wheels' tops, front to back, with a lip down their outer edge
+    for(const s of [-1,1])addGeo('paint',gridSurf(8,18,(u,v)=>{const a=lerp(.4,2.75,v);return[s*XR+(u-.5)*.4,RR+.79*Math.sin(a),ZR+.79*Math.cos(a)];},true),_m1.identity(),green);
+    for(const s of [-1,1])addGeo('paint',gridSurf(2,18,(u,v)=>{const a=lerp(.4,2.75,v),r=.79-u*.09;return[s*(XR+.2),RR+r*Math.sin(a),ZR+r*Math.cos(a)];},true),_m1.identity(),greenD);
+    // the platform, the seat's spring bar and its pan seat, the toolbox
+    for(const s of [-1,1])box('metal',s*.43,.47,ZR-.36,.22,.03,.62,iron);box('metal',0,.47,ZR-.62,.66,.03,.16,iron);
+    tubeTo('metal',[[0,.82,ZR-.18],[0,.98,ZR-.36],[0,1.17,ZR-.5],[0,1.3,ZR-.56]],.032,iron,12,6);
+    lathe('paint',[[0,0],[.17,.012],[.215,.05],[.235,.1],[.228,.13],[.21,.125]],20,0,1.31,ZR-.58,yel,1.08,1);
+    box('paint',.36,.98,ZR+.36,.2,.14,.32,greenD);
+    // the steering: its gear by the radiator, the shaft down the right of the hood to the wheel (made below)
+    box('paint',SG[0],1.02,SG[2],.13,.2,.16,greenD);rodTo('metal',SG,SW,.024,iron,8);
+    // levers: the clutch on the right, the throttle under the wheel; the drawbar behind
+    rodTo('metal',[-.42,.92,ZR+.32],[-.47,1.52,ZR+.06],.018,iron,6);sph('metal',-.47,1.52,ZR+.06,.035,blk);rodTo('metal',[.06,1.52,ZR+.2],[.16,1.52,ZR+.12],.012,iron,6);
+    box('metal',0,.33,ZR-.66,.96,.05,.13,iron);for(const s of [-1,1])rodTo('metal',[s*.4,.58,ZR-.08],[s*.44,.36,ZR-.64],.022,iron,6);
+    for(let i=0;i<5;i++)cyl('metal',-.36+i*.18,.32,ZR-.66,.025,.025,.07,8,blk);});
+  // the steering wheel at the shaft's top, square to it, turning about it
+  const swg=new THREE.Group(),swd=new THREE.Vector3(SW[0]-SG[0],SW[1]-SG[1],SW[2]-SG[2]).normalize();swg.position.set(SW[0],SW[1],SW[2]);swg.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),swd);
+  swg.add(buildGroup(()=>{addGeo('metal',G('trSW',()=>new THREE.TorusGeometry(.21,.017,8,30)),_m1.identity(),blk);for(let i=0;i<3;i++){const a=i/3*TAU+Math.PI/2;rodTo('metal',[0,0,0],[.2*Math.cos(a),.2*Math.sin(a),0],.011,iron,6);}
+    cyl('metal',0,0,0,.035,.035,.03,10,iron,false,_m1.makeRotationX(Math.PI/2));}));
+  // the maker's name on the radiator's top tank: both sides and the front
+  const lc=mk(256,40),lg=lc.ctx;lg.fillStyle='#2f6a2c';lg.fillRect(0,0,256,40);lg.fillStyle='#e8c25a';lg.font='bold 28px Georgia, serif';lg.textAlign='center';lg.textBaseline='middle';lg.fillText('JOHN DEERE',128,22);
+  const lgeo=mergeGeos([[new THREE.PlaneGeometry(.24,.04),new THREE.Matrix4().makeRotationY(Math.PI/2).setPosition(.333,1.32,ZF+.02)],[new THREE.PlaneGeometry(.24,.04),new THREE.Matrix4().makeRotationY(-Math.PI/2).setPosition(-.333,1.32,ZF+.02)],
+    [new THREE.PlaneGeometry(.4,.065),new THREE.Matrix4().makeTranslation(0,1.32,ZF+.172)]]);
+  const label=new THREE.Mesh(lgeo,new THREE.MeshStandardMaterial({map:ctex(lc,{clamp:true}),roughness:.5,metalness:.2}));label.name='decal';
+  // the wheels: steel rims; the rear ones with cleats slanted alternately across the tread and sixteen spokes in two staggered rows,
+  // the front ones with a guide rib round the middle and ten spokes
+  const rear=()=>buildGroup(()=>{axX(ring('trRimR',[[.6,-.15],[.66,-.15],[.66,.15],[.6,.15],[.6,-.15]],44),0,0,0,'paint',yel);
+    for(let i=0;i<22;i++){M.makeRotationX(i/22*TAU).multiply(N.makeTranslation(0,RR+.022,0)).multiply(_m1.makeRotationY(i%2?.42:-.42));boxM('metal',M,.31,.045,.05,iron);}
+    for(let i=0;i<16;i++){const a=(i+.5)/16*TAU,x0=i%2?.06:-.06;rodTo('paint',[x0,.13*Math.cos(a),.13*Math.sin(a)],[-x0*.3,.6*Math.cos(a),.6*Math.sin(a)],.017,yel,6);}
+    axX(cylG(.14,.16,.34,16),0,0,0,'paint',yelD);axX(cylG(.07,.08,.42,10),0,0,0,'metal',iron);});
+  const front=()=>buildGroup(()=>{axX(ring('trRimF',[[.34,-.065],[.38,-.065],[.38,-.016],[.415,-.008],[.415,.008],[.38,.016],[.38,.065],[.34,.065],[.34,-.065]],36),0,0,0,'paint',yel);
+    for(let i=0;i<10;i++){const a=i/10*TAU;rodTo('paint',[0,.08*Math.cos(a),.08*Math.sin(a)],[0,.34*Math.cos(a),.34*Math.sin(a)],.016,yel,6);}axX(cylG(.09,.1,.2,12),0,0,0,'paint',yelD);});
+  const root=new THREE.Group(),bodyG=new THREE.Group();root.add(bodyG);bodyG.add(body,label,swg);const wheels=[];
+  for(const [sx,i] of [[1,2],[-1,3]]){const g=new THREE.Group(),w=rear();g.position.set(sx*XR,RR,ZR);if(sx<0)w.rotation.y=Math.PI;g.add(w);g.userData.wheel=true;bodyG.add(g);wheels.push({g,spin:w,r:RR,y0:RR,i,front:false,x:sx*XR});}
+  for(const [sx,i] of [[1,0],[-1,1]]){const g=new THREE.Group(),w=front();g.position.set(sx*XF,RF,ZF);if(sx<0)w.rotation.y=Math.PI;g.add(w);g.userData.wheel=true;bodyG.add(g);wheels.push({g,spin:w,r:RF,y0:RF,i,front:true,x:sx*XF});}
+  return{root,body:bodyG,wheels,sw:swg,swRest:swg.quaternion.clone(),seat:new THREE.Vector3(0,1.36,ZR-.6),stack:[-.25,2.15,.7]};}
+// every frame near: the wheels roll (each by its own size), the fronts steer, all of them droop to the ground; the steering wheel turns
+function tractorSync(v,dt,sp){const T=v.trac,st=v.steer,wb=v.md.wb;
+  for(const w of T.wheels){w.spin.rotation.x=(w.spin.rotation.x+sp*dt/w.r)%TAU;if(w.front)w.g.rotation.y=Math.abs(st)>1e-4?Math.atan(wb/(wb/Math.tan(st)-w.x)):0;w.g.position.y=w.y0+clamp(v.wheelY[w.i]||0,-.25,.15);}
+  T.sw.quaternion.copy(T.swRest).multiply(_q1.setFromAxisAngle(_v2.set(0,0,1),st*7));}
 // ---------- crumple zones, cracked & shattered glass (ported from the ChatGPT build) ----------
 let CRACK_MAT=null;const DENT=new WeakMap();let SHARDS=null;const SHARD_ST=[];let shardNext=0;const _dinv=new THREE.Matrix4(),_dpt=new THREE.Vector3(),_ddir=new THREE.Vector3(),_dctr=new THREE.Vector3();
 function buildShards(){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute([-.032,-.014,0,.028,-.011,0,.003,.037,0],3));g.computeVertexNormals();
@@ -6461,6 +6734,8 @@ class Vehicle{
   if(this.wagon){const w=buildWagon(kind),L=w.layout;this.root=new THREE.Group();this.body=new THREE.Group();this.root.add(this.body);w.g.position.z=L?L.gz:-1.6;this.body.add(w.g);this.wheels=w.wheels.map(q=>({m:q.m,r:q.r,pv:null}));this.wparts=(w.parts||[]).slice();this.cargo=w.cargo||null;this.cols=w.cols||null;this.gz=w.g.position.z;
    this.horse=new Horse();this.horse.group.position.set(0,0,L?L.hz:1.85);this.body.add(this.horse.group);
    this.hl=md.L/2;this.hw=md.W/2;this.h=L?L.h:(kind==='wagon'?2.7:1.8);this.seat=L?new THREE.Vector3(L.seat[0],L.seat[1],L.seat[2]+L.gz):kind==='carriage'?new THREE.Vector3(.2,1.8,-.8):new THREE.Vector3(.25,kind==='wagon'?1.45:1.4,-.5);}
+  else if(kind==='tractor'){const t=makeTractor();this.root=t.root;this.body=t.body;this.trac=t;this.wheels=[];this.wr=md.wr;this.hl=md.L/2;this.hw=md.W/2;this.h=2.1;this.seat=t.seat;this.hoodZ=.9;this.hoodH=1.4;this.lampOut=[1,1];
+   this.body.traverse(o=>{if(o.isMesh){o.castShadow=carCasts(o);o.receiveShadow=true;}});}
   else if(kind==='cab'||kind==='modelt'){const cv=makeCabVisual(kind);this.root=cv.root;this.body=cv.body;this.wheels=cv.wheels;this.wr=cv.wr;this.hero=cv.H||null;this.wkey=cv.wkey;this.wgeo=cv.wgeo;
    this.cabVi=cv.vi;if(cv.vi!==undefined){this.ipKey='c:'+cv.vi;this.tint=cv.tint;}this.hl=md.L/2+.1;this.hw=cv.hw;this.h=cv.h;this.seat=cv.seat;this.hoodZ=cv.hoodZ;this.hoodH=cv.hoodH;if(cv.vname)this.md=Object.assign({},md,{name:cv.vname});
    this.body.traverse(o=>{if(o.isMesh){o.castShadow=!o.material.transparent;o.receiveShadow=true;}});}
@@ -6482,6 +6757,7 @@ class Vehicle{
   const sp=this.vel.x*Math.sin(this.yaw)+this.vel.z*Math.cos(this.yaw);
   if(this.wagon){for(const w of this.wheels)w.m.rotation.x+=sp*dt/w.r;if(this.horse)this.horse.update(dt,this.bolt>0?Math.max(7.5,sp):Math.abs(sp));}
   else if(this.hero)heroSync(this,dt,sp);
+  else if(this.trac)tractorSync(this,dt,sp);
   else for(let i=0;i<4;i++){const w=this.wheels[i];w.spin=(w.spin+sp*dt/(this.wr||this.md.wr))%TAU;w.y=this.wheelY[i];}}}
 // ---- dynamic simulation (player-driven or knocked about) ----
 const _cq=[];const _cs=new Float32Array(8),_cs2=new Float32Array(8);
@@ -6703,7 +6979,10 @@ function horseStruck(w,K,sp){const H=w.horse;if(!H)return;H.group.updateWorldMat
 function vehicleAmbient(v,dt){carBurning(v,dt);
   // a stove-in radiator steams
   if(v.radSteam>0&&!v.burnt&&chance(dt*(3+v.radSteam*9))){const s=Math.sin(v.yaw),c=Math.cos(v.yaw),hz=v.hl-.15;PUFFS.emit(v.pos.x+s*hz,v.pos.y+1.45,v.pos.z+c*hz,rnd(-.3,.3)+v.vel.x*.3,rnd(1,1.8),rnd(-.3,.3)+v.vel.z*.3,rnd(.9,1.6),rnd(.35,.6),.9,.9,.88,.42,.5,1.4,.6,2);}if(v.health<45&&!v.wagon&&!v.burnt){v.smokeT-=dt;if(v.smokeT<=0){v.smokeT=v.health<15?.04:.14;const s=Math.sin(v.yaw),c=Math.cos(v.yaw),hz=v.hl-.8;PUFFS.emit(v.pos.x+s*hz,v.pos.y+v.md.wr+.9,v.pos.z+c*hz,rnd(-.3,.3),rnd(.8,1.6),rnd(-.3,.3),rnd(1.4,2.2),rnd(.5,.85),v.health<15?.12:.45,v.health<15?.11:.44,v.health<15?.1:.42,.5,.4,1.1,.5,2);}}
-  if(!v.wagon&&v.mode!=='parked'&&chance(dt*(v===PLAYER.car?6:1.5))){const s=Math.sin(v.yaw),c=Math.cos(v.yaw);PUFFS.emit(v.pos.x-s*(v.hl-.1)+c*.4,v.pos.y+.35,v.pos.z-c*(v.hl-.1)-s*.4,-s*.6,.3,-c*.6,rnd(.7,1.2),.3,.46,.46,.46,.12,0,.6,1,2);}}
+  // the tractor's two cylinders pop out of its stack, quicker with the revs
+  if(v.trac){if(v.mode!=='parked'&&v.health>0){v.popT=(v.popT||0)-dt;if(v.popT<=0){v.popT=.22/(.7+(v.rpm||0)*1.6);const s=Math.sin(v.yaw),c=Math.cos(v.yaw),K=v.trac.stack;
+    PUFFS.emit(v.pos.x+K[0]*c+K[2]*s,v.pos.y+K[1],v.pos.z-K[0]*s+K[2]*c,v.vel.x*.5+rnd(-.15,.15),rnd(1.2,2),v.vel.z*.5+rnd(-.15,.15),rnd(.9,1.5),rnd(.16,.28),.16,.15,.14,.5,.4,1,.8,2);}}}
+  else if(!v.wagon&&v.mode!=='parked'&&chance(dt*(v===PLAYER.car?6:1.5))){const s=Math.sin(v.yaw),c=Math.cos(v.yaw);PUFFS.emit(v.pos.x-s*(v.hl-.1)+c*.4,v.pos.y+.35,v.pos.z-c*(v.hl-.1)-s*.4,-s*.6,.3,-c*.6,rnd(.7,1.2),.3,.46,.46,.46,.12,0,.6,1,2);}}
 // ================= CAR FIRES AND EXPLOSIONS =================
 // Cars are tough: knocks and scrapes do nothing and only hard crashes (or bullets, or fire) wear an engine down (carHurt). Below
 // 45 it steams; below 20 the engine catches fire, and a burning car loses what is left in a few seconds; at nothing it blows up -
@@ -6808,7 +7087,7 @@ function parkSlots(px,pz,n){if(inNew(px,pz)){wParkSlots(px,pz,n);return;}const S
    const v=new Vehicle(pickCarKind());if(!v.ready){v.remove();continue;}v.place(x,z,yaw+(rand()-.5)*.05);v.mode='parked';n--;}}
 function updateTraffic(dt,px,pz,simT){const Q=QUAL[quality];let ai=0,parked=0,wag=0;
   for(let i=VEHICLES.length-1;i>=0;i--){const v=VEHICLES[i];if(v===PLAYER.car||v.mode==='tram'||v.mode==='rival'||v===GAME.pcar||(FARE.car===v&&FARE.phase==='onboard'))continue;const d=Math.hypot(v.pos.x-px,v.pos.z-pz);
-   if((d>330&&!v.inView)||v.despawn||(v.pos.y<BED_Y+1&&d>40)){v.remove();continue;}if(v.mode==='ai'){ai++;if(v.wagon)wag++;}if(v.mode==='parked')parked++;}
+   if((d>330&&!v.inView&&!(v.keep&&d<1100))||v.despawn||(v.pos.y<BED_Y+1&&d>40)){v.remove();continue;}if(v.mode==='ai'){ai++;if(v.wagon)wag++;}if(v.mode==='parked')parked++;}
   if(ai<Q.cars){for(let k=0;k<(STATE.started?2:1)&&ai<Q.cars;k++){if(spawnAI(px,pz,chance(.22)?pick(WAGON_SPAWN):null,STATE.started?[65,230]:[20,230]))ai++;}}
   if(parked<Q.cars*.7)parkSlots(px,pz,2);
   for(const v of VEHICLES){if(v.mode==='ai')aiDrive(v,dt,simT);else if(v.mode==='dyn'){const ns=Math.ceil(dt/.012);for(let k=0;k<ns;k++)vehicleStep(v,dt/ns,null);v.dynT=(v.dynT||0)+dt;if(v.speed()<.3&&v.dynT>2&&!v.flip){v.mode=v.driver&&v.health>0?'recover':'parked';}}
@@ -7806,7 +8085,7 @@ function touchAxes(){if(STK.id===null||STK.l<=STK_DEAD){TOUCH.x=TOUCH.y=TOUCH.ru
 // The line a first finger crosses to be the stick (below) or a look (above): your shoulders when you are on your feet (kept between
 // the middle and the lower third of the screen), else the bottom third.
 function gDivider(){const P=PLAYER;if(!P.car&&!P.mount&&P.h&&!P.h.ragdoll&&!LRIDE.on){const b=gSelfOnScreen();return clamp(b.head+(b.feet-b.head)*.2,innerHeight*.5,innerHeight*.72);}return innerHeight*.667;}
-function setupTouch(){if(touchReady)return;touchReady=true;STK.el=$('stick');STK.knob=$('knob');stickPlace(STK.R+26,innerHeight-STK.R-30);
+function setupTouch(){if(touchReady)return;touchReady=true;STK.el=$('stick');STK.knob=$('knob');stickPlace(STK.R+26,innerHeight-STK.R-30);$('radar').classList.add('rNo','rOff');void $('radar').offsetWidth;$('radar').classList.remove('rNo');
   addEventListener('touchmove',e=>{for(const t of e.changedTouches){if(t.identifier===STK.id)stickDrive(t.clientX,t.clientY);gMove(t.identifier,t.clientX,t.clientY);}},{passive:false});
   const end=e=>{for(const t of e.changedTouches){if(t.identifier===STK.id)stickRelease();if(e.type==='touchend')gUp(t.identifier,t.clientX,t.clientY);else gCancel(t.identifier);}};addEventListener('touchend',end);addEventListener('touchcancel',end);
   // a finger coming down: on your body (legs, torso, head: the arms don't count) it is a gesture; else, while the stick is free and it
@@ -7818,7 +8097,16 @@ function setupTouch(){if(touchReady)return;touchReady=true;STK.el=$('stick');STK
 function updateStickUI(dt){if(!STK.el)return;const held=STK.id!==null||STK.demo,show=STATE.started&&!GAR.on&&!STATE.paused;STK.idle=held?0:STK.idle+dt;
   if(!held){const k=Math.exp(-dt*14);STK.kx*=k;STK.ky*=k;}
   const a=!show?0:held?.85:.6*clamp(1-(STK.idle-1.2)/.7,0,1);if(a!==STK.alpha){STK.alpha=a;STK.el.style.opacity=String(a);STK.el.style.display=a>0?'block':'none';}
-  if(a>0)STK.knob.style.transform=`translate(${STK.kx.toFixed(1)}px,${STK.ky.toFixed(1)}px)`;}
+  if(a>0)STK.knob.style.transform=`translate(${STK.kx.toFixed(1)}px,${STK.ky.toFixed(1)}px)`;radarSlide(dt,show&&(held||STK.idle<1.5));}
+// The minimap on a touch screen: out while the stick is in use (and a moment after), in the bottom corner opposite it, rising out
+// of that corner; then it sinks back down into it. Put down on the other side, the stick sends it out of one corner and up from the
+// other. RAD.side: 0 left, 1 right. (The weapons' buttons make way for it on the left: see wpnLayout.)
+const RAD={side:0,on:false,swap:0};
+function radarSide(el,side){el.classList.add('rNo');el.classList.toggle('rR',side===1);void el.offsetWidth;el.classList.remove('rNo');RAD.side=side;}
+function radarSlide(dt,want){const el=$('radar');if(!el)return;want=want||AER.on;const side=AER.on?0:STK.cx<innerWidth/2?1:0;
+  if(RAD.swap>0){RAD.swap-=dt;if(RAD.swap>0)return;radarSide(el,side);if(want){el.classList.remove('rOff');RAD.on=true;}return;}
+  if(want){if(!RAD.on){if(RAD.side!==side)radarSide(el,side);el.classList.remove('rOff');RAD.on=true;}else if(RAD.side!==side){el.classList.add('rOff');RAD.on=false;RAD.swap=.42;}}
+  else if(RAD.on){el.classList.add('rOff');RAD.on=false;}}
 // ================= GESTURES: acting on what you see (on a touch screen; a desktop keeps the keys) =================
 // On your character, his body only (legs, torso and head; a finger beside him, on an arm, is the stick's): what a swipe up does depends
 // on where it began and how he is going. A grab below his knees is a high jump; at his hips, a skip while he strolls, a hop standing
@@ -7879,6 +8167,8 @@ function gDown(id,x,y,tg,stick){gMenuClose(tg&&tg.k==='ped'?tg.o:null);
 // a finger moving: on you it may become a swipe (acted on the moment it is one); anywhere else, once it has moved a little, it
 // turns the view
 function gMove(id,x,y){const r=GEST.ptr.get(id);if(!r)return;const px=r.x,py=r.y;r.x=x;r.y=y;if(r.stick||r.kind==='done'||r.fire)return;
+  // in the saddle a quick flick up anywhere (but the stick) is a jump: no need to find the horse on the screen first
+  if(PLAYER.mount&&(!r.kind||r.kind==='look')&&!r.panning){const dx=r.x-r.x0,dy=r.y-r.y0;if(-dy>34&&-dy>Math.abs(dx)*1.3&&performance.now()-r.t0<420){r.kind='done';gJump('mount');return;}}
   if(r.self){gSelfMove(r,px,py);return;}
   gLook(r,px,py);}
 // a finger turning the view round: an invisible stick. Once it has moved a little from where it came down it is a look, and from
@@ -7993,8 +8283,9 @@ function updateGestures(dt){const P=PLAYER,G=GEST.menu,now=performance.now();tou
 // ---------- the thumb-side framing on a phone ----------
 // Where your character (or car) should stand across the screen, -1 left .. 1 right: away from the stick, where your other thumb
 // can reach it and the road; in landscape it follows the stick's place along the screen. It is applied gradually, as the car or
-// the character gets moving (see updateCamera), never in one go when the stick comes down.
-function gFrameTarget(cam){if(!STATE.touch||!STK.el)return 0;const sx=STK.cx/innerWidth*2-1;return cam.aspect>1?clamp(-sx*.62,-.42,.42):(sx<0?.3:-.3);}
+// the character gets moving (see updateCamera), never in one go when the stick comes down. Held sideways at the wheel (or in the
+// saddle, or at a boat's tiller) the car stays in the middle whichever side the stick is on: nothing there needs a thumb's reach.
+function gFrameTarget(cam){if(!STATE.touch||!STK.el)return 0;const P=PLAYER;if(cam.aspect>1&&(P.car||P.boat||P.mount))return 0;const sx=STK.cx/innerWidth*2-1;return cam.aspect>1?clamp(-sx*.62,-.42,.42):(sx<0?.3:-.3);}
 // slide the camera (cp) and its look point (tgt, on the character) sideways and turn the view in a little toward the character,
 // so it stands at fx across the screen with the way ahead toward the middle; never through a wall
 function gFrame(cam,cp,tgt,fx){const dx=tgt.x-cp.x,dz=tgt.z-cp.z,hd=Math.hypot(dx,dz);if(hd<.3)return;const rx=-dz/hd,rz=dx/hd,th=Math.tan(cam.fov*Math.PI/360)*cam.aspect,a=Math.atan(fx*th),b=a*.35,s=hd*Math.tan(a+b);
@@ -8009,7 +8300,7 @@ function gFrame(cam,cp,tgt,fx){const dx=tgt.x-cp.x,dz=tgt.z-cp.z,hd=Math.hypot(d
 // Armed with either gun he stands in the Pistol Aim motion (both hands out), the arms following the height of what he fires at.
 // Molotov: a tap throws a lit bottle at the spot, with the Grenade Throw motion (the bottle leaves his hand at its release); it
 // bursts into a fire that burns a few seconds, knocking people down and cooking cars.
-const WPN={list:['fist','gun','tommy','molotov'],wheel:['fist','gun','molotov'],gunKind:'gun',icons:null,cool:0,tracers:[],bottles:[],fires:[],light:null,shown:false,at:null,atKey:'',slots:null,pend:null,burst:null,tgt:new THREE.Vector3()};
+const WPN={list:['fist','gun','tommy','molotov'],wheel:['fist','gun','molotov'],gunKind:'gun',icons:null,cool:0,tracers:[],bottles:[],fires:[],light:null,shown:false,lay:'',tdT:0,slots:null,pend:null,burst:null,tgt:new THREE.Vector3()};
 const _wa=new THREE.Vector3(),_wb=new THREE.Vector3(),_wc=new THREE.Vector3();
 function buildWeapons(){WPN.light=new THREE.PointLight(C(0xff8a3a),0,18,2);WPN.light.castShadow=false;scene.add(WPN.light);
   for(let i=0;i<6;i++){const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(6),3));
@@ -8045,21 +8336,29 @@ function wpnProp(dt){const P=PLAYER,h=P.h;if(!h)return;const w=GEST.weapon,free=
   const want=!free?null:w==='gun'?'pistol':w==='tommy'?'tommy':w==='molotov'&&(WPN.cool<.2||WPN.pend)?'bottle':null;
   if((h.prop?h.propKind:null)!==want){h.setProp(want);h.propKind=want;}h.armed=free&&(w==='gun'||w==='tommy')?w:null;
   if(want==='bottle'&&dt&&chance(dt*24)){h.prop.getWorldPosition(_wc);SPARKS.emit(_wc.x,_wc.y+.2,_wc.z,rnd(-.1,.1),rnd(.3,.7),rnd(-.1,.1),rnd(.15,.3),rnd(.07,.13),2.4,1.2,.3,1,1.5,-.2,1,0);}}
-// where the wheel sits: round the minimap in the bottom left corner; its centre (x,y) and the radius its items sit on (measured
-// again when the window changes size)
-function wpnAnchor(){const k=innerWidth+'x'+innerHeight;if(WPN.atKey!==k)WPN.at=null;
-  if(!WPN.at){const r=$('radar').getBoundingClientRect();if(r.width){WPN.at={x:r.left+r.width/2,y:r.top+r.height/2,r:r.width/2+32};WPN.atKey=k;}}return WPN.at;}
-// the three items on an arc toward the middle of the screen; the one in hand full size, the others a little smaller. Shown, they
-// grow out from the minimap's centre one after another.
-function wpnWheel(){const W=$('wheel'),show=STATE.started&&!GAR.on&&!STATE.paused&&!LRIDE.on&&!AER.on&&!EDCAM.on,a=show?wpnAnchor():null;
-  if(!a){if(WPN.shown){W.style.display='none';WPN.shown=false;}return;}
+// where the wheel's three buttons stand (pixels in the game's frame, where the minimap's own offsets are measured). On a desktop: on an
+// arc round the minimap in the bottom left corner, toward the middle of the screen. On a touch screen the minimap is out only while
+// the stick is in use (radarSlide), so the buttons keep to the left edge, one over another down to the corner; when the minimap rises
+// on the left it shoulders them out onto the arc round itself, and they drop back into their column when it sinks away.
+function wpnLayout(){const el=$('radar');if(!el||!el.offsetWidth)return null;
+  if(STATE.touch&&!(RAD.on&&RAD.side===0)){const sl=Math.max(0,($('menuBtn').offsetLeft||14)-14),b=el.offsetTop+el.offsetHeight;
+    return{key:'col'+innerWidth+'x'+innerHeight,pts:WPN.wheel.map((w,i)=>({x:sl+40,y:b-28-i*62}))};}
+  const a={x:el.offsetLeft+el.offsetWidth/2,y:el.offsetTop+el.offsetHeight/2,r:el.offsetWidth/2+32};
+  return{key:'arc'+Math.round(a.x)+','+Math.round(a.y)+'|'+innerWidth+'x'+innerHeight,pts:WPN.wheel.map((w,i)=>wpnSlot(a,i))};}
+// where button i stands now (the tutorial's ghost reaches for the pistol's)
+function wpnPos(i){const L=wpnLayout();return L?L.pts[i]:null;}
+// the one in hand full size, the others a little smaller. Shown, they grow out of their places one after another; moved (the
+// minimap coming or going), they spring to their new places, the lowest first, as if pushed
+function wpnWheel(){const W=$('wheel'),show=STATE.started&&!GAR.on&&!STATE.paused&&!LRIDE.on&&!AER.on&&!EDCAM.on,L=show?wpnLayout():null;
+  if(!L){if(WPN.shown){W.style.display='none';WPN.shown=false;}return;}
   const items=W.querySelectorAll('.wpn[data-w]');
-  if(!WPN.shown){W.style.display='block';WPN.shown=true;WPN.slots=null;
-    items.forEach(b=>{b.style.transition='none';b.style.transform=`translate(${a.x}px,${a.y}px) scale(.2)`;b.style.opacity='0';});void W.offsetWidth;
+  if(!WPN.shown){W.style.display='block';WPN.shown=true;WPN.slots=null;WPN.lay=L.key;
+    items.forEach((b,i)=>{const q=L.pts[i];b.style.transition='none';b.style.transform=`translate(${q.x}px,${q.y}px) scale(.2)`;b.style.opacity='0';});void W.offsetWidth;
     items.forEach((b,i)=>{b.style.transition='';b.style.transitionDelay=i*.09+'s';});}
-  const key=Math.round(a.x)+','+Math.round(a.y)+','+wpnGroup(GEST.weapon);if(WPN.slots===key)return;WPN.slots=key;
-  items.forEach((b,i)=>{const q=wpnSlot(a,i);b.style.transform=`translate(${q.x}px,${q.y}px) scale(${b.dataset.w===wpnGroup(GEST.weapon)?1:.8})`;b.style.opacity='1';});
-  setTimeout(()=>items.forEach(b=>{b.style.transitionDelay='';}),400);}
+  const key=L.key+','+wpnGroup(GEST.weapon);if(WPN.slots===key)return;const moved=WPN.lay!==L.key;WPN.lay=L.key;WPN.slots=key;
+  items.forEach((b,i)=>{const q=L.pts[i];if(moved){b.style.transition='transform .5s cubic-bezier(.3,1.5,.5,1),opacity .2s,background-color .2s,border-color .2s';b.style.transitionDelay=(.08+i*.06)+'s';}
+    b.style.transform=`translate(${q.x}px,${q.y}px) scale(${b.dataset.w===wpnGroup(GEST.weapon)?1:.8})`;b.style.opacity='1';});
+  clearTimeout(WPN.tdT);WPN.tdT=setTimeout(()=>items.forEach(b=>{b.style.transitionDelay='';b.style.transition='';}),moved?800:400);}
 // where item i stands (client pixels) round the anchor a: on an arc toward the middle of the screen
 function wpnSlot(a,i){const n=WPN.wheel.length,t=Math.atan2(innerHeight/2-a.y,innerWidth/2-a.x)+(i-(n-1)/2)*.62;return{x:clamp(a.x+Math.cos(t)*a.r,30,innerWidth-30),y:clamp(a.y+Math.sin(t)*a.r,30,innerHeight-30)};}
 // ---------- firing ----------
@@ -8142,7 +8441,7 @@ function wpnUpdate(dt,lit){WPN.cool=Math.max(0,WPN.cool-dt);
 // character does it - a pale circle for a finger on a touch screen, the key on a desktop. Then it is your turn, and the next
 // move waits until you have done this one: walking, looking round, running, jumping, punching, crouching, the pistol, and your
 // cab - getting in, the horn, getting out.
-const TUT={on:false,i:-1,phase:'',t:0,iz:0,run:false,crouch:false,car:null,was:null,yaw0:0,lx:null,hold:0,heard:new Set(),fired:{},steps:null,g:{x:0,y:0,a:0,down:false,key:''}};
+const TUT={on:false,i:-1,phase:'',t:0,iz:0,ix:0,run:false,crouch:false,car:null,was:null,yaw0:0,yaw0h:0,horse:false,lx:null,hold:0,heard:new Set(),fired:{},steps:null,g:{x:0,y:0,a:0,down:false,key:''}};
 const TUT_SPOT={x:485,z:286,yaw:0,car:[476,290,0]},TUT_GOOD=['Swell!','Nice work.','That\'s the stuff.','Attaboy!','Now you\'re cooking.'];
 // the steps: what the subtitle says, the demonstration (its length), what your turn asks for, and how it knows you did it
 function tutSteps(){const T=STATE.touch;return[
@@ -8153,7 +8452,7 @@ function tutSteps(){const T=STATE.touch;return[
   {say:T?'Swipe up from his hips to jump. Below his knees it is a high jump; from his chest, a lunge.':'Press Space to jump.',try:'Your turn: jump.',demo:tutDemoJump,len:1.5,ok:()=>TUT.heard.has('jumped')},
   {say:T?'Swipe out from his chest to throw a punch.':'Press F, or click, to throw a punch.',try:'Your turn: throw a punch.',demo:tutDemoPunch,len:1.5,ok:()=>TUT.heard.has('punched')},
   {say:T?'Swipe down on him and keep holding to crouch.':'Hold Z to crouch.',try:'Your turn: crouch.',demo:tutDemoCrouch,len:2.4,ok:dt=>(TUT.hold=PLAYER.crouch?TUT.hold+dt:0)>.5},
-  {say:T?'Pick the pistol on the wheel round the map, then tap where you want to shoot.':'Press 2 for the pistol (or pick it on the wheel round the map), then click where you want to shoot.',
+  {say:T?'Pick the pistol from the buttons down the left, then tap where you want to shoot.':'Press 2 for the pistol (or pick it on the wheel round the map), then click where you want to shoot.',
    try:T?'Your turn: take the pistol and fire. The bottle works the same way: tap where it should land.':'Your turn: take the pistol and fire. The bottle (3) works the same way: click where it should land.',
    demo:tutDemoGun,len:2.9,ok:()=>TUT.heard.has('shot'),after:()=>wpnSelect('fist')},
   {say:T?'Your cab is waiting. Tap it, or double-tap anywhere, to get in; from further off you\'ll hurry over.':'Your cab is waiting. Walk up to it and press E to get in.',try:T?'Your turn: tap the cab.':'Your turn: get in the cab.',
@@ -8189,7 +8488,7 @@ function tutDemoCrouch(t,live,G){const on=t>.55&&t<2;if(live)TUT.crouch=on;if(!S
   const [cx,cy]=tutSelf(1.35),[,hy]=tutSelf(.8),k=tutEase(tutSeg(t,.3,.55));G.x=cx;G.y=cy+(hy-cy)*k;G.a=tutSeg(t,0,.25)*(1-tutSeg(t,2,2.3));G.down=t>.25&&t<2;}
 // to the pistol on the wheel, a tap; over to a spot on the ground a dozen metres ahead of him, two shots; the fists back in hand
 // for your turn
-function tutDemoGun(t,live,G){const a=wpnAnchor(),gs=a?wpnSlot(a,1):{x:innerWidth/2,y:innerHeight-60},h=PLAYER.h,ax=h.pos.x-Math.sin(CAM.yaw)*12,az=h.pos.z-Math.cos(CAM.yaw)*12,[tx,ty]=tutPt(ax,groundAt(ax,az)+.05,az);
+function tutDemoGun(t,live,G){const gs=wpnPos(1)||{x:innerWidth/2,y:innerHeight-60},h=PLAYER.h,ax=h.pos.x-Math.sin(CAM.yaw)*12,az=h.pos.z-Math.cos(CAM.yaw)*12,[tx,ty]=tutPt(ax,groundAt(ax,az)+.05,az);
   if(t<.6){const k=tutEase(tutSeg(t,0,.5));G.x=lerp(innerWidth*.55,gs.x,k);G.y=lerp(innerHeight*.6,gs.y,k);}else{const k=tutEase(tutSeg(t,.75,1.3));G.x=lerp(gs.x,tx,k);G.y=lerp(gs.y,ty,k);}
   G.a=tutSeg(t,0,.2)*(1-tutSeg(t,2.5,2.9));G.down=t>.5&&t<.62||t>1.35&&t<1.47||t>1.75&&t<1.87;if(!live)return;
   const once=(k,at,f)=>{if(t>=at&&!TUT.fired[k]){TUT.fired[k]=1;f();}};
@@ -8204,8 +8503,50 @@ function tutCab(){const P=PLAYER,h=P.h;if(TUT.car&&!TUT.car.dead)return;let [x,z
   if(Math.hypot(h.pos.x-x,h.pos.z-z)>25){const ok=(px,pz)=>!isWater(px,pz)&&Math.hypot(px-FOUNT.x,pz-FOUNT.z)>37&&Math.abs(groundAt(px,pz)-groundAt(h.pos.x,h.pos.z))<.3&&!collideCircle(_v3.set(px,0,pz),1.6,h.pos.y,1.5);
     for(let k=0;k<8;k++){const a=h.yaw+Math.PI/2+k*Math.PI/4,px=h.pos.x+Math.sin(a)*8,pz=h.pos.z+Math.cos(a)*8;if(ok(px,pz)){x=px;z=pz;yaw=h.yaw;break;}}}
   if(GAME.pcar&&!GAME.pcar.dead&&GAME.pcar!==P.car)GAME.pcar.remove();const v=spawnHeroCab(GAR.sel===1?1:0);v.place(x,z,yaw);v.mode='parked';GAME.pcar=v;TUT.car=v;}
+// ---------- the horse's lesson, at Leona Farms ----------
+// "View tutorial" with the horse chosen: you and your saddled horse before the stable; getting up, walking on, turning, the gallop;
+// then the cross-rail at the start of the training ground's course (taken back before it for your go), the whole course, and down
+// again. The ghost shows each first, as in the city's lesson.
+function tutHorseSteps(){const T=STATE.touch;return[
+  {say:'Leona Farms Estate, 1928. Here\'s how to ride.',auto:3},
+  {say:T?'Your horse is saddled. Tap him, or double-tap anywhere, to get up.':'Your horse is saddled. Walk up to him and press E to get up.',try:T?'Your turn: get up on your horse.':'Your turn: get up.',demo:tutDemoMount,len:1.6,ok:()=>!!PLAYER.mount&&PLAYER.mount.mountT>=1},
+  {say:T?'Push the stick up to walk on. Further out he trots; past the ring he canters.':'W walks him on; 1 to 4 picks his pace.',try:'Your turn: ride on a little.',demo:tutDemoRide,len:2.8,ok:()=>!!PLAYER.mount&&tutMoved(8)},
+  {say:T?'Push the stick left or right to turn him.':'A and D turn him.',try:'Your turn: turn him round.',demo:tutDemoTurnH,len:2.6,retry:()=>{TUT.yaw0h=PLAYER.mount?PLAYER.mount.yaw:0;},ok:()=>!!PLAYER.mount&&Math.abs(angDiff(TUT.yaw0h,PLAYER.mount.yaw))>1.4},
+  {say:T?'Hold your finger on the horse and he gallops, for as long as you hold.':'Hold Shift and he gallops.',try:'Your turn: gallop.',demo:tutDemoGallop,len:2.8,ok:dt=>(TUT.hold=PLAYER.mount&&PLAYER.mount.speed>8.5?TUT.hold+dt:0)>.3},
+  {say:T?'To jump, flick a finger up anywhere. Ask a few strides out and he picks his own spot. The faster he goes, the higher he jumps.':'Space jumps. Ask a few strides out and he picks his own spot; the faster he goes, the higher he jumps.',
+   try:'Your turn: take the cross-rail.',demo:tutDemoLeap,len:6.5,before:tutAtCross,retry:tutAtCross,ok:()=>TUT.heard.has('cleared')},
+  {say:'Catch a rail and it comes down. Run him at a fence without jumping and he stumbles into it.',try:'Now the course: jumps 1 to 7, in order. Follow the gold ring.',demo:tutDemoNone,len:.1,ok:()=>TUT.heard.has('course')},
+  {say:T?'Pull the stick back to slow him. Double-tap anywhere to get down.':'S slows him; E gets you down.',try:'Your turn: get down.',demo:tutDemoOut,len:1.6,ok:()=>!PLAYER.mount},
+  {say:'That\'s the lot. The farm\'s yours: the track, the course, the fields, and the tractor in the yard.',end:true}];}
+// the ghost on your horse (or the one waiting for you), dy metres up
+function tutHorseAt(G,dy){const m=PLAYER.mount||(GAME.myHorse&&!GAME.myHorse.dead?GAME.myHorse:null);if(!m)return false;[G.x,G.y]=tutPt(m.x,groundAt(m.x,m.z)+dy,m.z);return true;}
+function tutDemoMount(t,live,G){if(!STATE.touch){tutKey(G,'E',t,.5,.7);return;}if(!tutHorseAt(G,1.4))return;G.a=tutSeg(t,0,.25)*(1-tutSeg(t,1,1.3));G.down=t>.45&&t<.6;}
+// a thumb down low on the left pushing the stick: up (dx 0) or up and over to the right
+function tutStickDemo(t,live,G,dx,dy,t0,t1){if(!STK.el)return;const x0=innerWidth*.26,y0=innerHeight*.8,k=tutEase(tutSeg(t,t0,t0+.45))*(1-tutSeg(t,t1,t1+.3));G.x=x0+dx*k;G.y=y0-dy*k;G.a=tutSeg(t,0,.3)*(1-tutSeg(t,t1+.1,t1+.5));G.down=t>t0-.2&&t<t1;
+  if(live&&STK.id===null){if(t>t0-.2&&!TUT.fired.place){TUT.fired.place=1;stickPlace(x0,y0);}STK.demo=G.down;if(G.down){STK.kx=dx*k;STK.ky=-dy*k;}}}
+function tutDemoRide(t,live,G){const on=t>.55&&t<2.3;if(live)TUT.iz=on?.6:0;if(!STATE.touch){tutKey(G,'W',t,.55,2.3);return;}tutStickDemo(t,live,G,0,56,.55,2.3);}
+function tutDemoTurnH(t,live,G){const on=t>.5&&t<2.2;if(live){TUT.iz=on?.5:0;TUT.ix=on?.9:0;}if(!STATE.touch){tutKey(G,'D',t,.5,2.2);return;}tutStickDemo(t,live,G,54,28,.5,2.2);}
+function tutDemoGallop(t,live,G){const on=t>.45&&t<2.5;if(live){TUT.run=on;TUT.iz=on?1:0;}if(!STATE.touch){tutKey(G,'Shift',t,.45,2.5);return;}
+  if(!tutHorseAt(G,1.3))return;const k=tutEase(tutSeg(t,0,.4));G.x+=60*(1-k);G.y+=30*(1-k);G.a=tutSeg(t,0,.2)*(1-tutSeg(t,2.5,2.8));G.down=on;}
+// at a canter for the cross-rail; asked to jump a few strides out (he waits for his spot), the ghost flicking a finger up as it is
+function tutDemoLeap(t,live,G){const m=PLAYER.mount;
+  if(live){TUT.iz=t>.3&&t<5.6?.85:0;if(m&&t>.3&&!TUT.fired.pace){TUT.fired.pace=1;m.pace=3;}
+    if(m&&!TUT.fired.jump){const a=jumpAhead(m,30);if(a&&a.d<jumpTakeoff(m)+6){TUT.fired.jump=t;PRESS.Space=true;}}}
+  const jt=live?(TUT.fired.jump||0):2.4;if(!jt){G.a=0;return;}
+  if(!STATE.touch){tutKey(G,'Space',t,jt-.05,jt+.2);return;}
+  const k=tutEase(tutSeg(t,jt-.2,jt+.1));G.x=innerWidth*.62;G.y=innerHeight*(.62-.2*k);G.a=tutSeg(t,jt-.45,jt-.25)*(1-tutSeg(t,jt+.2,jt+.45));G.down=t>jt-.25&&t<jt+.1;}
+function tutDemoNone(t,live,G){G.a=0;}
+// you, in the saddle, 26 m before the cross-rail and square to it, standing (the poles all up)
+function tutAtCross(){const P=PLAYER,J=COURSE.first[1];if(!J)return;const m=P.mount||playerHorse(),x=J.x-J.nx*J.appr*26,z=J.z-J.nz*J.appr*26,yaw=Math.atan2(J.nx*J.appr,J.nz*J.appr);
+  jumpsReset();m.place(x,z,yaw);if(P.mount===m)seatRider(m,P.h,0);else P.h.place(x+Math.cos(yaw)*1.3,groundAt(x,z),z-Math.sin(yaw)*1.3,yaw);CAM.yaw=yaw+Math.PI;CAM.pitch=.1;CAM.lastMount=null;}
+function tutBeginHorse(){const P=PLAYER,S=leonaSpot(),me=playerHorse();TUT.horse=true;TUT.on=true;TUT.i=-1;TUT.car=null;tutHands();TUT.steps=tutHorseSteps();
+  if(P.mount)dismountHorse(P.mount,true);if(P.car)exitVehicle();if(P.h.ragdoll)P.h.ragdoll.remove();P.swim=false;GEST.goal=null;gMenuClose(null);wpnSelect('fist');
+  if(GAME.pcar&&!GAME.pcar.dead){GAME.pcar.remove();GAME.pcar=null;}COURSE.on=false;COURSE.next=1;jumpsReset();
+  me.place(S.hx,S.hz,S.yaw);P.h.place(S.px,groundAt(S.px,S.pz),S.pz,S.yaw);P.vel.set(0,0,0);CAM.yaw=S.yaw+Math.PI;CAM.pitch=.14;CAM.lastCar=null;CAM.lastMount=null;ctWarm(S.px,S.pz);
+  const el=$('tut');el.style.display='block';el.querySelector('.tutEnd').style.display='none';tutNext();}
 // ---------- running it ----------
 function tutBegin(){const P=PLAYER,S=TUT_SPOT;if(!TUT.steps)GEST.on.push(k=>{if(TUT.on)TUT.heard.add(k);});   // it hears what the gestures and the game did
+  $('tutDrive').textContent=GAR.sel===2?'RIDE AROUND':'DRIVE AROUND';if(GAR.sel===2&&leonaSpot()){tutBeginHorse();return;}TUT.horse=false;
   TUT.on=true;TUT.i=-1;TUT.car=null;tutHands();TUT.steps=tutSteps();
   if(P.mount)dismountHorse(P.mount,true);if(P.car)exitVehicle();if(P.h.ragdoll)P.h.ragdoll.remove();P.swim=false;GEST.goal=null;gMenuClose(null);wpnSelect('fist');
   if(GAME.pcar&&!GAME.pcar.dead){GAME.pcar.remove();GAME.pcar=null;}
@@ -8214,7 +8555,7 @@ function tutBegin(){const P=PLAYER,S=TUT_SPOT;if(!TUT.steps)GEST.on.push(k=>{if(
   P.h.place(S.x,groundAt(S.x,S.z),S.z,S.yaw);P.vel.set(0,0,0);CAM.yaw=S.yaw+Math.PI;CAM.pitch=.12;CAM.lastCar=null;
   const el=$('tut');el.style.display='block';el.querySelector('.tutEnd').style.display='none';tutNext();}
 // the demonstration lets go of whatever it held
-function tutHands(){TUT.iz=0;TUT.run=false;TUT.crouch=false;TUT.lx=null;STK.demo=false;}
+function tutHands(){TUT.iz=0;TUT.ix=0;TUT.run=false;TUT.crouch=false;TUT.lx=null;STK.demo=false;}
 function tutNext(){TUT.i++;const s=TUT.steps[TUT.i];if(!s)return;if(s.before)s.before();TUT.phase=s.end?'end':'say';TUT.t=0;TUT.fired={};TUT.heard.clear();tutHands();tutSay(s.say);
   const n=TUT.steps.length-2;$('tut').querySelector('.tutStep').textContent=s.auto||s.end?'':TUT.i+' / '+n;if(s.end)$('tut').querySelector('.tutEnd').style.display='flex';}
 function tutSay(text){const el=$('tut').querySelector('.tutSub');el.textContent=text;el.classList.remove('in');void el.offsetWidth;el.classList.add('in');}
@@ -8223,7 +8564,7 @@ function tutSay(text){const el=$('tut').querySelector('.tutSub');el.textContent=
 function tutUpdate(dt){if(!TUT.on)return;const s=TUT.steps[TUT.i],G=TUT.g;G.a=0;G.key='';if(!s)return;TUT.t+=dt;
   if(s.auto){if(TUT.t>s.auto)tutNext();}
   else if(TUT.phase==='say'){if(TUT.t>1.5){TUT.phase='demo';TUT.t=0;TUT.fired={};}}
-  else if(TUT.phase==='demo'){s.demo(TUT.t,true,G);if(TUT.t>s.len){tutHands();TUT.phase='try';TUT.t=0;TUT.heard.clear();TUT.hold=0;TUT.was=PLAYER.h.pos.clone();TUT.yaw0=CAM.yaw;tutSay(s.try);}}
+  else if(TUT.phase==='demo'){s.demo(TUT.t,true,G);if(TUT.t>s.len){tutHands();TUT.phase='try';TUT.t=0;TUT.heard.clear();TUT.hold=0;TUT.was=PLAYER.h.pos.clone();TUT.yaw0=CAM.yaw;if(s.retry)s.retry();tutSay(s.try);}}
   else if(TUT.phase==='try'){const lt=TUT.t%4.5-1.4;if(lt>0&&lt<s.len){s.demo(lt,false,G);G.a*=.5;}
     if(s.ok(dt)){TUT.phase='good';TUT.t=0;tutSay(pick(TUT_GOOD));if(s.after)s.after();}}
   else if(TUT.phase==='good'&&TUT.t>1.4)tutNext();
@@ -8238,7 +8579,7 @@ document.addEventListener('pointerlockerror',()=>{STATE.noLock=true;});
 function lockPointer(){if(STATE.noLock||!canvasEl.requestPointerLock)return;try{const r=canvasEl.requestPointerLock();if(r&&r.catch)r.catch(()=>{STATE.noLock=true;});}catch(e){STATE.noLock=true;}}
 // ================= PLAYER =================
 const PLAYER={h:null,car:null,mount:null,boat:null,act:null,thrS:0,vel:new THREE.Vector3(),onGround:true,swim:false,down:0,punchT:0,climb:0};
-const CAM={yaw:Math.PI,pitch:.12,dist:4.2,shake:0,idle:0,presets:[1,1.45,.78],pi:0,pos:new THREE.Vector3(),look:new THREE.Vector3(),lastCar:null,tgt:new THREE.Vector3(),lastMount:null,hLast:0,turnT:9,back:0,fw:0,towT:0};
+const CAM={yaw:Math.PI,pitch:.12,dist:4.2,shake:0,idle:0,presets:[1,1.45,.78],pi:0,pos:new THREE.Vector3(),look:new THREE.Vector3(),lastCar:null,tgt:new THREE.Vector3(),lastMount:null,hLast:0,turnT:9,back:0,fw:0,towT:0,tw:0,swS:0,ctl:0,ctlA:null};
 function initPlayer(){const h=new Human(LOOK_KIND.player[0],1.0);h.scale=1;h.group.scale.setScalar(1);PLAYER.h=h;scene.add(h.group);h.place(126.5,CURB,-60,Math.PI);CAM.yaw=Math.PI;}
 function nearestVehicle(p,maxD){let best=null,bd=maxD;for(const v of VEHICLES){if(v.dead||v.burnt||v.mode==='tram'||v.pos.y<waterLevelAt(v.pos.x,v.pos.z)-2||Math.abs(v.pos.y-p.y)>2.6)continue;const d=Math.hypot(v.pos.x-p.x,v.pos.z-p.z)-Math.min(v.hw,v.hl)*.6;if(d<bd){bd=d;best=v;}}return best;}
 function enterVehicle(v){const P=PLAYER,h=P.h;P.act=null;if(v.driver&&v.driver!==h){const d=v.driver,dp=d.ped;detachFromVehicle(d,v);v.driver=null;if(dp){dp.inCar=null;if(v.wagon||chance(.4)){knockDown(d,Math.cos(v.yaw)*2.5,2,-Math.sin(v.yaw)*2.5);dp.mode='down';dp.timer=4;}else{dp.mode='flee';dp.panic=6;dp.fleeFrom=[v.pos.x,v.pos.z];}
@@ -8261,7 +8602,7 @@ function playerUpdate(dt){const P=PLAYER,h=P.h;if(LRIDE.on||LRIDE.busy){if(LRIDE
    if(TOUCH.active){const a=Math.abs(tz)>Math.abs(P.thrS)&&tz*P.thrS>=0?2.4:9;P.thrS+=clamp(tz-P.thrS,-a*dt,a*dt);}else P.thrS=tz;
    const inp={steer:clamp(-ix,-1,1),thr:P.thrS,brk:0,hand:KEYS.Space?1:0,run:KEYS.ShiftLeft||KEYS.ShiftRight,rock:clamp(ix,-1,1),analog:TOUCH.active};if(v.wagon&&inp.thr<0&&v.speed()<.3)inp.thr=-.5;P.brake=inp.brk>0||(iz<0&&vLp(v)>1);if(GAME.freeze){inp.thr=0;inp.brk=1;inp.hand=1;}
    const vL=v.vel.x*Math.sin(v.yaw)+v.vel.z*Math.cos(v.yaw);if(!v.wagon&&iz<0&&vL>1)inp.brk=TOUCH.active?clamp(-iz*1.3,0,1):1;
-   v.punch=v.wagon?1:2.3;const ns=Math.ceil(dt/.0085),sdt=dt/ns,din=v.health>0||v.wagon?inp:{steer:inp.steer,thr:0,brk:.3,hand:0,rock:inp.rock};for(let i=0;i<ns;i++)vehicleStep(v,sdt,din);P.thr=din.thr;h.steer=v.steer*2;
+   v.punch=v.wagon||v.trac?1:2.3;const ns=Math.ceil(dt/.0085),sdt=dt/ns,din=v.health>0||v.wagon?inp:{steer:inp.steer,thr:0,brk:.3,hand:0,rock:inp.rock};for(let i=0;i<ns;i++)vehicleStep(v,sdt,din);P.thr=din.thr;h.steer=v.steer*2;
    if(PRESS.KeyQ){if(v.wagon){AUD.whip(v.pos.x,v.pos.z);if(v.horse)v.horse.rear=v.speed()<1?1.6:0;}else AUD.horn(v.pos.x,v.pos.z,1,v.kind);panicAround(v.pos.x+Math.sin(v.yaw)*8,v.pos.z+Math.cos(v.yaw)*8,7);gEvent('horn');}
    if(PRESS.KeyL)v.lights=!v.lights;
    if(v.inWater>.85&&v.pos.y<waterLevelAt(v.pos.x,v.pos.z)-1.2){exitVehicle();P.swim=true;}return;}
@@ -8271,7 +8612,12 @@ function playerUpdate(dt){const P=PLAYER,h=P.h;if(LRIDE.on||LRIDE.busy){if(LRIDE
   // G: talk to whoever is nearest (within 3 m); Z held, a finger swiped down on you and held, crouches (and you creep along)
   if(PRESS.KeyG){let best=null,bd=3;for(const p of PEDS){const t=p.h;if(p.inCar||t.ragdoll||t.attached||!t.group.visible)continue;const d=Math.hypot(t.pos.x-h.pos.x,t.pos.z-h.pos.z);if(d<bd){bd=d;best=p;}}if(best){gMenuOpen(best);gEvent('talk');}}
   P.crouch=(KEYS.KeyZ||GEST.crouch>0||TUT.crouch)&&P.onGround&&!P.swim&&!P.act;
-  let run=(KEYS.ShiftLeft||KEYS.ShiftRight||GEST.run>0||TUT.run)&&!P.crouch;const fx=-Math.sin(CAM.yaw),fz=-Math.cos(CAM.yaw);const rx=-fz,rz=fx;let mx=fx*iz+rx*ix,mz=fz*iz+rz*ix,ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml;ml=1;}
+  // the way the stick (or the keys) points is held to the view it was pushed against while the camera swings round behind him on its
+  // own (CAM.ctl: what that swing has turned), so walking toward the camera he walks on straight while it comes round, instead of
+  // circling with it. Let go and it is the view's own again; steer, and it comes back to the view's as the stick turns (gradually,
+  // so his heading never jumps; a thumb's wobble of a few degrees is not steering)
+  {const a=Math.atan2(ix,iz);if(Math.hypot(ix,iz)<.12){CAM.ctl=0;CAM.ctlA=null;}else if(CAM.ctlA===null)CAM.ctlA=a;else{const da=angDiff(CAM.ctlA,a),ex=Math.abs(da)-.12;if(ex>0){CAM.ctl*=Math.exp(-2.2*ex);CAM.ctlA+=Math.sign(da)*ex;}}}
+  let run=(KEYS.ShiftLeft||KEYS.ShiftRight||GEST.run>0||TUT.run)&&!P.crouch;const cy=CAM.yaw-CAM.ctl,fx=-Math.sin(cy),fz=-Math.cos(cy);const rx=-fz,rz=fx;let mx=fx*iz+rx*ix,mz=fz*iz+rz*ix,ml=Math.hypot(mx,mz);if(ml>1){mx/=ml;mz/=ml;ml=1;}
   // hurrying over to a car, horse or boat you tapped (until you take the stick)
   if(ml>.05||P.swim)GEST.goal=null;else{const g=gGoal(h,dt);if(g){mx=g.x;mz=g.z;ml=1;run=true;}if(P.car||P.mount||P.boat)return;}
   // the moves a swipe (or Space) asks for: a jump, a high jump, a skip, a lunge
@@ -8363,22 +8709,84 @@ class Mount{
  // o: {coat, colors, name, x, z, yaw}
  constructor(o){this.coat=o.coat||'bay';this.h=o.horse||HORSES.factory.build({coat:this.coat,lodDist:[0,12,35,80],colors:o.colors||{},variant:o.variant});   // (o.horse: a horse already made, a carriage horse let loose)
  this.name=o.name||COAT_NAMES[this.coat]+' Saddle Horse';
-  this.x=0;this.z=0;this.yaw=0;this.speed=0;this.turn=0;this.jumpT=-1;this.pace=2;this.rider=null;this.mountT=0;this.from=null;this.wantOff=false;this.ai=null;this.dist=0;this.dead=false;
+  this.x=0;this.z=0;this.yaw=0;this.speed=0;this.turn=0;this.jumpT=-1;this.jumpH=.8;this.stumble=-1;this.stK=0;this.jumpQ=null;this.faultT=0;this.pace=2;this.rider=null;this.mountT=0;this.from=null;this.wantOff=false;this.ai=null;this.dist=0;this.dead=false;
   scene.add(this.h.group);MOUNTS.push(this);this.place(o.x||0,o.z||0,o.yaw||0);}
  get down(){return this.h.down;}
- place(x,z,yaw){this.x=x;this.z=z;this.yaw=yaw;this.speed=0;this.turn=0;this.jumpT=-1;this.sync(0);}
- sync(dt){if(this.rd)return;this.h.update(dt,{speed:this.speed,turnRate:this.turn,jump:this.jumpT>=0?this.jumpT:null});
+ place(x,z,yaw){this.x=x;this.z=z;this.yaw=yaw;this.speed=0;this.turn=0;this.jumpT=-1;this.jT=null;this.stumble=-1;this.jumpQ=null;this.sync(0);}
+ sync(dt){if(this.rd)return;this.h.update(dt,{speed:this.speed,turnRate:this.turn,jump:this.jumpT>=0?this.jumpT:null,jumpH:Math.max(.5,this.jumpH-.3),stumble:this.stumble,stumbleK:this.stK});
   // just up from a fall: the pose blends from the way it lay into the animator's
   if(this.rdBlend>0){this.rdBlend=Math.max(0,this.rdBlend-dt/.55);const k=this.rdBlend*this.rdBlend*(3-2*this.rdBlend),bs=this.h.skeleton.bones;for(let i=0;i<bs.length;i++)bs[i].quaternion.slerp(this.rdFrom[i],k);bs[0].position.lerp(this.rdPos,k);}
  const g=this.h.group;g.position.set(this.x,groundAt(this.x,this.z),this.z);g.rotation.y=this.yaw;g.updateMatrixWorld(true);}
- // walk on at the current speed and turn rate; the chest and haunches are two circles that slide along walls
+ // walk on at the current speed and turn rate; the chest and haunches are two circles that slide along walls - or, in the air, over
+ // them (each as high as its legs are: see the jumps below); a fence or a jump crossed is cleared, or a fault
  move(dt){if(this.jumpT>=0){this.jumpT+=dt/1.05;this.speed=Math.max(this.speed,4.5);if(this.jumpT>=1)this.jumpT=-1;}
+  if(this.stumble>=0){this.stumble+=dt/1.15;if(this.stumble>=1)this.stumble=-1;}if(this.faultT>0)this.faultT-=dt;
+  // the leap's arc over the ground: from where the forelegs leave it (a fifth of the way into the leap), as long as the pace carries
+  // it in the forelegs' time in the air; kept until the haunches are past it
+  {const s=Math.sin(this.yaw),c=Math.cos(this.yaw);if(this.jumpT>=.2&&this.jumpT<.5&&!this.jT){this.jT=[this.x+s*.95,this.z+c*.95,s,c];this.jL=Math.max(this.speed,4.5)*1.05*.6;}
+   if(this.jT&&(this.x-s*.85-this.jT[0])*this.jT[2]+(this.z-c*.85-this.jT[1])*this.jT[3]>this.jL+.5)this.jT=null;}
+  // a jump asked for a few strides out: off at its spot (forgotten if that fence is no longer ahead)
+  if(this.jumpQ){const q=this.jumpQ,a=jumpAhead(this,26);q.t-=dt;if(!a||a.J!==q.J||q.t<=0)this.jumpQ=null;else if(a.d<=jumpTakeoff(this))horseJump(this);}
   this.yaw=wrapAng(this.yaw+this.turn*dt);let x=this.x+Math.sin(this.yaw)*this.speed*dt,z=this.z+Math.cos(this.yaw)*this.speed*dt;const s=Math.sin(this.yaw),c=Math.cos(this.yaw);
-  for(const off of [.8,-.7]){_v3.set(x+s*off,0,z+c*off);if(collideCircle(_v3,.5,groundAt(x,z)+.25,1.6)){x=_v3.x-s*off;z=_v3.z-c*off;this.speed*=.75;}}
+  if(JMP.list.length&&this.speed>.3)jumpCross(this,x,z);
+  const cf=horseClear(this,x+s*.8,z+c*.8,0),ch=horseClear(this,x-s*.7,z-c*.7,1);
+  for(const off of [.8,-.7]){_v3.set(x+s*off,0,z+c*off);const hc=collideCircle(_v3,.5,groundAt(x,z)+.25+(off>0?cf:ch),1.6);
+   if(hc){x=_v3.x-s*off;z=_v3.z-c*off;if(hc.jump&&off>0&&this.speed>2.5&&!(this.faultT>0))jumpFault(this,hc.jump,cf,0);this.speed*=.75;}}
   this.x=x;this.z=z;}
  // steer toward a pace and heading (riders' hands; the rival's race line)
  drive(dt,target,steer){const acc=target>this.speed?2.6:3.5;this.speed+=clamp(target-this.speed,-acc*dt,acc*dt);const tr=-clamp(steer,-1,1)*lerp(1.8,.75,clamp(this.speed/11,0,1));this.turn+=(tr-this.turn)*(1-Math.exp(-dt*6));}
  remove(){if(this.rd){const i=HRAGS.indexOf(this.rd);if(i>=0)HRAGS.splice(i,1);this.rd=null;}if(this.rider)dismountHorse(this,true);this.h.group.removeFromParent();this.h.dispose();const i=MOUNTS.indexOf(this);if(i>=0)MOUNTS.splice(i,1);this.dead=true;}}
+// ---------- jumping: the farm's fences, the track's rails, the course's jumps ----------
+// Anything a horse can be put at is a JMP: a straight line (a run of fence, a jump's rails) with its height over the ground, kept in a
+// grid of 16 m cells. A horse jumps (Space, or a swipe up) as high as its pace allows (horseJump: the faster the higher), and asked a
+// few strides out it picks its own spot, where it will be at the top of its leap over the rail (horseAskJump, jumpTakeoff). Crossing
+// the line its forelegs (at the chest) and then its hind legs (at the haunches) must be over the top (horseClear: how high each is
+// through the leap). A leg that catches it is a fault: the course's poles come down and the horse stumbles, a little from the hind
+// legs, hard from the forelegs, worst when it hardly left the ground. Run at a fence without jumping and it stops the horse dead, and
+// the horse stumbles into it. Each is a wall (its collider, J.col) to anything on foot or wheels, and to a horse whose legs are
+// under its top.
+const JMP={list:[],grid:new Map(),stamp:0,poles:null};const JMP_NONE=[];
+function jumpAdd(o){const dx=o.x1-o.x0,dz=o.z1-o.z0,L=Math.hypot(dx,dz)||1,J=Object.assign({x:(o.x0+o.x1)/2,z:(o.z0+o.z1)/2,ax:dx/L,az:dz/L,nx:dz/L,nz:-dx/L,hl:L/2,down:false,st:0,col:null},o);JMP.list.push(J);
+  for(let gx=Math.floor((Math.min(o.x0,o.x1)-3)/16);gx<=Math.floor((Math.max(o.x0,o.x1)+3)/16);gx++)for(let gz=Math.floor((Math.min(o.z0,o.z1)-3)/16);gz<=Math.floor((Math.max(o.z0,o.z1)+3)/16);gz++){
+    const k=gx*4096+gz;let a=JMP.grid.get(k);if(!a)JMP.grid.set(k,a=[]);a.push(J);}
+  return J;}
+function jumpsAt(x,z){return JMP.grid.get(Math.floor(x/16)*4096+Math.floor(z/16))||JMP_NONE;}
+// its wall, from y0 to its top y1 (world heights)
+function jumpWall(J,y0,y1){J.cy0=y0;J.cy1=y1;J.col=segCol(J.x0,J.z0,J.x1,J.z1,.16,y1,y0,'prop');J.col.jump=J;return J;}
+// how high a horse's legs are over the ground at the body's point (px,pz) through a leap: on the arc it took off on (Mount.jT: from
+// where its forelegs left the ground, the way it was going, jL long), up to H halfway along. The hind legs follow the forelegs over
+// the same ground, a little lower (they tuck less), so a rail at the top of the arc is cleared by both and one near its ends is
+// caught, the hind legs first. 0 out of a leap.
+function horseClear(m,px,pz,hind){const T=m.jT;if(!T)return 0;const x=(px-T[0])*T[2]+(pz-T[1])*T[3];return x<=0||x>=m.jL?0:m.jumpH*(hind?.92:1)*Math.sin(Math.PI*x/m.jL);}
+// how far out from a rail to take off at this pace, to be at the top over it (the forelegs peak halfway through the leap, which lasts
+// 1.05 s; over a fence a horse never goes slower than 4.5 m/s)
+function jumpTakeoff(m){return Math.max(m.speed,4.5)*.5*1.05;}
+// the nearest fence or jump the horse is headed at within range metres: its chest's line of travel crossing it, not too slantwise
+function jumpAhead(m,range){const s=Math.sin(m.yaw),c=Math.cos(m.yaw),px=m.x+s*.95,pz=m.z+c*.95;let best=null,bd=range;JMP.stamp++;
+  for(let d=0;d<=range+8;d+=8)for(const J of jumpsAt(px+s*d,pz+c*d)){if(J.st===JMP.stamp)continue;J.st=JMP.stamp;if(J.down)continue;
+    const fn=s*J.nx+c*J.nz;if(Math.abs(fn)<.35)continue;const t=-((px-J.x)*J.nx+(pz-J.z)*J.nz)/fn;if(t<=0||t>=bd)continue;
+    if(Math.abs((px+s*t-J.x)*J.ax+(pz+c*t-J.z)*J.az)>J.hl+.3)continue;bd=t;best=J;}
+  return best?{J:best,d:bd}:null;}
+// the leap itself, as high as the pace allows: about 0.9 m trotting, 1.1 cantering, up to 1.6 flat out
+function horseJump(m){m.jumpQ=null;m.jumpT=0;m.jT=null;m.jumpH=clamp(.4+Math.max(m.speed,4.5)*.105,.55,1.6);}
+// asked to jump: a fence a few strides ahead, it waits for its spot (Mount.move); too close, or nothing ahead, it goes now
+function horseAskJump(m){if(m.jumpT>=0||m.speed<1.2||m.mountT<1||m.stumble>=0||m.down)return;const a=jumpAhead(m,24);
+  if(a){const dI=jumpTakeoff(m);if(a.d>dI+.5&&a.d<dI+13){m.jumpQ={J:a.J,t:2.6};return;}}horseJump(m);}
+// over cleanly (said by the forelegs, once a fence)
+function jumpOver(m,J){if(m===PLAYER.mount)jumpEvent(J,'clear');}
+// a fault, once a fence: the course's poles come down; the horse stumbles and loses its pace
+function jumpFault(m,J,cl,hind){m.faultT=.8;const knock=!!J.poles&&!J.down,hard=!hind&&cl<J.h*.55,sp=m.speed;if(knock)jumpKnock(J,m);
+  m.stumble=0;m.stK=hard?1:hind?.45:.75;m.speed*=hard?.3:hind?.8:.55;if(hard){m.jumpT=-1;m.jT=null;}m.jumpQ=null;
+  AUD.thud(Math.min(9,2+sp*.6),m.x,m.z);if(knock&&AUD.crash)AUD.crash(1.2+sp*.1,J.x,J.z,false);
+  if(m===PLAYER.mount){CAM.shake=Math.min(1.2,CAM.shake+(hard?.6:.3));jumpEvent(J,'fault');}}
+// the chest's and the haunches' crossings of the jumps between where the horse is and where it is going (nx,nz)
+function jumpCross(m,nx,nz){const s=Math.sin(m.yaw),c=Math.cos(m.yaw);
+  for(const [off,hind] of [[.95,0],[-.85,1]]){const ax=m.x+s*off,az=m.z+c*off,bx=nx+s*off,bz=nz+c*off;
+    for(const J of jumpsAt(bx,bz)){if(J.down)continue;const da=(ax-J.x)*J.nx+(az-J.z)*J.nz,db=(bx-J.x)*J.nx+(bz-J.z)*J.nz;if((da>0)===(db>0))continue;
+      const t=da/(da-db);if(Math.abs((ax+(bx-ax)*t-J.x)*J.ax+(az+(bz-az)*t-J.z)*J.az)>J.hl+.2)continue;
+      const cl=horseClear(m,ax+(bx-ax)*t,az+(bz-az)*t,hind);if(cl>=J.h-.08){if(!hind)jumpOver(m,J);}else if(!(m.faultT>0))jumpFault(m,J,cl,hind);}}}
+// what a jump crossed means to whoever is listening: the tutorial (gestures' events), the course's round
+function jumpEvent(J,what){gEvent(what==='clear'?'cleared':'faulted');if(J.n)courseCross(J,what);}
 // ---------- a struck horse falls as the heavy animal it is ----------
 // Position-based dynamics on thirty points of its own skeleton: a rigid barrel of eight (hips, shoulders, withers, belly, the ends of the
 // spine: most of its 500 kg), the neck and head, the tail, and each leg's joints (elbow, knee, fetlock, hoof; stifle, hock, fetlock,
@@ -8501,12 +8909,12 @@ function rideUpdate(dt){const P=PLAYER,h=P.h,m=P.mount;
   if(!m){if(PRESS.KeyE&&!P.car&&!P.boat&&!h.ragdoll&&!P.swim){const mm=nearestMount(h.pos,2.8);if(mm){delete PRESS.KeyE;mountHorse(mm,h);seatRider(mm,h,dt);return true;}}return false;}
   if(h.ragdoll||m.dead){m.rider=null;h.mount=null;P.mount=null;return false;}
   for(let i=1;i<=4;i++)if(PRESS['Digit'+i])m.pace=i;
-  const ix=(KEYS.KeyD||KEYS.ArrowRight?1:0)-(KEYS.KeyA||KEYS.ArrowLeft?1:0)+(TOUCH.x||0),iz=(KEYS.KeyW||KEYS.ArrowUp?1:0)-(KEYS.KeyS||KEYS.ArrowDown?1:0)-(TOUCH.y||0);
+  const ix=(KEYS.KeyD||KEYS.ArrowRight?1:0)-(KEYS.KeyA||KEYS.ArrowLeft?1:0)+(TOUCH.x||0)+TUT.ix,iz=(KEYS.KeyW||KEYS.ArrowUp?1:0)-(KEYS.KeyS||KEYS.ArrowDown?1:0)-(TOUCH.y||0)+TUT.iz;
   const run=KEYS.ShiftLeft||KEYS.ShiftRight||GEST.run>0||TUT.run||TOUCH.run>.6;if(PRESS.KeyE){delete PRESS.KeyE;m.wantOff=true;}
   let target=0;if(iz>.1)target=run?PACES[4]:(Math.abs(TOUCH.y||0)>.05?(iz<.4?PACES[1]:iz<.75?PACES[2]:PACES[3]):PACES[m.pace]);if(m.wantOff||m.down||m.mountT<1||GAME.freeze)target=0;
   const acc=target>m.speed?2.6:(iz<-.1||m.wantOff?6:3.5);m.speed+=clamp(target-m.speed,-acc*dt,acc*dt);
   const tr=-clamp(ix,-1,1)*lerp(1.8,.75,clamp(m.speed/11,0,1));m.turn+=(tr-m.turn)*(1-Math.exp(-dt*6));
-  if(PRESS.Space&&m.jumpT<0&&m.speed>1.2&&m.mountT>=1)m.jumpT=0;
+  if(PRESS.Space)horseAskJump(m);
   if(m.wantOff&&m.speed<.3&&m.jumpT<0){dismountHorse(m);return true;}
   m.move(dt);m.sync(dt);seatRider(m,h,dt);P.vel.set(Math.sin(m.yaw)*m.speed,0,Math.cos(m.yaw)*m.speed);P.onGround=true;return true;}
 // ---------- untie a carriage horse ----------
@@ -8546,20 +8954,33 @@ function mountContacts(m,dt){HOBB.pos.x=m.x;HOBB.pos.z=m.z;HOBB.yaw=m.yaw;const 
 // ---------- the horse race: your bay against a rival rider, Michigan Avenue from Roosevelt Road to the river ----------
 // (the bascule stays up for the cars' jump; horses finish on the south bank)
 function horseRaceFinishZ(){return rivS(RACE.x)+36;}
-function startHorseRace(){const P=PLAYER;if(P.car)exitVehicle();if(P.mount)dismountHorse(P.mount,true);if(P.h.ragdoll)P.h.ragdoll.remove();P.swim=false;
+function startHorseRace(){const P=PLAYER,A=LEO.arena;if(P.car)exitVehicle();if(P.mount)dismountHorse(P.mount,true);if(P.h.ragdoll)P.h.ragdoll.remove();P.swim=false;
   if(GAME.pcar&&!GAME.pcar.dead){GAME.pcar.remove();GAME.pcar=null;}
+  // once round Leona Farms' track, side by side from the winning post, the rival on the inside
+  if(A&&A.y!==undefined){endHorseRace(true);COURSE.on=false;COURSE.next=1;const a=arenaAt(A.start,1.7),b=arenaAt(A.start,-1.7),me=playerHorse();
+    me.place(a.x,a.z,a.yaw);P.h.place(me.x,groundAt(me.x,me.z),me.z,a.yaw);mountHorse(me,P.h);me.mountT=1;seatRider(me,P.h,0);me.pace=4;
+    const rc=pick(['darkbay','chestnut','black','grey','sorrel']),rv=new Mount({coat:rc,name:COAT_NAMES[rc]+' Racehorse',x:b.x,z:b.z,yaw:b.yaw});rv.temp=true;
+    const jockey=makeNPC(chance(.3)?'gangster':'man');scene.add(jockey.h.group);jockey.mode='special';jockey.riding=rv;jockey.h.place(rv.x,groundAt(rv.x,rv.z),rv.z,b.yaw);mountHorse(rv,jockey.h);rv.mountT=1;seatRider(rv,jockey.h,0);
+    rv.ai=ovalRaceAI;rv.lane=-1.7;rv.top=rnd(10.3,11.1);GAME.rivalMount=rv;
+    RACE.horse=true;RACE.oval={me:0,rv:0,sm:A.start,sr:A.start};RACE.on=true;RACE.count=3;RACE.finished=false;RACE.text='';RACE.t=0;makeFinishLine();
+    const f=arenaAt(A.start,0);RACE.fx=f.x;RACE.fz=f.z;RACE.line.position.set(f.x,A.y+.06,f.z);RACE.line.rotation.set(-Math.PI/2,0,f.yaw);RACE.line.scale.set((A.W+.6)/31,1,1);RACE.line.visible=true;
+    CAM.yaw=a.yaw+Math.PI;CAM.lastCar=null;CAM.lastMount=null;ctWarm(a.x,a.z);return;}
+  RACE.oval=null;
   clearArea((x,z)=>Math.abs(x-RACE.x)<22&&z<RACE.z0+40&&z>horseRaceFinishZ()-30);endHorseRace(true);
   const me=playerHorse();me.place(RACE.cx-2.6,RACE.z0,Math.PI);P.h.place(me.x,groundAt(me.x,me.z),me.z,Math.PI);mountHorse(me,P.h);me.mountT=1;seatRider(me,P.h,0);me.pace=4;
   const rc=pick(['darkbay','chestnut','black','grey','sorrel']);const rv=new Mount({coat:rc,name:COAT_NAMES[rc]+' Racehorse',x:RACE.cx+2.6,z:RACE.z0,yaw:Math.PI});rv.temp=true;
   const jockey=makeNPC(chance(.3)?'gangster':'man');scene.add(jockey.h.group);jockey.mode='special';jockey.riding=rv;jockey.h.place(rv.x,groundAt(rv.x,rv.z),rv.z,Math.PI);mountHorse(rv,jockey.h);rv.mountT=1;seatRider(rv,jockey.h,0);
   rv.ai=horseRaceAI;rv.lane=RACE.cx+2.6;rv.top=rnd(10.4,11.2);GAME.rivalMount=rv;
-  RACE.horse=true;RACE.fz=horseRaceFinishZ();RACE.on=true;RACE.count=3;RACE.finished=false;RACE.text='';RACE.t=0;makeFinishLine();RACE.line.position.z=RACE.fz;RACE.line.visible=true;
+  RACE.horse=true;RACE.fz=horseRaceFinishZ();RACE.on=true;RACE.count=3;RACE.finished=false;RACE.text='';RACE.t=0;makeFinishLine();RACE.line.position.set(RACE.x,.03,RACE.fz);RACE.line.rotation.set(-Math.PI/2,0,0);RACE.line.scale.set(1,1,1);RACE.line.visible=true;
   CAM.yaw=0;CAM.lastCar=null;CAM.lastMount=null;}
+// on the track: round in its lane (A.lane metres out from the middle) at a gallop, easing when well ahead, digging in when behind
+function ovalRaceAI(m,dt){const R=RACE.oval;let target=RACE.count>0?0:RACE.finished?1.6:m.top+(R?clamp((R.me-R.rv)*.03,-.8,1.2):0);if(m.down||m.stumble>=0)target=Math.min(target,2);
+  const q=arenaS(m.x,m.z),la=arenaAt(q.s+10,m.lane||0),des=Math.atan2(la.x-m.x,la.z-m.z);m.drive(dt,target,-clamp(angDiff(m.yaw,des)*2.2,-1,1)*(m.speed>.5?1:0));}
 // the rival holds its lane at a gallop, eases when far ahead, digs in when behind; slows to a walk after the line
 function horseRaceAI(m,dt){const me=PLAYER.mount;const gap=me?(m.z-me.z):0;// > 0: the rival is behind
   let target=RACE.count>0?0:RACE.finished?1.6:m.top+clamp(gap*.03,-.8,1.2);if(m.down)target=0;
   const dx=(m.lane||m.x)-m.x,des=Math.atan2(dx*.25,-8);m.drive(dt,target,-clamp(angDiff(m.yaw,des)*2.2,-1,1)*(m.speed>.5?1:0));}
-function endHorseRace(silent){const rv=GAME.rivalMount;if(rv&&!rv.dead){const j=rv.rider;rv.ai=null;rv.speed=0;if(j){dismountHorse(rv,true);const p=j.ped;if(p){p.mode='walk';p.riding=null;relinkPed(p);}}}GAME.rivalMount=null;RACE.horse=false;}
+function endHorseRace(silent){const rv=GAME.rivalMount;if(rv&&!rv.dead){const j=rv.rider;rv.ai=null;rv.speed=0;if(j){dismountHorse(rv,true);const p=j.ped;if(p){p.mode='walk';p.riding=null;relinkPed(p);}}}GAME.rivalMount=null;RACE.horse=false;RACE.oval=null;}
 // your own bay: made once, waits wherever you left it
 function playerHorse(){if(!GAME.myHorse||GAME.myHorse.dead){GAME.myHorse=new Mount({coat:DEV.horse.coat||'bay',colors:horseColors(),name:'Your '+COAT_NAMES[DEV.horse.coat||'bay']+' Saddle Horse'});}return GAME.myHorse;}
 // ================= DEVELOPER (menu > Developer) =================
@@ -8676,21 +9097,25 @@ function updateCamera(dt,cam){const P=PLAYER,h=P.h;const md=INVERT?-1:1;CAM.idle
   CAM.yaw-=MOUSE_DX*SENS;CAM.pitch=clamp(CAM.pitch+MOUSE_DY*SENS*md,-.75,1.25);MOUSE_DX=MOUSE_DY=0;
   if(PRESS.KeyC)CAM.pi=(CAM.pi+1)%CAM.presets.length;const zoom=CAM.presets[CAM.pi];let target,dist,k;
   const follow=heading=>{CAM.yaw+=angDiff(CAM.yaw,heading+Math.PI)*(1-Math.exp(-dt*1.6));};
+  // a phone held sideways (PH) at the wheel or in the saddle: a narrower lens than the wide one there, which bent everything
+  // toward the edges, with the camera back a little to make up for it, so the car (or horse) is as big as before, in the middle of
+  // the screen whichever side the stick is on (gFrameTarget), and eased back only when going really fast
+  const PH=STATE.touch&&cam.aspect>1.15;
   // horseback: in close behind the rider and level with their eyes, aimed just over their hat so the road ahead shows past
   // the horse's ears; the camera eases back a little with speed and settles to eye level while you ride
-  if(P.mount){const m=P.mount,wide=clamp((cam.aspect-1)/.7,0,1),eye=lerp(.12,.085,wide);
+  if(P.mount){const m=P.mount,wide=clamp((cam.aspect-1)/.7,0,1),eye=lerp(.12,.085,wide);CAM.ctl=0;
    if(CAM.lastMount!==m)CAM.pitch=eye;if(Math.abs(m.speed)>.5&&CAM.idle>1.2){follow(m.yaw);CAM.pitch+=(eye-CAM.pitch)*Math.min(1,dt*1.5);}
    _ct.set(m.x,groundAt(m.x,m.z)+2.5,m.z);if(CAM.lastMount!==m){CAM.tgt.copy(_ct);CAM.lastMount=m;}else CAM.tgt.lerp(_ct,1-Math.exp(-dt*10));target=_ct.copy(CAM.tgt);
-   dist=(lerp(5.4,4.0,wide)+Math.min(1.1,Math.abs(m.speed)*.07))*zoom;k=Math.min(1,dt*14);}
+   dist=(PH?5.5+Math.min(1,Math.abs(m.speed)*.06):lerp(5.4,4.0,wide)+Math.min(1.1,Math.abs(m.speed)*.07))*zoom;k=Math.min(1,dt*14);}
   else{CAM.lastMount=null;
-   if(P.car){const v=P.car;const sp=v.speed();const wide=clamp((cam.aspect-1)/.7,0,1);
+   if(P.car){const v=P.car;const sp=v.speed();const wide=clamp((cam.aspect-1)/.7,0,1);CAM.ctl=0;
     if(CAM.idle>1.2&&sp>.5){const vy=Math.atan2(v.vel.x,v.vel.z);follow(sp>2?(Math.cos(vy-v.yaw)<-.3?vy+Math.PI:vy):v.yaw);CAM.pitch+=(lerp(.16,.24,wide)-CAM.pitch)*Math.min(1,dt*1.5);}
     // on a wide screen the old chase distance left the cab tiny: pull in close (a touch higher, so the road still shows over
     // the roof) and ease back only a little with speed; portrait phones keep the old framing
-    target=_ct.set(v.pos.x,v.pos.y+lerp(1.6,1.42,wide),v.pos.z);dist=(v.wagon?lerp(9.5,7.4,wide):lerp(6.8,4.7,wide)+Math.min(lerp(5,1.7,wide),sp*lerp(.12,.055,wide)))*zoom;k=Math.min(1,dt*9);}
-   else if(P.boat){const b=P.boat,sp=Math.abs(b.speed),wide=clamp((cam.aspect-1)/.7,0,1);
+    target=_ct.set(v.pos.x,v.pos.y+lerp(1.6,1.42,wide),v.pos.z);dist=(v.wagon?lerp(9.5,7.4,wide):PH?5.4+1.5*sstep(18,32,sp):lerp(6.8,4.7,wide)+Math.min(lerp(5,1.7,wide),sp*lerp(.12,.055,wide)))*zoom;k=Math.min(1,dt*9);}
+   else if(P.boat){const b=P.boat,sp=Math.abs(b.speed),wide=clamp((cam.aspect-1)/.7,0,1);CAM.ctl=0;
     if(CAM.idle>1.2&&sp>.5){follow(b.speed<-1?b.yaw+Math.PI:b.yaw);CAM.pitch+=(lerp(.2,.28,wide)-CAM.pitch)*Math.min(1,dt*1.5);}
-    target=_ct.set(b.pos.x,b.pos.y+lerp(1.9,1.7,wide)+b.hl*.06,b.pos.z);dist=(b.hl*lerp(1.7,1.35,wide)+lerp(4.5,3.2,wide)+Math.min(2.5,sp*.18))*zoom;k=Math.min(1,dt*7);}
+    target=_ct.set(b.pos.x,b.pos.y+lerp(1.9,1.7,wide)+b.hl*.06,b.pos.z);dist=(b.hl*lerp(1.7,1.35,wide)+lerp(4.5,3.2,wide)+Math.min(2.5,sp*.18))*(PH?1.3:1)*zoom;k=Math.min(1,dt*7);}
    // on foot; a phone held sideways comes in close, the character's upper body filling the screen (his legs below the knee out of it)
    else{const close=STATE.touch?clamp((cam.aspect-1.05)/.45,0,1):0;
     if(h.ragdoll){target=_ct.set(h.ragdoll.p[0],h.ragdoll.p[1]+.6,h.ragdoll.p[2]);CAM.back*=Math.exp(-dt*2);}
@@ -8698,12 +9123,16 @@ function updateCamera(dt,cam){const P=PLAYER,h=P.h;const md=INVERT?-1:1;CAM.idle
      // he turns first and the camera watches; then, as he walks on, it comes round behind him - smoothly (its pull eases in and out,
      // fw) and at the pace of his walking, faster when he runs - whichever way he goes. Turned to walk toward it, he gets a moment
      // first: it backs off to give him room, and only then starts to swing round, slowly at first
+     // (walking at it, the stick is held to the view it was pushed against - CAM.ctl, see playerUpdate - so the swing round no longer
+     // turns him with it; how much he is walking at the camera (tw) eases rather than switching at one angle, and once the swing
+     // has set off round one side it keeps that way, where the short way round used to flip from side to side)
      const rel=angDiff(h.yaw+Math.PI,CAM.yaw),turning=Math.abs(angDiff(CAM.hLast,h.yaw))>.7*Math.max(dt,.004);CAM.hLast=h.yaw;CAM.turnT=turning?0:CAM.turnT+dt;
-     const moving=h.speed>.5&&!P.act&&CAM.idle>1.0,toward=moving&&Math.abs(rel)>2.1;CAM.towT=toward?CAM.towT+dt:Math.max(0,CAM.towT-dt*2);
-     const want=moving?clamp(h.speed/1.5,.45,1.6)*sstep(.25,1.1,CAM.turnT)*(toward?.55*sstep(.9,3.2,CAM.towT):1):0;
+     const moving=h.speed>.5&&!P.act&&CAM.idle>1.0;CAM.tw+=((moving?sstep(1.75,2.4,Math.abs(rel)):0)-CAM.tw)*(1-Math.exp(-dt*4));const toward=CAM.tw>.5;CAM.towT=toward?CAM.towT+dt:Math.max(0,CAM.towT-dt*2);
+     const want=moving?clamp(h.speed/1.5,.45,1.6)*sstep(.25,1.1,CAM.turnT)*lerp(1,.55*sstep(.9,3.2,CAM.towT),CAM.tw):0;
      CAM.fw+=(want-CAM.fw)*(1-Math.exp(-dt*(want>CAM.fw?1.4:3)));
-     if(CAM.fw>.001)CAM.yaw+=angDiff(CAM.yaw,h.yaw+Math.PI)*(1-Math.exp(-dt*1.15*CAM.fw));
-     CAM.back+=((toward?1.5:0)-CAM.back)*(1-Math.exp(-dt*(toward?1.2:.7)));
+     if(CAM.fw>.001){let d=angDiff(CAM.yaw,h.yaw+Math.PI);if(Math.abs(d)>2.6&&CAM.swS&&Math.sign(d)!==CAM.swS)d+=CAM.swS*TAU;CAM.swS=Math.abs(d)>.25?Math.sign(d):0;
+      const dy=d*(1-Math.exp(-dt*1.15*CAM.fw));CAM.yaw+=dy;CAM.ctl+=dy;}else CAM.swS=0;
+     CAM.back+=(1.5*CAM.tw-CAM.back)*(1-Math.exp(-dt*(toward?1.2:.7)));
      target=_ct.set(h.pos.x,h.pos.y+(P.swim?.3:P.crouch?lerp(1.1,1.0,close):lerp(1.55,1.45,close)),h.pos.z);}
     dist=(lerp(4.1,1.75,close)+CAM.back)*zoom;k=Math.min(1,dt*14);}}
   // on a phone the character stands off to the side instead of the over-the-shoulder offset (see gFrame)
@@ -8714,7 +9143,11 @@ function updateCamera(dt,cam){const P=PLAYER,h=P.h;const md=INVERT?-1:1;CAM.idle
   const sw=!P.car&&!P.mount&&!P.boat&&!h.ragdoll?stairCam(dt,h):0;if(sw>0){const e=sw*sw*(3-2*sw);_cp.lerp(STAIRCAM.cp,e);tgt.lerp(STAIRCAM.look,e);}
   {const cv=P.car||P.boat||null;if(CAM.lastCar!==cv){CAM.pos.copy(_cp);CAM.lastCar=cv;}}CAM.pos.lerp(_cp,k);if(CAM.ceil<Infinity&&CAM.pos.y>CAM.ceil-.3)CAM.pos.y=CAM.ceil-.3;CAM.look.lerp(tgt,Math.min(1,dt*16));
   cam.position.copy(CAM.pos);if(CAM.shake>0){CAM.shake=Math.max(0,CAM.shake-dt*2);cam.position.x+=(rand()-.5)*CAM.shake*.3;cam.position.y+=(rand()-.5)*CAM.shake*.3;}cam.lookAt(CAM.look);
-  if(P.car){const sp=P.car.speed(),wide=clamp((cam.aspect-1)/.7,0,1);cam.fov+=(lerp(62,58,wide)+Math.min(lerp(14,7,wide),sp*.3)-cam.fov)*Math.min(1,dt*2);cam.updateProjectionMatrix();}else if(Math.abs(cam.fov-62)>.1){cam.fov+=(62-cam.fov)*Math.min(1,dt*2);cam.updateProjectionMatrix();}}
+  // the lens: on a sideways phone at the wheel or in the saddle, about 84 degrees across (a little more when flat out); elsewhere as
+  // it was (a car's widening with speed; 62 high on foot)
+  let fovT=62;if(PH&&(P.car||P.boat||P.mount)){const sp=P.car?P.car.speed():P.boat?Math.abs(P.boat.speed):Math.abs(P.mount.speed);fovT=clamp(2*Math.atan(.9/cam.aspect)*180/Math.PI,38,58)+5*sstep(18,32,sp);}
+  else if(P.car){const sp=P.car.speed(),wide=clamp((cam.aspect-1)/.7,0,1);fovT=lerp(62,58,wide)+Math.min(lerp(14,7,wide),sp*.3);}
+  if(Math.abs(cam.fov-fovT)>.05){cam.fov+=(fovT-cam.fov)*Math.min(1,dt*2);cam.updateProjectionMatrix();}}
 // On an L stair the camera drops below you and looks up the flight at you, the canopy over you and the platform ahead; it eases in
 // once you are on the steps and back out on the landing (or the pavement). The view turns to look up the stair, so the stick's up
 // (W) climbs. Returns the camera's weight (0 off a stair); STAIRCAM.cp and .look are where it stands and what it looks at.
@@ -8935,7 +9368,7 @@ function updateHUD(dt,fps){toastT-=dt;if(toastT<0)$('toast').style.opacity=Math.
    const em=$('gear');const warn=!v.wagon&&v.health<45;const txt=warn?(v.health<=0?'ENGINE DEAD':v.health<CAR_FIRE?'ON FIRE':'STEAMING'):g;if(em.textContent!==txt)em.textContent=txt;em.classList.toggle('warn',warn);}
   else if(P.boat&&!AER.on){sp.style.display='block';const bs=P.boat.speed;$('mph').textContent=Math.round(Math.abs(bs)*2.23694);const txt=bs<-.3?'ASTERN':Math.abs(bs)<.2?'ADRIFT':(P.boat.thr>.1?'UNDER WAY':'COASTING');const em=$('gear');if(em.textContent!==txt)em.textContent=txt;em.classList.remove('warn');}
   else sp.style.display='none';
-  if(!(frameNo&1))drawRadar();}
+  if(!(frameNo&1)&&(!STATE.touch||RAD.on))drawRadar();}
 
 function wireMenu(){$('resume').onclick=()=>setPause(false);$('menuBtn').onclick=e=>{e.stopPropagation();if(STATE.started&&!GAR.on)setPause(!STATE.paused);};
   $('mAerial').onclick=()=>{setPause(false);toggleAerial();};$('mMap').onclick=()=>showMap();$('mapClose').onclick=()=>{$('mapView').style.display='none';};$('mSettingsBtn').onclick=()=>menuPage('settings');$('mDevBtn').onclick=()=>{menuPage('dev');buildDev();};$('mDevBack').onclick=()=>menuPage('main');$('mBack').onclick=()=>menuPage('main');
@@ -9724,7 +10157,7 @@ function buildGarage(){const S=new THREE.Scene();S.background=new THREE.Color(0x
   addEventListener('keydown',e=>{if(!GAR.on)return;if(e.code==='ArrowLeft')chooseSkin(GAR.sel-1);if(e.code==='ArrowRight')chooseSkin(GAR.sel+1);if(e.code==='Enter'){e.preventDefault();leaveGarage('race');}});
   $('garageBtn').onclick=()=>showGarage();}
 const GAR_SLOTS=[['Yellow Cab','327 · ORIGINAL YELLOW'],['Checker Cab','327 · FOREST GREEN / CHECKER'],[null,'16 HANDS · ENGLISH SADDLE · HALTER']];
-function chooseSkin(i){if(i<0)return;GAR.sel=clamp(i,0,GAR.horse?2:1);const S=GAR_SLOTS[GAR.sel];$('skinName').textContent=S[0]||COAT_NAMES[DEV.horse.coat||'bay']+' Saddle Horse';$('skinDetail').textContent=S[1];$('freeButton').textContent=GAR.sel===2?'RIDE':'DRIVE';}
+function chooseSkin(i){if(i<0)return;GAR.sel=PWA.app>=0?PWA.app:clamp(i,0,GAR.horse?2:1);if(PWA.gate)pwaManifest(GAR.sel);const S=GAR_SLOTS[GAR.sel];$('skinName').textContent=S[0]||COAT_NAMES[DEV.horse.coat||'bay']+' Saddle Horse';$('skinDetail').textContent=S[1];$('freeButton').textContent=GAR.sel===2?'RIDE':'DRIVE';}
 // both cabs go into the showroom at once, hidden until their shaders are compiled
 function addGarageCab(i){if(GAR.cars[i])return;const r=makeHeroCab(i);r.root.rotation.y=-.29;r.root.position.x=(i-GAR.sel)*3.35;r.root.visible=false;garageOwnMaterials(r.root);GAR.scene.add(r.root);GAR.cars[i]=r;}
 // your saddle horse is the third choice: facing the same way as the cabs, clickable like them (an invisible box takes the click)
@@ -9759,6 +10192,9 @@ function clearArea(fn){for(let i=VEHICLES.length-1;i>=0;i--){const v=VEHICLES[i]
 // free roam: your cab at the start (your horse waits beside the street), or you on foot next to your saddled horse
 function startFree(){const x=207.3,z=-205,P=PLAYER,me=playerHorse();
   if(GAR.sel===2){if(P.car)exitVehicle();if(P.mount)dismountHorse(P.mount,true);if(P.h.ragdoll)P.h.ragdoll.remove();P.swim=false;if(GAME.pcar&&!GAME.pcar.dead){GAME.pcar.remove();GAME.pcar=null;}
+   // (the horse lives out at Leona Farms: you start before its stable, the land round it built behind a fade)
+   const S=leonaSpot();if(S){me.place(S.hx,S.hz,S.yaw);P.h.place(S.px,groundAt(S.px,S.pz),S.pz,S.yaw);P.vel.set(0,0,0);CAM.yaw=S.yaw+Math.PI;CAM.pitch=.14;CAM.lastCar=null;CAM.lastMount=null;
+    ctWarm(S.px,S.pz);showToast('Leona Farms Estate \u00b7 your horse is saddled');return;}
    clearArea((vx,vz)=>Math.hypot(vx-x,vz-z-5.5)<12);me.place(x-2.9,z+5.5,0);P.h.place(x-1.95,groundAt(x-1.95,z+5.5),z+5.5,-Math.PI/2);P.vel.set(0,0,0);CAM.yaw=Math.PI/2;CAM.pitch=.16;CAM.lastCar=null;
    showToast('Your horse is saddled');return;}
   clearArea((vx,vz)=>Math.abs(vx-x)<4.5&&vz>z-30&&vz<z+110||Math.hypot(vx-x,vz-z)<12);const v=putPlayerInHeroCab(x,z,0);v.vel.set(0,0,12.5);v.gear=1;me.place(x-2.9,z+5.5,0);
@@ -9768,7 +10204,7 @@ function makeFinishLine(){if(RACE.line)return;const m=new THREE.MeshStandardMate
   const t=ctex(c);t.repeat.set(31/1.4*1.0,1);m.map=t;const pl=new THREE.Mesh(new THREE.PlaneGeometry(31,1.4),m);pl.rotation.x=-Math.PI/2;pl.position.set(RACE.x,.03,RACE.z1);pl.receiveShadow=true;scene.add(pl);RACE.line=pl;}
 function startRace(){if(GAR.sel===2){startHorseRace();return;}const pv=putPlayerInHeroCab(RACE.cx-2.8,RACE.z0,Math.PI);clearArea((x,z)=>Math.abs(x-RACE.x)<22&&z<RACE.z0+40&&z>RACE.z1-30);
   const rv=makeRival(1-GAR.sel,RACE.cx+2.5,RACE.z0,Math.PI);AI.mode='race';Object.assign(AI,{tactic:'launch',cool:0,attack:0,side:1,stuck:0,recover:0,lastHit:-10,playerSlow:0});
-  RACE.horse=false;RACE.fz=RACE.z1;RACE.on=true;RACE.count=3;RACE.finished=false;RACE.text='';RACE.t=0;makeFinishLine();RACE.line.position.z=RACE.z1;RACE.line.visible=true;
+  RACE.horse=false;RACE.oval=null;RACE.fz=RACE.z1;RACE.on=true;RACE.count=3;RACE.finished=false;RACE.text='';RACE.t=0;makeFinishLine();RACE.line.position.set(RACE.x,.03,RACE.z1);RACE.line.rotation.set(-Math.PI/2,0,0);RACE.line.scale.set(1,1,1);RACE.line.visible=true;
   BASC.target=.245;BASC.ang=.245;BASC.open=1;BASC.timer=1e9;resetBarricades();repairVehicle(pv);}
 function endRace(silent){if(RACE.horse)endHorseRace(true);if(RACE.line)RACE.line.visible=false;if(RACE.on||RACE.finished){BASC.timer=Math.min(BASC.timer,4);}RACE.on=false;RACE.count=0;if(!silent)return;RACE.finished=false;$('raceMessage').innerHTML='';
   if(GAME.rival&&!GAME.rival.dead&&AI.mode==='race')releaseRival();}
@@ -9883,7 +10319,9 @@ function updateGame(dt){if(PRESS.KeyP){if(FARE.phase==='idle'||FARE.phase==='com
   if(FARE.phase==='onboard'||FARE.phase==='boarding'||FARE.phase==='exiting')recordCrumbs();
   if(RACE.count>0){RACE.count=Math.max(0,RACE.count-dt);GAME.freeze=true;if(RACE.count===0)GAME.freeze=false;}
   else if(RACE.on){RACE.t+=dt;if(!RACE.finished){let pw,rw;
-    if(RACE.horse){const me=PLAYER.mount,rv=GAME.rivalMount;pw=me&&me.z<=RACE.fz&&Math.abs(me.x-RACE.x)<17;rw=rv&&!rv.dead&&rv.z<=RACE.fz&&Math.abs(rv.x-RACE.x)<17;}
+    if(RACE.oval){const R=RACE.oval,Lt=LEO.arena.Lt,adv=(m,k,sk)=>{if(!m||m.dead)return;const s=arenaS(m.x,m.z).s;let d=s-R[sk];if(d<-Lt/2)d+=Lt;if(d>Lt/2)d-=Lt;R[k]+=d;R[sk]=s;};
+      adv(PLAYER.mount,'me','sm');adv(GAME.rivalMount,'rv','sr');pw=R.me>=Lt;rw=R.rv>=Lt;}
+    else if(RACE.horse){const me=PLAYER.mount,rv=GAME.rivalMount;pw=me&&me.z<=RACE.fz&&Math.abs(me.x-RACE.x)<17;rw=rv&&!rv.dead&&rv.z<=RACE.fz&&Math.abs(rv.x-RACE.x)<17;}
     else{const pc=PLAYER.car,rv=GAME.rival;pw=pc&&pc.pos.z<=RACE.z1&&Math.abs(pc.pos.x-RACE.x)<17;rw=rv&&!rv.dead&&rv.pos.z<=RACE.z1&&Math.abs(rv.pos.x-RACE.x)<17;}
     if(pw||rw){RACE.finished=true;RACE.text=pw?'YOU WIN':'RIVAL WINS';RACE.finishAt=RACE.t;BASC.timer=8;}}
    if(RACE.finished&&RACE.t-RACE.finishAt>6){RACE.on=false;if(RACE.line)RACE.line.visible=false;if(RACE.horse)endHorseRace();else releaseRival();}}
@@ -9892,7 +10330,9 @@ function updateGame(dt){if(PRESS.KeyP){if(FARE.phase==='idle'||FARE.phase==='com
   const b=$('fareBtn');b.style.display=STATE.started&&!GAR.on&&!TUT.on&&PLAYER.car&&!PLAYER.car.wagon?'block':'none';
   // HUD
   let hud='';const pc=PLAYER.car;
-  if(RACE.on&&RACE.horse&&PLAYER.mount&&GAME.rivalMount){const me=PLAYER.mount,rv=GAME.rivalMount;hud=(me.z<=rv.z?'1st':'2nd')+' / 2 \u00b7 '+Math.max(0,Math.round(me.z-RACE.fz))+' m to the line';}
+  if(RACE.on&&RACE.oval&&PLAYER.mount&&GAME.rivalMount){const R=RACE.oval;hud=(R.me>=R.rv?'1st':'2nd')+' / 2 \u00b7 '+Math.max(0,Math.round(LEO.arena.Lt-R.me))+' m to the line';}
+  else if(RACE.on&&RACE.horse&&PLAYER.mount&&GAME.rivalMount){const me=PLAYER.mount,rv=GAME.rivalMount;hud=(me.z<=rv.z?'1st':'2nd')+' / 2 \u00b7 '+Math.max(0,Math.round(me.z-RACE.fz))+' m to the line';}
+  else if(COURSE.on)hud='COURSE \u00b7 JUMP '+COURSE.next+' OF '+COURSE.n+' \u00b7 '+(COURSE.faults?COURSE.faults+' FAULTS':'CLEAR SO FAR')+' \u00b7 '+courseTime(COURSE.t);
   else if(RACE.on&&pc&&GAME.rival){const S=-(pc.pos.z-RACE.z0),RS=-(GAME.rival.pos.z-RACE.z0);hud=(S>=RS?'1st':'2nd')+' / 2 · '+Math.max(0,Math.round(-(RACE.z1-pc.pos.z)))+' m  |  DAMAGE '+Math.round(pc.damage||0)+'% · GLASS '+(pc.glassBroken||0)+' · '+(AI.tactic||'').toUpperCase();}
   else if(FARE.phase==='waiting'&&pc)hud='PICKUP · '+Math.round(Math.hypot(pc.pos.x-FARE.pick.x,pc.pos.z-FARE.pick.z))+' m · Stop in the yellow circle';
   else if(FARE.phase==='onboard'&&FARE.drop){const c=FARE.car;hud='DROP OFF · '+FARE.drop.name.toUpperCase()+' · '+Math.round(Math.hypot(c.pos.x-FARE.drop.x,c.pos.z-FARE.drop.z))+' m'+(GAME.rival&&AI.mode==='hunt'?' · CHECKER: '+AI.tactic.toUpperCase():'')+(PLAYER.car!==c?' · your fare is waiting in the cab':'');}
@@ -9901,7 +10341,7 @@ function updateGame(dt){if(PRESS.KeyP){if(FARE.phase==='idle'||FARE.phase==='com
   const msg=RACE.count>0?String(Math.ceil(RACE.count)):(RACE.finished&&RACE.t-RACE.finishAt<4?RACE.text+'<small>Keep driving to explore</small>':'');if(msg!==GAME.msg){GAME.msg=msg;$('raceMessage').innerHTML=msg;}}
 // ---------- radar markers ----------
 function radarMarks(g,R,rot,k,src){const marks=[];if(FARE.phase==='waiting'&&FARE.pick)marks.push([FARE.pick.x,FARE.pick.z,'fare']);if((FARE.phase==='onboard'||FARE.phase==='exiting')&&FARE.drop)marks.push([FARE.drop.x,FARE.drop.z,'drop']);
-  if(RACE.on)marks.push([RACE.x,RACE.horse?RACE.fz:RACE.z1,'finish']);if(GAME.rival&&!GAME.rival.dead)marks.push([GAME.rival.pos.x,GAME.rival.pos.z,'rival']);if(GAME.rivalMount&&!GAME.rivalMount.dead)marks.push([GAME.rivalMount.x,GAME.rivalMount.z,'rival']);
+  if(RACE.on)marks.push(RACE.oval?[RACE.fx,RACE.fz,'finish']:[RACE.x,RACE.horse?RACE.fz:RACE.z1,'finish']);if(COURSE.on&&COURSE.first[COURSE.next]){const J=COURSE.first[COURSE.next];marks.push([J.x,J.z,'finish']);}if(GAME.rival&&!GAME.rival.dead)marks.push([GAME.rival.pos.x,GAME.rival.pos.z,'rival']);if(GAME.rivalMount&&!GAME.rivalMount.dead)marks.push([GAME.rivalMount.x,GAME.rivalMount.z,'rival']);
   g.save();g.translate(R,R);g.rotate(rot);for(const [x,z,t] of marks){let dx=(x-src.x)*k,dz=(z-src.z)*k;const d=Math.hypot(dx,dz),m=R-26;let edge=false;if(d>m){dx*=m/d;dz*=m/d;edge=true;}
    g.save();g.translate(dx,dz);g.rotate(-rot);g.lineWidth=4;g.strokeStyle='#1b1712';
    if(t==='fare'){g.fillStyle='#ffcc29';g.beginPath();g.arc(0,0,edge?11:13,0,TAU);g.fill();g.stroke();g.fillStyle='#1b1712';g.font='bold 16px Georgia';g.textAlign='center';g.textBaseline='middle';g.fillText('$',0,1);}
@@ -9910,6 +10350,78 @@ function radarMarks(g,R,rot,k,src){const marks=[];if(FARE.phase==='waiting'&&FAR
    else{g.fillStyle=GAME.rival&&GAME.rival.hero&&GAME.rival.hero.skin===1?'#3aa060':'#f2c418';g.fillRect(-7,-7,14,14);g.strokeRect(-7,-7,14,14);}
    g.restore();}g.restore();}
 
+// ================= THE APP: Taxi Wars on a phone's home screen =================
+// On a phone, in its browser, the game is only its showroom - the two cabs and the horse, nothing else built - and PLAY under them.
+// PLAY installs the one you are looking at as an app of its own (the browser's install prompt; on an iPhone, which has none, a card
+// shows Share > Add to Home Screen): full screen, its icon that one's colour - the Yellow Cab's yellow, the Checker's green, each with
+// a little checker of two black squares and two empty ones; the horse's, a horse's head - named Taxi Wars (or Horse). Opened from the
+// home screen (?app=yellow|green|horse, display-mode fullscreen or standalone) the showroom has only that one in it while the whole
+// city loads round the Loop, then RACE and DRIVE (RIDE) as ever; the horse lives out at Leona Farms. Not wanting the app, PLAY IN THE
+// BROWSER plays on in the page, full screen. A desktop, the editor's artifact (a frame), a page opened from disk: none of this.
+// The manifest and the icons are made here (PNG drawn on a canvas), so the game stays one file: served from sw.js's cache under real
+// addresses on the site when sw.js (beside the game) is in charge of the page, else as data: URLs. sw.js also keeps the game and
+// three.js for playing offline.
+const PWA_APPS=[{id:'yellow',name:'Taxi Wars',bg:'#e2b420'},{id:'green',name:'Taxi Wars',bg:'#2e6b43'},{id:'horse',name:'Horse',bg:'#8a4f26'}];
+const PWA={app:-1,standalone:false,gate:false,ios:false,bip:null,bipSel:-1,sel:-1,seq:0,icons:{},go:null,goRes:null,installed:false};
+function pwaInit(){const q=new URLSearchParams(location.search).get('app'),k=PWA_APPS.findIndex(a=>a.id===q),web=/^https?:$/.test(location.protocol)&&self===top;
+  PWA.standalone=!!(window.matchMedia&&(matchMedia('(display-mode: fullscreen)').matches||matchMedia('(display-mode: standalone)').matches))||navigator.standalone===true;
+  PWA.ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  if(PWA.standalone&&k>=0){PWA.app=k;GAR.sel=k;document.title=PWA_APPS[k].name;const T=$('garageTitle');if(T&&T.firstChild){T.firstChild.nodeValue=k===2?'LEONA FARMS ESTATE · 1928':'TAXI WARS · CHICAGO 1928';T.querySelector('b').textContent=k===2?'Your horse':'Your cab';}}
+  else if(STATE.touch&&web){PWA.gate=true;PWA.go=new Promise(r=>{PWA.goRes=r;});
+    addEventListener('beforeinstallprompt',e=>{e.preventDefault();PWA.bip=e;PWA.bipSel=PWA.sel;});addEventListener('appinstalled',()=>{PWA.installed=true;});
+    $('pwaSheet').addEventListener('click',e=>{const b=e.target.closest('button');if(b){if(b.dataset.a==='here')pwaPlayHere();else $('pwaSheet').classList.remove('on');}else if(e.target.id==='pwaSheet')$('pwaSheet').classList.remove('on');});}
+  if(web&&'serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{});}
+// the showroom on a phone's browser: PLAY instead of the loading Loop
+function pwaGarage(){$('garageLoad').style.display='none';const b=$('playButton');b.style.display='';b.onclick=pwaPlay;pwaManifest(GAR.sel);}
+// PLAY: the browser's own install prompt when it has offered one (for the choice on show; it is offered again a moment after the
+// choice changes); installed, a card saying so; an iPhone, a card showing how; anything else, a card pointing at the browser's menu
+async function pwaPlay(){const k=GAR.sel;await pwaManifest(k);if(PWA.installed){pwaSheet('installed',k);return;}
+  if(PWA.bip&&PWA.bipSel!==k){const t0=performance.now();while(PWA.bipSel!==k&&performance.now()-t0<1200)await new Promise(r=>setTimeout(r,100));}
+  const e=PWA.bip;if(e){PWA.bip=null;try{await e.prompt();const r=await e.userChoice;if(r&&r.outcome==='accepted'){PWA.installed=true;pwaSheet('installed',k);return;}}catch(err){}pwaPlayHere();return;}
+  pwaSheet(PWA.ios?'ios':'menu',k);}
+function pwaSheet(kind,k){const A=PWA_APPS[k],el=$('pwaSheet'),share='<svg viewBox="0 0 24 24" width="18" height="18" style="vertical-align:-3px" aria-hidden="true"><path d="M12 3.5v11M7.8 7.6 12 3.5l4.2 4.1M6.5 11v9h11v-9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  let h='Put '+A.name+' on your home screen',body='';
+  if(kind==='installed'){h=A.name+' is on your home screen';body='<p>Open it from there: it plays full screen, and the whole city loads round the Loop.</p>';}
+  else if(kind==='ios')body='<div class="steps">1. Tap <b>Share</b> '+share+' below<br>2. Choose <b>Add to Home Screen</b><br>3. Open <b>'+A.name+'</b> from your home screen</div>';
+  else body='<div class="steps">1. Open the browser\'s menu <b>&#8942;</b><br>2. Choose <b>Install app</b> or <b>Add to Home screen</b><br>3. Open <b>'+A.name+'</b> from your home screen</div><p>Already installed? Open it from your home screen.</p>';
+  el.innerHTML='<div class="card"><img alt="" src="'+pwaIcons(k)[180]+'"><h2 id="pwaH">'+h+'</h2>'+body+'<button class="go" type="button" data-a="here">PLAY IN THE BROWSER</button><button class="alt" type="button" data-a="close">CLOSE</button></div>';
+  el.classList.add('on');const g=el.querySelector('.go');if(g&&!STATE.touch)g.focus();}
+// playing on in the page after all: full screen if the browser allows it (else at the next touch), and the city starts to build
+function pwaPlayHere(){$('pwaSheet').classList.remove('on');if(!PWA.goRes)return;
+  const fs=()=>{try{const d=document.documentElement,f=d.requestFullscreen||d.webkitRequestFullscreen;if(!f||document.fullscreenElement)return true;const r=f.call(d,{navigationUI:'hide'});if(r&&r.catch)r.catch(()=>addEventListener('pointerdown',fs,{once:true}));return true;}catch(e){return false;}};
+  if(!fs())addEventListener('pointerdown',fs,{once:true});
+  $('playButton').style.display='none';$('garageLoad').style.display='';const r=PWA.goRes;PWA.goRes=null;PWA.gate=false;r();}
+// the app for showroom choice k: its manifest (and, for an iPhone, its touch icon and title); the page's address takes ?app= so an
+// iPhone's Add to Home Screen opens straight into it
+async function pwaManifest(k){if(!PWA.gate||k===PWA.sel)return;PWA.sel=k;const seq=++PWA.seq,A=PWA_APPS[k],ic=pwaIcons(k),dir=new URL('./',location.href).href,base=location.origin+location.pathname;
+  pwaLink('apple-touch-icon').href=ic[180];const t=$('appTitle');if(t)t.setAttribute('content',A.name);try{history.replaceState(history.state,'',location.pathname+'?app='+A.id+location.hash);}catch(e){}
+  let src={192:ic[192],512:ic[512],m512:ic.m512},href=null;
+  if(navigator.serviceWorker&&navigator.serviceWorker.controller&&window.caches){try{const c=await caches.open('tw-app'),s2={};
+      for(const key of ['192','512','m512']){const url=dir+'tw-app/'+A.id+'-'+key+'.png';await c.put(url,new Response(await (await fetch(ic[key])).blob(),{headers:{'Content-Type':'image/png'}}));s2[key]=url;}
+      const mu=dir+'tw-app/'+A.id+'.webmanifest';await c.put(mu,new Response(JSON.stringify(pwaManifestJSON(A,s2,base,dir)),{headers:{'Content-Type':'application/manifest+json'}}));src=s2;href=mu;}catch(e){href=null;}}
+  if(seq!==PWA.seq)return;pwaLink('manifest').href=href||'data:application/manifest+json;charset=utf-8,'+encodeURIComponent(JSON.stringify(pwaManifestJSON(A,src,base,dir)));}
+function pwaManifestJSON(A,src,base,dir){return{id:base+'?app='+A.id,name:A.name,short_name:A.name,description:A.id==='horse'?'Ride out from Leona Farms Estate, 1928.':'Chicago, 1928: drive a cab, race the Checker, take the fares.',
+  start_url:base+'?app='+A.id,scope:dir,display:'fullscreen',display_override:['fullscreen','standalone'],orientation:'any',background_color:'#000000',theme_color:'#000000',
+  icons:[{src:src[192],sizes:'192x192',type:'image/png',purpose:'any'},{src:src[512],sizes:'512x512',type:'image/png',purpose:'any'},{src:src.m512,sizes:'512x512',type:'image/png',purpose:'maskable'}]};}
+function pwaLink(rel){let l=document.head.querySelector('link[rel="'+rel+'"]');if(!l){l=document.createElement('link');l.rel=rel;document.head.appendChild(l);}return l;}
+// the icons, drawn once each: the colour edge to edge (a round or rounded mask cuts nothing that matters) with a little enamel light
+// from above; on it, for the cabs, a checker of four squares - two black, two left empty, a thin black line round the four - and
+// for the horse a horse's head and neck in the cream of the showroom's lettering. 180 px (iPhone), 192, 512, and 512 drawn smaller
+// for the masks an Android launcher cuts
+function pwaIcons(k){if(PWA.icons[k])return PWA.icons[k];const A=PWA_APPS[k];
+  const draw=(S,sc)=>{const c=mk(S,S),g=c.ctx;g.fillStyle=A.bg;g.fillRect(0,0,S,S);const gr=g.createLinearGradient(0,0,0,S);gr.addColorStop(0,'rgba(255,255,255,.16)');gr.addColorStop(.55,'rgba(255,255,255,0)');gr.addColorStop(1,'rgba(0,0,0,.14)');g.fillStyle=gr;g.fillRect(0,0,S,S);
+    g.save();g.translate(S/2,S/2);g.scale(S*sc/512,S*sc/512);
+    if(A.id==='horse')pwaHorse(g,A.bg);else{const q=64;g.fillStyle='#121110';g.fillRect(-q,-q,q,q);g.fillRect(0,0,q,q);g.lineWidth=7;g.strokeStyle='#121110';g.strokeRect(-q,-q,2*q,2*q);}
+    g.restore();return c.toDataURL('image/png');};
+  return PWA.icons[k]={180:draw(180,1),192:draw(192,1),512:draw(512,1),m512:draw(512,.78)};}
+// a horse's head and neck in profile, facing left (in a 512 square about its middle): ear, forehead, the long face down to the muzzle,
+// the lips and chin, the round of the jaw, the throat and the neck to a level cut, the crest back up to the poll; its eye and nostril
+function pwaHorse(g,bg){g.save();g.translate(-36,0);g.fillStyle='#f1e7cf';g.beginPath();g.moveTo(38,-205);
+  g.bezierCurveTo(28,-175,18,-150,6,-128);g.bezierCurveTo(-40,-108,-78,-78,-104,-40);g.bezierCurveTo(-128,-4,-150,40,-164,72);g.bezierCurveTo(-174,96,-160,120,-132,124);
+  g.bezierCurveTo(-114,126,-100,118,-92,110);g.bezierCurveTo(-78,114,-60,114,-46,106);g.bezierCurveTo(-8,94,26,80,50,48);g.bezierCurveTo(64,26,66,6,62,-8);
+  g.bezierCurveTo(78,40,102,120,125,205);g.lineTo(245,205);g.bezierCurveTo(238,120,200,10,130,-80);g.bezierCurveTo(108,-112,86,-140,70,-160);g.bezierCurveTo(62,-175,52,-195,38,-205);g.closePath();g.fill();
+  g.fillStyle=bg;g.beginPath();g.ellipse(-34,-58,12,9,-.5,0,TAU);g.fill();g.beginPath();g.ellipse(-146,84,9,6,-.9,0,TAU);g.fill();
+  g.strokeStyle=bg;g.lineWidth=5;g.lineCap='round';g.beginPath();g.moveTo(96,-120);g.bezierCurveTo(140,-60,175,20,196,120);g.stroke();g.restore();}
 // ================= MAIN =================
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(62,innerWidth/innerHeight,.25,QUAL[quality].far);camera.position.set(126,3,-50);
@@ -9986,14 +10498,16 @@ async function step(fn){const label=STEPS[stepI]?STEPS[stepI][0]:'Almost there';
 async function waitFonts(){try{if(!document.fonts)return;await Promise.race([Promise.all([document.fonts.load('40px Limelight'),document.fonts.load('20px "Special Elite"')]),new Promise(r=>setTimeout(r,2500))]);}catch(e){}}
 let cells=null;
 let CITY_READY=false;
-async function init(){STATE.touch=(matchMedia&&matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window&&navigator.maxTouchPoints>0);if(STATE.touch)document.body.classList.add('touch');initRouteUI();wireMenu();$('qBtn').textContent='Quality: '+quality[0].toUpperCase()+quality.slice(1);
+async function init(){STATE.touch=(matchMedia&&matchMedia('(pointer: coarse)').matches)||('ontouchstart' in window&&navigator.maxTouchPoints>0);if(STATE.touch)document.body.classList.add('touch');pwaInit();initRouteUI();wireMenu();$('qBtn').textContent='Quality: '+quality[0].toUpperCase()+quality.slice(1);
   // 1) a dark screen with one small line while both cabs are built and their shaders compiled (a few per frame);
   // 2) then the showroom lights come up on the two of them together; 3) then the Loop appears and the city builds behind them
   initPost();onResize();buildGarage();showGarage();await nextFrame();await nextFrame();
-  buildHeroCabs();await nextFrame();addGarageCab(0);addGarageCab(1);await buildHorseLibrary();addGarageHorse();await nextFrame();
+  // (the installed app shows only its own cab or horse; every other way in, all three)
+  const only=PWA.app;buildHeroCabs();await nextFrame();if(only<0||only===0)addGarageCab(0);if(only<0||only===1)addGarageCab(1);await buildHorseLibrary();if(only<0||only===2)addGarageHorse();await nextFrame();
   await warmScene(GAR.scene,GAR.cam);
-  for(const c of GAR.cars)c.root.visible=true;for(let i=0;i<3;i++)await nextFrame();   // their first draws (geometry upload, shadow shaders) happen while it is still dark
-  await revealGarage();$('garageLoad').classList.add('on');await nextFrame();
+  for(const c of GAR.cars)if(c)c.root.visible=true;for(let i=0;i<3;i++)await nextFrame();   // their first draws (geometry upload, shadow shaders) happen while it is still dark
+  // on a phone's browser the city waits: the showroom and PLAY (see THE APP), until you choose to play here after all
+  await revealGarage();if(PWA.gate){pwaGarage();await PWA.go;}$('garageLoad').classList.add('on');await nextFrame();
   await step(()=>buildFacadeAtlas());await step(()=>buildHouseAtlas());await step(()=>buildGroundTextures());await step(async()=>{await waitFonts();buildClockTex();buildSignTextures();buildReliefTex();buildWestSigns();buildHwySigns();try{buildLPTextures();}catch(e){console.warn('Lincoln Park: its textures',e);}});
   // the world builders run in source scopes (see SOURCE SCOPES), so what each one made can be named, found and rebuilt
   await step(()=>{buildMaterials();buildMaterials2();});await step(()=>buildWestPlanA());await step(()=>buildWestPlanB());await step(()=>{cells=srcScope(buildGround);});await step(()=>srcScope(buildLandmarks));await step(()=>srcScope(genCity,cells));await step(()=>srcScope(buildBridges,scene));await step(()=>srcScope(buildL));
