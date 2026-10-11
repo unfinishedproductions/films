@@ -16014,7 +16014,7 @@ function warmStandIns(){const g=new THREE.BufferGeometry();g.setAttribute('posit
 <script type="module">
 // three.js r186 (an ES module) loads first; the game is a classic script that expects a global THREE, so it is started once
 // three.js is here. Colour management stays off: the game converts its colours to linear where it makes them (see C()).
-// ez-tree (procedural trees, MIT, by Daniel Greenheck) loads alongside; the park waits for it a few seconds at most.
+// ez-tree (procedural trees, MIT, by Daniel Greenheck) loads alongside; the park waits for it a few seconds at most
 import * as THREE from 'three';
 window.THREE=THREE;THREE.ColorManagement.enabled=false;
 window.EZTREE_READY=import('ez-tree').then(m=>(window.EZTREE=m)).catch(e=>{console.warn('ez-tree unavailable: the park keeps simple trees',e);return null;});
