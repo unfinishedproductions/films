@@ -3076,28 +3076,31 @@ function hznUpdate(dt,cam,night,lit=0){if(!HZN.ring)return;const c=cam.position,
 // windows use the buildings' own bays, glass and light hashes: mostly dark, a sparse few gathering into warm bokeh, across the low
 // neighbourhoods as well as the towers. They fade into the real windows on approach. Their range compresses like the simple far
 // walls and roofs, preserving their direction and depth order at every quality setting.
-const HZL={pts:null,glow:null,t:0,cap:60000,box:null,L0:300,L1:520};
+const HZL={pts:null,glow:null,beacon:null,t:0,cap:60000,box:null,L0:300,L1:520};
 const HZL_VS=`attribute vec3 aCol,aCore,aFace;attribute vec4 aN,aWin;uniform float uR,uH,uTime,uHI,uCI,uL0,uL1,uB0,uB1,fogDensity,uNight,uLitOffice,uLitShop,uLitHome;varying vec3 vC,vK;varying float vG,vB;
 float h12(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
 `+TW_FOG_FN+`
-void main(){vec3 d=position-cameraPosition;float D=max(length(d),1.);vec4 mv=viewMatrix*vec4(position,1.);float z=max(-mv.z,1.);
+void main(){vec3 d=position-cameraPosition;float D=max(length(d),1.);vec4 mv=viewMatrix*vec4(position,1.);float z=max(-mv.z,1.),loop=step(-300.,position.x)*step(position.x,410.)*step(-660.,position.z)*step(position.z,460.);
  float w=smoothstep(uL0,uL1,D),wc=aN.w>.5?smoothstep(uB0,uB1,D):w;
  float s=2.2*aN.x*projectionMatrix[1][1]*uH*.5/z,k=1.;if(s<2.){k=s*s*.25;s=2.;}
  float farK=smoothstep(900.,3000.,D),keep=mix(.1,.015,smoothstep(4000.,12000.,D));vB=farK;s=max(s,mix(2.,mix(3.,10.,smoothstep(15.,55.,position.y)),farK)*uH/1080.);float sg=aN.y/1.1,sg2=max(sg,1.4/s);
  float f=mix(twFogT(z,fogDensity)*k,.65,farK)*mix(1.,1.-smoothstep(keep*.6,keep,aN.z),farK)*(1.+.04*farK*sin(uTime*(2.3+3.1*aN.z)+aN.z*40.));
  vC=aCol*uHI*w*f;vK=aCore*uCI*wc*f*(sg*sg)/(sg2*sg2);vG=sg2*sg2;
- if(aN.w>1.5){float kind=aWin.z,lh=h12(aWin.xy*1.37+aWin.w*7.7),up=smoothstep(3.,40.,position.y);
+ if(aN.w>1.5&&aN.w<2.5){float kind=aWin.z,lh=h12(aWin.xy*1.37+aWin.w*7.7),up=smoothstep(3.,40.,position.y),tower=loop*smoothstep(45.,95.,position.y);
   float lp=(kind<.5?uLitOffice:kind<1.5?uLitShop:kind<2.5?0.:kind<3.5?uLitOffice:uLitHome)*mix(.55,1.,up),lb=fract(lh*5.3);
   float bl=h12(aWin.xy+vec2(3.1,aWin.w)),blind=(kind<.5||kind>3.5)?step(.86-bl*bl*.62,aFace.z):0.;
   float fc=smoothstep(0.,.15,-dot(aFace.xy,d.xz)/D),tw=1.+.12*farK*sin(uTime*(2.3+3.1*aN.z)+aN.z*40.);
   vec3 col=mix(vec3(1.,.6,.3),vec3(1.,.84,.6),fract(lh*13.7));
   vC=col*step(1.-lp,lh)*(.3+.8*lb*lb)*(1.-blind*.55)*(kind>.5&&kind<1.5?.72:.62)*mix(.35,1.,up)*uNight*fc*smoothstep(650.,1400.,D)
-   *mix(twFogT(z,fogDensity),.65,farK)*mix(1.,1.-smoothstep(.25,.4,aN.z),farK)*mix(1.,.9,farK)*tw*(1.+farK*smoothstep(25.,85.,position.y));
+   *mix(twFogT(z,fogDensity),.65,farK)*mix(1.,1.-smoothstep(.25+.35*tower,.4+.4*tower,aN.z),farK)*mix(1.,.9,farK)*tw*(1.+farK*(smoothstep(25.,85.,position.y)+2.*tower));
   vK=vec3(0.);vG=1.;s=max(2.,mix(2.,mix(2.5,8.,smoothstep(15.,55.,position.y)),farK)*uH/1080.);}
+ if(aN.w>2.5){vC=aCol*uNight*smoothstep(uB0,uB1,D)*mix(twFogT(z,fogDensity),.75,farK)*mix(1.,3.5,farK);vK=vec3(0.);vG=1.;s=max(2.,mix(2.,6.,farK)*uH/1080.);}
  float m=max(max(vC.r+vK.r,vC.g+vK.g),vC.b+vK.b);if(m>8.){vC*=8./m;vK*=8./m;}
- // far window bands separate gently; a low building's band sets the three-row ceiling, easing back before real windows appear
+ // the Loop's upper windows keep their order beneath the blue crown; the whole band stays within three low-building rows
  if(aN.w>1.5){float k=smoothstep(1600.,4500.,D),h=max(aCore.x-.16,1.),px=projectionMatrix[1][1]*uH*.5/z,row=9.84*px+2.5*uH/1080.;
-  s=mix(s,min(s,2.8*row),k);float H=min(h*mix(.82,1.2,smoothstep(30.,90.,h)),max(0.,(3.*row-s)/px));d.y+=(position.y-.16)*(H/h-1.)*k;}
+  if(loop>.5||aN.w>2.5){h=max(position.y-.16,.001);s=mix(s,min(s,1.15*row),k);float lim=max((2.55*row-.5*s)/px,1.),lift=h*mix(.82,1.25,smoothstep(30.,100.,h));
+   float H=aN.w>2.5?(3.*row-.5*s)/px:lim*lift/(lim+lift);d.y+=(H-h)*k;}
+  else{s=mix(s,min(s,2.8*row),k);float H=min(h*mix(.82,1.2,smoothstep(30.,90.,h)),max(0.,(3.*row-s)/px));d.y+=(position.y-.16)*(H/h-1.)*k;}}
  vec3 p=D>uR?cameraPosition+d*(uR*(2.-uR/D)/D):position;p-=d/D*.8;
  gl_PointSize=s;gl_Position=(max(w,wc)>.001&&m>.0002)?projectionMatrix*viewMatrix*vec4(p,1.):vec4(2.,2.,2.,1.);}`;
 // lens discs belong to the lights alone: round, softly edged, a little brighter at the rim; the tiny core's energy is spread too
@@ -3106,8 +3109,10 @@ const HZL_FS=`varying vec3 vC,vK;varying float vG,vB;void main(){vec2 q=gl_Point
  gl_FragColor=vec4(mix(near,disc,vB)*edge,1.);}`;
 // real lamps and a restrained selection of real window bays; the glass and lighting pattern come from the same facades as nearby
 function hznLightsInit(scene){let sd=1928;const R=()=>{sd=(Math.imul(sd,1664525)+1013904223)>>>0;return sd/4294967296;};
-  const P=[],K=[],Q=[],N=[],W=[],NF=[],cells=new Map(),halo=C('#ffd9a8'),board=C('#fff1c8').multiplyScalar(6);
-  const add=(x,y,z,t,core,Rw,rg,kind,win=[0,0,0,0],face=[0,0,.5])=>{P.push(x,y,z);K.push(halo.r*t.r,halo.g*t.g,halo.b*t.b);Q.push(core.r,core.g,core.b);N.push(Rw,rg/Rw,R(),kind);W.push(...win);NF.push(...face);};
+  const P=[],K=[],Q=[],N=[],W=[],NF=[],cells=new Map(),halo=C('#ffd9a8'),board=C('#fff1c8').multiplyScalar(6);let seen=0;
+  // keep an even sample across the whole city without first storing every window
+  const add=(x,y,z,t,core,Rw,rg,kind,win=[0,0,0,0],face=[0,0,.5],slot=-1)=>{const i=slot>=0?slot:seen++<HZL.cap?P.length/3:Math.floor(R()*seen);if(i>=HZL.cap)return;
+    for(const [a,v] of [[P,[x,y,z]],[K,kind>2.5?[t.r,t.g,t.b]:[halo.r*t.r,halo.g*t.g,halo.b*t.b]],[Q,[core.r,core.g,core.b]],[N,[Rw,rg/Rw,R(),kind]],[W,win],[NF,face]])for(let j=0;j<v.length;j++)a[i*v.length+j]=v[j];};
   const gp=INST.globePos||[],dark=INST.globeDark||new Set(),tint=INST.globeTint||[];
   for(let i=0;i<gp.length;i++){if(dark.has(i))continue;const g=gp[i],t=tint[i]||WHITE,gs=g[3]||1;add(g[0],g[1],g[2],t,t,1.7*Math.max(.55,gs),.3*gs,0);}
   for(const b of BOARD_LAMPS)add(b[0],b[1],b[2],WHITE,board,1.7,.4,1);
@@ -3120,11 +3125,13 @@ function hznLightsInit(scene){let sd=1928;const R=()=>{sd=(Math.imul(sd,1664525)
         const ix=Math.floor((e.getX(a)+x*.1235+.0007)*img.width),iy=Math.floor((e.getY(a)+y*.247+.0015)*img.height);if(img.data[(iy*img.width+ix)*4+3]>127&&dx*dx+dy*dy<best){best=dx*dx+dy*dy;off=[x,y];}}cells.set(ck,off);}if(!off)continue;
       const u0=u.getX(a),v0=u.getY(a),du=u.getX(b)-u0,dv=u.getY(d)-v0;if(Math.abs(du)<1e-6||Math.abs(dv)<1e-6)continue;
       for(let j=Math.ceil(Math.min(v0,v0+dv)-off[1]);j+off[1]<Math.max(v0,v0+dv);j++)for(let i=Math.ceil(Math.min(u0,u0+du)-off[0]);i+off[0]<Math.max(u0,u0+du);i++){
-        if(R()>(key==='house'?.5:.22))continue;const fx=(i+off[0]-u0)/du,fy=(j+off[1]-v0)/dv;
+        const fx=(i+off[0]-u0)/du,fy=(j+off[1]-v0)/dv;
         const x=p.getX(a)+(p.getX(b)-p.getX(a))*fx+(p.getX(d)-p.getX(a))*fy,y=p.getY(a)+(p.getY(b)-p.getY(a))*fx+(p.getY(d)-p.getY(a))*fy,z=p.getZ(a)+(p.getZ(b)-p.getZ(a))*fx+(p.getZ(d)-p.getZ(a))*fy;
+        if(R()>(key==='house'?.5:.22+(x>=-300&&x<=410&&z>=-660&&z<=460?.48*sstep(45,95,y):0)))continue;
         add(x+nx*.08,y,z+nz*.08,WHITE,{r:Math.max(p.getY(a),p.getY(b),p.getY(c),p.getY(d)),g:1,b:1},.8,.2,2,[i,j,kind,e.getW(a)],[nx,nz,off[1]]);}}}
-  // (thinned evenly if there are ever too many)
-  let n=P.length/3;if(n>HZL.cap){const keep=HZL.cap/n;let j=0;for(let i=0;i<n;i++){if(R()>keep)continue;for(let a=0;a<3;a++){P[j*3+a]=P[i*3+a];K[j*3+a]=K[i*3+a];Q[j*3+a]=Q[i*3+a];NF[j*3+a]=NF[i*3+a];}for(let a=0;a<4;a++){N[j*4+a]=N[i*4+a];W[j*4+a]=W[i*4+a];}j++;}n=j;P.length=K.length=Q.length=NF.length=n*3;N.length=W.length=n*4;}
+  // the actual Straus crown keeps its colour and its own slot, even when the window sample reaches the cap
+  const b=HZL.beacon;if(b)add(b[0],b[1],b[2],b[3],b[3],2.1,.5,3,[0,0,0,0],[0,0,.5],Math.min(P.length/3,HZL.cap-1));
+  const n=P.length/3;
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(P,3));g.setAttribute('aCol',new THREE.Float32BufferAttribute(K,3));g.setAttribute('aCore',new THREE.Float32BufferAttribute(Q,3));g.setAttribute('aN',new THREE.Float32BufferAttribute(N,4));g.setAttribute('aWin',new THREE.Float32BufferAttribute(W,4));g.setAttribute('aFace',new THREE.Float32BufferAttribute(NF,3));g.boundingSphere=new THREE.Sphere(new THREE.Vector3(),1e6);
   const pts=new THREE.Points(g,new THREE.ShaderMaterial({uniforms:{...THREE.UniformsUtils.merge([THREE.UniformsLib.fog,{uR:{value:800},uH:{value:1080},uTime:{value:0},uHI:{value:0},uCI:{value:0},uL0:{value:HZL.L0},uL1:{value:HZL.L1},uB0:{value:800},uB1:{value:950}}]),uNight:UNI.night,uLitOffice:UNI.litOffice,uLitShop:UNI.litShop,uLitHome:UNI.litHome},
     vertexShader:HZL_VS,fragmentShader:HZL_FS,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,fog:true}));
@@ -4161,7 +4168,7 @@ function geoFromBucket(g){const geo=new THREE.BufferGeometry();geo.setAttribute(
 function buildGroup(fn,matOverride){const prev=BKOV,own=BKOV={};try{fn();}finally{BKOV=prev;}// (re-entrant: a live rebuild may be collecting world buckets around it)
   const grp=new THREE.Group();for(const mk in own){const g=own[mk];if(!g.vc)continue;const m=new THREE.Mesh(geoFromBucket(g),(matOverride&&matOverride[mk])||MATS[mk]);m.castShadow=MCFG[mk]?MCFG[mk].cast:true;m.receiveShadow=true;m.name=mk;grp.add(m);}return grp;}
 // (a frame for the browser whenever 35 ms have gone: the whole city at once is a long stretch on a slow machine)
-async function finalizeBuckets(scene){STREAM.scene=scene;const out=[];let t0=performance.now();FARC.acc=new Map();if(quality==='low')FARC.minEdge=3;
+async function finalizeBuckets(scene){STREAM.scene=scene;const out=[];let t0=performance.now();FARC.acc=new Map();FARC.minEdge=STATE.touch?6:quality==='low'?3:2;
   for(const mk in BK){for(const [ck,g] of BK[mk]){if(!g.vc)continue;if(performance.now()-t0>35){await nextFrame();t0=performance.now();}const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(g.p,3));geo.setAttribute('normal',new THREE.Float32BufferAttribute(g.n,3));
     geo.setAttribute('uv',new THREE.Float32BufferAttribute(g.u,2));geo.setAttribute('color',new THREE.Float32BufferAttribute(g.c,3));if(g.e.length)geo.setAttribute('cell',new THREE.Float32BufferAttribute(g.e,4));
     geo.setIndex(new THREE.BufferAttribute(g.vc>65535?new Uint32Array(g.i):new Uint16Array(g.i),1));geo.computeBoundingSphere();
@@ -4696,7 +4703,7 @@ function buildLandmarks(){
   {const s=T('#cdc5b1'),sd=.49,y1=CURB+SHOP_H+18*FLOOR_H;block4(238,214,290,257,CURB+SHOP_H,y1,4,0,s,{seed:sd,cornice:[1.2,1],trim:s});boxCol(238,214,290,257,y1+20);
    sides(238,214,290,257).forEach(q=>{const L=Math.hypot(q.b[0]-q.a[0],q.b[1]-q.a[1]);facade(q.a[0],q.a[1],q.b[0],q.b[1],CURB,CURB+SHOP_H,20,Math.round(L/3.6),1,1,sd,s);});
    box('stone',264,y1,235.5,34,5,30,s);box('stone',264,y1+5,235.5,24,5,21,s);box('stone',264,y1+10,235.5,14,5,12,s);box('stone',264,y1+15,235.5,5,2,5,s);
-   sph('glow',264,y1+19.2,235.5,2.1,T('#5d8bd8'),12,10,1.35);for(const [a,b] of [[-2.8,0],[2.8,0],[0,-2.8],[0,2.8]])box('bronze',264+a,y1+17,235.5+b,.9,.9,1.6,T('#3a3326'));}
+   sph('glow',264,y1+19.2,235.5,2.1,T('#5d8bd8'),12,10,1.35);HZL.beacon=[264,y1+19.2,235.5,T('#5d8bd8')];for(const [a,b] of [[-2.8,0],[2.8,0],[0,-2.8],[0,2.8]])box('bronze',264+a,y1+17,235.5+b,.9,.9,1.6,T('#3a3326'));}
   // ---------- ART INSTITUTE (1893) + lions ----------
   srcMark('Art Institute (1893)');
   {const s=T('#c3baa6'),sd=.33;block4(346,140,404,228,CURB,CURB+20,4,0,s,{seed:sd,fh:6.5,cornice:[1.4,1.2],trim:s});boxCol(346,140,404,228,22);
@@ -5349,7 +5356,7 @@ function timpMat(){const m=new THREE.MeshStandardMaterial({roughness:.9,metalnes
 // column i, row j of each variant's layer; supersampled coverage and mipmaps keep partly covered texels full without dilation
 async function timpBake(parts,barkSrc,leafTex){let hiA=null,hiN=null,tri=null,quad=null,im=null,saved=null;const mats=[];
   const restore=()=>{if(!saved)return;renderer.setRenderTarget(saved.rt,saved.face,saved.level);renderer.autoClear=saved.auto;renderer.setClearColor(saved.color,saved.alpha);saved=null;};
-  try{const nv=parts.length,N=TIMP.N,F=quality==='high'?128:quality==='medium'?96:64,S=N*F;Object.assign(TIMP,{nv,F,S,d:quality==='high'?110:quality==='medium'?95:75});
+  try{const nv=parts.length,N=TIMP.N,F=STATE.touch?48:quality==='high'?128:quality==='medium'?96:64,S=N*F;Object.assign(TIMP,{nv,F,S,d:quality==='high'?110:quality==='medium'?95:75});
     const D=new THREE.Vector3(),Rr=new THREE.Vector3(),U=new THREE.Vector3(),p=new THREE.Vector3();
     for(const P of parts){const gs=[P.b[0],P.l[0]],box=new THREE.Box3();for(const g of gs)box.union(new THREE.Box3().setFromBufferAttribute(g.attributes.position));
       const c=box.getCenter(new THREE.Vector3());let R=0;for(const g of gs){const a=g.attributes.position;for(let k=0;k<a.count;k++)R=Math.max(R,p.fromBufferAttribute(a,k).distanceTo(c));}TIMP.var.push(new THREE.Vector4(c.x,c.y,c.z,R*1.03));TIMP.can.push(new THREE.Box3().setFromBufferAttribute(P.l[0].attributes.position).getBoundingSphere(new THREE.Sphere()));}
@@ -5371,13 +5378,13 @@ async function timpBake(parts,barkSrc,leafTex){let hiA=null,hiN=null,tri=null,qu
         for(let j=0;j<N;j++)for(let i=0;i<N;i++){timpDirJS(i,j,N,D);timpBasisJS(D,Rr,U);cam.matrix.makeBasis(Rr,U,D).setPosition(p.copy(c).addScaledVector(D,2*R));cam.updateMatrixWorld(true);
           rt.viewport.set(i*fp,j*fp,fp,fp);rt.scissor.set(i*fp,j*fp,fp,fp);renderer.setRenderTarget(rt);renderer.clear(true,true,false);renderer.render(bs,cam);}
         ds.uniforms.tHi.value=rt.texture;renderer.setRenderTarget(out,v);renderer.render(dsScene,cam);}
-      restore();await nextFrame();}
+      bm.geometry.dispose();lm.geometry.dispose();restore();await nextFrame();}
     quad=new THREE.PlaneGeometry(2,2);TIMP.aI=new THREE.InstancedBufferAttribute(new Float32Array(TIMP.cap*4),4);TIMP.aI.setUsage(THREE.DynamicDrawUsage);quad.setAttribute('aImp',TIMP.aI);
     im=new THREE.InstancedMesh(quad,timpMat(),TIMP.cap);im.instanceMatrix.setUsage(THREE.DynamicDrawUsage);im.instanceColor=new THREE.InstancedBufferAttribute(new Float32Array(TIMP.cap*3),3);im.instanceColor.setUsage(THREE.DynamicDrawUsage);
     im.count=0;im.frustumCulled=false;im.castShadow=im.receiveShadow=false;im.name='tree impostors';scene.add(im);TIMP.im=im;TIMP.ok=true;
     console.info('[tree impostors] '+nv+' variants, '+N+'x'+N+' frames of '+F+' px');}
   catch(e){console.warn('tree impostors: the far trees keep their levels',e);TIMP.ok=false;if(TIMP.alb)TIMP.alb.dispose();if(TIMP.nrm)TIMP.nrm.dispose();if(im){scene.remove(im);im.material.dispose();im.dispose();}if(quad)quad.dispose();TIMP.alb=TIMP.nrm=TIMP.im=TIMP.aI=null;TIMP.var.length=0;}
-  finally{restore();if(hiA)hiA.dispose();if(hiN)hiN.dispose();for(const m of mats)m.dispose();if(tri)tri.dispose();}}
+  finally{restore();if(hiA)hiA.dispose();if(hiN)hiN.dispose();for(const P of parts){P.b[0].dispose();P.l[0].dispose();}for(const m of mats)m.dispose();if(tri)tri.dispose();}}
 // live slots: matrix and tint written together, the fade separately; only the changed ranges are uploaded each frame
 function timpDirty(R,i){if(i<R[0])R[0]=i;if(i>R[1])R[1]=i;}
 function timpAdd(m,v,cr,cg,cb,bk,a){if(!TIMP.ok)return -1;const i=TIMP.free.length?TIMP.free.pop():TIMP.top<TIMP.cap?TIMP.top++:-1;if(i<0)return -1;
@@ -10161,7 +10168,7 @@ function updateSky(dt,px,pz,cam){twUnderUpdate(dt,cam);SKY.t=(SKY.t+dt*SKY.speed
 let POST=null;
 function initPost(){const hdr=GL2&&(renderer.extensions.has('EXT_color_buffer_float')||renderer.extensions.has('EXT_color_buffer_half_float'));if(!hdr){renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMappingExposure=1.05;POST={hdr:false};return;}
   renderer.toneMapping=THREE.NoToneMapping;const opt={type:THREE.HalfFloatType,format:THREE.RGBAFormat,depthBuffer:true};
-  const main=THREE.WebGLMultisampleRenderTarget?new THREE.WebGLMultisampleRenderTarget(4,4,opt):new THREE.WebGLRenderTarget(4,4,opt);if(main.samples!==undefined)main.samples=4;
+  const main=THREE.WebGLMultisampleRenderTarget?new THREE.WebGLMultisampleRenderTarget(4,4,opt):new THREE.WebGLRenderTarget(4,4,opt);if(main.samples!==undefined)main.samples=STATE.touch?2:4;
   const mkRT=()=>new THREE.WebGLRenderTarget(4,4,{type:THREE.HalfFloatType,format:THREE.RGBAFormat,depthBuffer:false});const cam=new THREE.OrthographicCamera(-1,1,1,-1,0,1);const tri=new THREE.BufferGeometry();tri.setAttribute('position',new THREE.Float32BufferAttribute([-1,-1,0,3,-1,0,-1,3,0],3));
   const VS='varying vec2 vUv;void main(){vUv=position.xy*.5+.5;gl_Position=vec4(position.xy,0.,1.);}';
   const bright=new THREE.ShaderMaterial({uniforms:{t:{value:null},th:{value:1.1}},vertexShader:VS,fragmentShader:'uniform sampler2D t;uniform float th;varying vec2 vUv;void main(){vec3 c=texture2D(t,vUv).rgb;c=(c.r<1e9&&c.g<1e9&&c.b<1e9)?clamp(c,0.,48.):vec3(0.);float l=max(max(c.r,c.g),c.b);gl_FragColor=vec4(c*smoothstep(th,th*2.2,l),1.);}'});
@@ -15733,7 +15740,8 @@ function pwaInit(){const q=new URLSearchParams(location.search).get('app'),k=PWA
   else if(STATE.touch&&web){PWA.gate=true;PWA.go=new Promise(r=>{PWA.goRes=r;});
     addEventListener('beforeinstallprompt',e=>{e.preventDefault();PWA.bip=e;PWA.bipSel=PWA.sel;});addEventListener('appinstalled',()=>{PWA.installed=true;});
     $('pwaSheet').addEventListener('click',e=>{const b=e.target.closest('button');if(b){if(b.dataset.a==='here')pwaPlayHere();else $('pwaSheet').classList.remove('on');}else if(e.target.id==='pwaSheet')$('pwaSheet').classList.remove('on');});}
-  if(web&&'serviceWorker' in navigator&&window.isSecureContext)navigator.serviceWorker.register('sw.js').catch(()=>{});}
+  if(web&&'serviceWorker' in navigator&&window.isSecureContext){navigator.serviceWorker.addEventListener('controllerchange',()=>{if(PWA.sel>=0){const k=PWA.sel;PWA.sel=-1;pwaManifest(k);}});
+    navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).catch(e=>console.warn('app service worker',e));}}
 // the showroom on a phone's browser: PLAY instead of the loading Loop
 function pwaGarage(){$('garageLoad').style.display='none';const b=$('playButton');b.style.display='';b.onclick=pwaPlay;pwaManifest(GAR.sel);}
 // PLAY: the browser's own install prompt when it has offered one (for the choice on show; it is offered again a moment after the
@@ -15756,7 +15764,7 @@ function pwaPlayHere(){$('pwaSheet').classList.remove('on');if(!PWA.goRes)return
   $('playButton').style.display='none';$('garageLoad').style.display='';const r=PWA.goRes;PWA.goRes=null;PWA.gate=false;r();}
 // the app for showroom choice k: its manifest (and, for an iPhone, its touch icon and title); the page's address takes ?app= so an
 // iPhone's Add to Home Screen opens straight into it
-async function pwaManifest(k){if(!PWA.gate||k===PWA.sel||location.protocol==='file:')return;PWA.sel=k;const seq=++PWA.seq,A=PWA_APPS[k],ic=pwaIcons(k),dir=new URL('./',location.href).href,base=location.origin+location.pathname;
+async function pwaManifest(k){if(k===PWA.sel||location.protocol==='file:')return;PWA.sel=k;const seq=++PWA.seq,A=PWA_APPS[k],ic=pwaIcons(k),dir=new URL('./',location.href).href,base=location.origin+location.pathname;
   pwaLink('apple-touch-icon').href=ic[180];const t=$('appTitle');if(t)t.setAttribute('content',A.name);try{history.replaceState(history.state,'',location.pathname+'?app='+A.id+location.hash);}catch(e){}
   let src={192:ic[192],512:ic[512],m512:ic.m512},href=null;
   if(navigator.serviceWorker&&navigator.serviceWorker.controller&&window.caches){try{const c=await caches.open('tw-app'),s2={};
